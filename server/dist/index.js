@@ -60,17 +60,35 @@ if (fs.existsSync(clientDist)) {
     });
 }
 // Connect to MongoDB and start listening
-mongoose
-    .connect(MONGO_URI, getConnectOptions(MONGO_URI))
-    .then(() => {
-    console.log(`Connected to MongoDB (${mongoose.connection.name}) at ${MONGO_URI}`);
+async function startServer() {
+    const primaryUri = MONGO_URI;
+    const fallbackUri = 'mongodb://localhost:27017/syllabusforge';
+    try {
+        console.log(`Attempting connection to MongoDB at ${primaryUri}...`);
+        await mongoose.connect(primaryUri, getConnectOptions(primaryUri));
+        console.log(`Connected to primary MongoDB (${mongoose.connection.name}) at ${primaryUri}`);
+    }
+    catch (primaryErr) {
+        console.error(`Primary MongoDB connection failed (${primaryErr.message}).`);
+        if (primaryUri !== fallbackUri) {
+            console.warn(`[RECOVERY] Attempting fallback to local MongoDB at ${fallbackUri}...`);
+            try {
+                await mongoose.connect(fallbackUri, getConnectOptions(fallbackUri));
+                console.log(`[SUCCESS] Connected to fallback local MongoDB (${mongoose.connection.name}) at ${fallbackUri}`);
+            }
+            catch (fallbackErr) {
+                console.error(`[FATAL] Both primary and fallback MongoDB connections failed: ${fallbackErr.message}`);
+                process.exit(1);
+            }
+        }
+        else {
+            process.exit(1);
+        }
+    }
     app.listen(PORT, () => {
         console.log(`SyllabusForge API Server listening on http://localhost:${PORT}`);
     });
-})
-    .catch(err => {
-    console.error('MongoDB connection error:', err);
-    process.exit(1);
-});
+}
+startServer();
 export default app;
-// Trigger reload
+// Trigger reload for Atlas connection - 2026-10-13
