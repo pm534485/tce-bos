@@ -50,16 +50,37 @@ export async function generatePdfDocument(course) {
     const headerText = getDegreeProgramHeader(course);
     const titleCaps = (course.courseName || '').toUpperCase();
     // 1. Prerequisites formatting
-    let prereqText = 'NIL';
-    if (typeof course.prerequisites === 'string') {
-        prereqText = course.prerequisites.trim();
-        if (prereqText.toLowerCase() === 'nil') {
-            prereqText = 'NIL';
+    const getPrerequisiteList = (prereqs) => {
+        if (!prereqs)
+            return [];
+        if (Array.isArray(prereqs)) {
+            return prereqs
+                .map(p => {
+                if (typeof p === 'string')
+                    return p.trim();
+                const code = (p.courseCode || '').trim();
+                const name = (p.courseName || '').trim();
+                if (code && name)
+                    return `${code} ${name}`;
+                return code || name || '';
+            })
+                .filter(s => s && s.toLowerCase() !== 'nil');
         }
-    }
-    else if (Array.isArray(course.prerequisites) && course.prerequisites.length > 0) {
-        prereqText = course.prerequisites.map(p => `${p.courseCode} ${p.courseName}`).join(', ');
-    }
+        if (typeof prereqs === 'string') {
+            const trimmed = prereqs.trim();
+            if (!trimmed || trimmed.toLowerCase() === 'nil')
+                return [];
+            if (trimmed.includes('\n')) {
+                return trimmed
+                    .split('\n')
+                    .map(s => s.trim().replace(/^[•\-\*]\s*/, ''))
+                    .filter(s => s && s.toLowerCase() !== 'nil');
+            }
+            return [trimmed];
+        }
+        return [];
+    };
+    const prereqList = getPrerequisiteList(course.prerequisites);
     // 2. Course Outcomes formatting
     const coList = course.courseOutcomes || [];
     const coRowsHtml = coList.map(co => `
@@ -452,7 +473,9 @@ export async function generatePdfDocument(course) {
 
   <!-- Prerequisite -->
   <div class="gray-banner">Prerequisite</div>
-  <p class="section-p" style="margin-top: 4px;">${prereqText}</p>
+  ${prereqList.length > 0
+        ? `<ul class="bullet-list" style="margin-top: 4px;">${prereqList.map(p => `<li>${p}</li>`).join('')}</ul>`
+        : `<p class="section-p" style="margin-top: 4px;">NIL</p>`}
 
   <!-- Line space between each section -->
   <div class="line-space"></div>

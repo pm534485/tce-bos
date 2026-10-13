@@ -211,19 +211,50 @@ export async function generateDocxDocument(course: Course): Promise<Buffer> {
   children.push(createLineSpace());
 
   // 3. Prerequisite
-  let prereqText = 'NIL';
-  if (typeof course.prerequisites === 'string') {
-    prereqText = course.prerequisites.trim();
-    if (prereqText.toLowerCase() === 'nil') prereqText = 'NIL';
-  } else if (Array.isArray(course.prerequisites) && course.prerequisites.length > 0) {
-    prereqText = course.prerequisites.map(p => `${p.courseCode} ${p.courseName}`).join(', ');
-  }
+  const getPrerequisiteList = (prereqs: any): string[] => {
+    if (!prereqs) return [];
+    if (Array.isArray(prereqs)) {
+      return prereqs
+        .map(p => {
+          if (typeof p === 'string') return p.trim();
+          const code = (p.courseCode || '').trim();
+          const name = (p.courseName || '').trim();
+          if (code && name) return `${code} ${name}`;
+          return code || name || '';
+        })
+        .filter(s => s && s.toLowerCase() !== 'nil');
+    }
+    if (typeof prereqs === 'string') {
+      const trimmed = prereqs.trim();
+      if (!trimmed || trimmed.toLowerCase() === 'nil') return [];
+      if (trimmed.includes('\n')) {
+        return trimmed
+          .split('\n')
+          .map(s => s.trim().replace(/^[•\-\*]\s*/, ''))
+          .filter(s => s && s.toLowerCase() !== 'nil');
+      }
+      return [trimmed];
+    }
+    return [];
+  };
+
+  const prereqList = getPrerequisiteList(course.prerequisites);
 
   children.push(createShadedBanner('Prerequisite'));
-  children.push(new Paragraph({
-    spacing: { before: 60, after: 0 },
-    children: [createText(prereqText)],
-  }));
+  if (prereqList.length > 0) {
+    prereqList.forEach(p => {
+      children.push(new Paragraph({
+        indent: { left: 360, hanging: 180 },
+        spacing: { before: 40, after: 40 },
+        children: [createText(`•  ${p}`)],
+      }));
+    });
+  } else {
+    children.push(new Paragraph({
+      spacing: { before: 60, after: 0 },
+      children: [createText('NIL')],
+    }));
+  }
 
   // Line space between sections
   children.push(createLineSpace());

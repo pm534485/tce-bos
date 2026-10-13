@@ -17,7 +17,6 @@ import {
   validateCourse,
   computeCourseCode,
   computeCredits,
-  suggestCoWeightages,
   countWords,
   PROGRAMME_CODES,
   CATEGORY_CODES,
@@ -1118,60 +1117,9 @@ export const CourseWizard: React.FC = () => {
                 {/* Step 3: Course Outcomes */}
                 {currentStep === 2 && (
                   <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h2 className="text-xl font-bold text-slate-900">3. Course Outcomes (COs)</h2>
-                        <p className="text-sm text-slate-500 mt-1">
-                          {course.courseType === 'THEORY' && '6 to 8 COs. Minimum 70% at TPS >= 3. Total weightage = 100%.'}
-                          {course.courseType === 'PRACTICAL' && 'Select from General CO Pool: Cognitive (2-4), Affective (2-3), Psychomotor (2-3).'}
-                          {course.courseType === 'TCP' && 'Up to 8 COs. At least 2 addressing PO6 to PO11 competencies.'}
-                        </p>
-                      </div>
-
-                      {/* Weightage Suggester */}
-                      {(course.courseType === 'THEORY' || course.courseType === 'TCP') && (
-                        <button
-                          onClick={() => {
-                            const suggested = suggestCoWeightages(course.courseOutcomes || []);
-                            const updatedCos = (course.courseOutcomes || []).map((c, i) => ({
-                              ...c,
-                              weightage: suggested[i] || c.weightage,
-                            }));
-                            updateField('courseOutcomes', updatedCos);
-                          }}
-                          className="px-3 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-semibold flex items-center space-x-1"
-                        >
-                          <Sparkles className="w-3.5 h-3.5" />
-                          <span>Suggest Weightages</span>
-                        </button>
-                      )}
+                    <div>
+                      <h2 className="text-xl font-bold text-slate-900">3. Course Outcomes (COs)</h2>
                     </div>
-
-                    {/* Real-time Weightage Balance Bar & Error Alert */}
-                    {(() => {
-                      const totalW = (course.courseOutcomes || []).reduce((s, c) => s + (c.weightage || 0), 0);
-                      if (course.courseType === 'THEORY' || course.courseType === 'TCP') {
-                        if (totalW !== 100) {
-                          return (
-                            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center justify-between animate-in fade-in duration-150">
-                              <div className="flex items-center space-x-2">
-                                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                                <span className="font-semibold">Total CO Weightage must equal 100% (currently {totalW}%)</span>
-                              </div>
-                              <span className="font-bold px-2.5 py-0.5 bg-red-100 rounded text-red-800">{totalW}% / 100%</span>
-                            </div>
-                          );
-                        }
-                        return (
-                          <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center space-x-2 animate-in fade-in duration-150">
-                            <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                            <span className="font-semibold">CO Weightage balanced at 100%</span>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })()}
-                    <InlineFieldError field="courseOutcomes" />
 
                     {/* Practical General CO Pool Picker */}
                     {course.courseType === 'PRACTICAL' && (

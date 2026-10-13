@@ -449,7 +449,10 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
 
   <!-- Prerequisite -->
   <div class="gray-banner">Prerequisite</div>
-  <p class="section-p" style="margin-top: 4px;">${prereqText}</p>
+  ${prereqList.length > 0
+    ? `<ul class="bullet-list" style="margin-top: 4px;">${prereqList.map(p => `<li>${p}</li>`).join('')}</ul>`
+    : `<p class="section-p" style="margin-top: 4px;">NIL</p>`
+  }
 
   <!-- Line space between each section -->
   <div class="line-space"></div>
