@@ -8,15 +8,17 @@ import masterRoutes from './routes/master.js';
 import courseRoutes from './routes/courses.js';
 import programmeRoutes from './routes/programmes.js';
 dotenv.config();
-// Ensure SRV DNS resolution works properly on Windows environments
-try {
-    const currentServers = dns.getServers();
-    if (!currentServers.length || currentServers.includes('127.0.0.1')) {
-        dns.setServers(['8.8.8.8', '1.1.1.1']);
+// Ensure SRV DNS resolution works properly on local Windows environments
+if (!process.env.VERCEL) {
+    try {
+        const currentServers = dns.getServers();
+        if (!currentServers.length || currentServers.includes('127.0.0.1')) {
+            dns.setServers(['8.8.8.8', '1.1.1.1']);
+        }
     }
-}
-catch {
-    // Ignore DNS fallback error
+    catch {
+        // Ignore DNS fallback error
+    }
 }
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -27,7 +29,11 @@ function getConnectOptions(uri) {
     const pathPart = withoutProto.split('?')[0];
     const slashIdx = pathPart.indexOf('/');
     const db = slashIdx !== -1 ? pathPart.substring(slashIdx + 1) : '';
-    return db ? {} : { dbName: 'syllabusforge' };
+    const baseOptions = {
+        serverSelectionTimeoutMS: 10000,
+        connectTimeoutMS: 10000,
+    };
+    return db ? baseOptions : { ...baseOptions, dbName: 'syllabusforge' };
 }
 // Ensure DB connection for serverless invocations (Vercel)
 export async function connectDB() {
