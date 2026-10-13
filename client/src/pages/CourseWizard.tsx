@@ -63,6 +63,22 @@ export const VALID_UNIQUE_LETTERS = [
   'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
 ];
 
+// Helper: split subtopic strings by commas, dashes/hyphens (-), en/em dashes (–, —), semicolons, or newlines
+export const splitSubtopics = (raw: string | string[]): string[] => {
+  if (!raw) return [];
+  const parts = Array.isArray(raw) ? raw : [raw];
+  const out: string[] = [];
+  for (const p of parts) {
+    if (typeof p !== 'string') continue;
+    const items = p
+      .split(/[,;\n\r–—]+|\s*-\s*|\s*•\s*/)
+      .map(s => s.trim().replace(/^[-–—•*]\s*/, '').trim())
+      .filter(Boolean);
+    out.push(...items);
+  }
+  return out;
+};
+
 export const CourseWizard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
@@ -1946,7 +1962,7 @@ export const CourseWizard: React.FC = () => {
                                 onChange={e => {
                                   const raw = e.target.value;
                                   setSubtopicsDraft(prev => ({ ...prev, [idx]: raw }));
-                                  const list = raw.split(',').map(s => s.trim()).filter(Boolean);
+                                  const list = splitSubtopics(raw);
                                   const updated = [...(course.modules || [])];
                                   updated[idx] = { ...updated[idx], subtopics: list };
                                   updateField('modules', updated);
@@ -1958,7 +1974,7 @@ export const CourseWizard: React.FC = () => {
                                     return next;
                                   });
                                 }}
-                                placeholder="e.g. Subtopic A, Subtopic B, Subtopic C (comma-separated)"
+                                placeholder="e.g. Subtopic A, Subtopic B - Subtopic C (comma or dash separated)"
                                 className="w-full p-2 border border-slate-300 rounded-lg text-xs"
                               />
                             </div>
@@ -1991,6 +2007,9 @@ export const CourseWizard: React.FC = () => {
                             const handleSyncFromModules = () => {
                               if (!course.modules || course.modules.length === 0) return;
                               const items: LectureScheduleItem[] = [];
+                              const updatedModules = [...(course.modules || [])];
+                              let modulesUpdated = false;
+
                               course.modules.forEach((mod, mIdx) => {
                                 const modNo = String(mod.moduleNo || mIdx + 1);
                                 const modCos = Array.isArray(mod.coMapping) && mod.coMapping.length > 0
@@ -2004,8 +2023,16 @@ export const CourseWizard: React.FC = () => {
                                   coMapping: modCos,
                                 });
 
-                                if (mod.subtopics && mod.subtopics.length > 0) {
-                                  mod.subtopics.forEach((sub, sIdx) => {
+                                const rawSubtopics = subtopicsDraft[mIdx] !== undefined ? subtopicsDraft[mIdx] : (mod.subtopics || []);
+                                const parsedSubtopics = splitSubtopics(rawSubtopics);
+
+                                if (JSON.stringify(parsedSubtopics) !== JSON.stringify(mod.subtopics)) {
+                                  updatedModules[mIdx] = { ...updatedModules[mIdx], subtopics: parsedSubtopics };
+                                  modulesUpdated = true;
+                                }
+
+                                if (parsedSubtopics && parsedSubtopics.length > 0) {
+                                  parsedSubtopics.forEach((sub, sIdx) => {
                                     items.push({
                                       moduleNo: `${modNo}.${sIdx + 1}`,
                                       topic: sub,
@@ -2015,6 +2042,10 @@ export const CourseWizard: React.FC = () => {
                                   });
                                 }
                               });
+
+                              if (modulesUpdated) {
+                                updateField('modules', updatedModules);
+                              }
                               updateField('lectureScheduleItems', items);
                             };
 
