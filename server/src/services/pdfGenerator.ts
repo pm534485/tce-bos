@@ -275,7 +275,10 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
   // 7. Designers
   const designers = course.designers || [];
   const designersHtml = designers.length > 0
-    ? designers.map(d => `${d.name}${d.email ? `, <a href="mailto:${d.email}" style="color: #0000FF; text-decoration: underline;">${d.email}</a>` : ''}`).join('<br>')
+    ? designers.map(d => {
+        const parts = [d.name, d.designation].filter(Boolean).join(', ');
+        return `${parts}${d.email ? (parts ? ', ' : '') + `<a href="mailto:${d.email}" style="color: #0000FF; text-decoration: underline;">${d.email}</a>` : ''}`;
+      }).join('<br>')
     : 'Faculty Member, <a href="mailto:faculty@tce.edu" style="color: #0000FF; text-decoration: underline;">faculty@tce.edu</a>';
 
   const html = `

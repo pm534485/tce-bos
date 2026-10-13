@@ -533,7 +533,8 @@ export async function generateDocxDocument(course) {
     const designers = course.designers || [];
     if (designers.length > 0) {
         designers.forEach(d => {
-            const runs = [createText(`${d.name}${d.email ? ', ' : ''}`)];
+            const parts = [d.name, d.designation].filter(Boolean).join(', ');
+            const runs = [createText(`${parts}${d.email ? (parts ? ', ' : '') : ''}`)];
             if (d.email) {
                 runs.push(new TextRun({
                     text: d.email,

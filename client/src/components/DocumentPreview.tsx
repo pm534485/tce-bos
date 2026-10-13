@@ -576,11 +576,22 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
 
           <div className="text-xs text-black leading-relaxed">
             {(course.designers && course.designers.length > 0) ? (
-              course.designers.map((d, idx) => (
-                <div key={idx}>
-                  {d.name}{d.email ? <>, <a href={`mailto:${d.email}`} className="text-[#0000FF] underline font-medium hover:text-blue-800">{d.email}</a></> : ''}
-                </div>
-              ))
+              course.designers.map((d, idx) => {
+                const textParts = [d.name, d.designation].filter(Boolean).join(', ');
+                return (
+                  <div key={idx}>
+                    {textParts}
+                    {d.email ? (
+                      <>
+                        {textParts ? ', ' : ''}
+                        <a href={`mailto:${d.email}`} className="text-[#0000FF] underline font-medium hover:text-blue-800">
+                          {d.email}
+                        </a>
+                      </>
+                    ) : ''}
+                  </div>
+                );
+              })
             ) : (
               <div>Faculty Member, <a href="mailto:faculty@tce.edu" className="text-[#0000FF] underline font-medium">faculty@tce.edu</a></div>
             )}

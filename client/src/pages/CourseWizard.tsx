@@ -54,7 +54,13 @@ import {
   ChevronRight,
   ChevronLeft,
   Menu,
+  BookOpen,
 } from 'lucide-react';
+
+export const VALID_UNIQUE_LETTERS = [
+  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M',
+  'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
+];
 
 export const CourseWizard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -143,7 +149,6 @@ export const CourseWizard: React.FC = () => {
           setLastSaved(new Date());
         } else {
           // If default 'A' is already taken in this programme/category, pick the next available letter
-          const VALID_UNIQUE_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
           const defaultCode = computeCourseCode({
             regulationCode: '26',
             programmeCode: user?.programmeAccess[0] || 'CA',
@@ -353,6 +358,14 @@ export const CourseWizard: React.FC = () => {
     </div>
   );
 
+  // Live counts for institutional header
+  const totalModulePeriods = (course.modules || []).reduce((acc, m) => acc + (Number(m.periods) || 0), 0);
+  const totalLecturePeriods = (course.lectureScheduleItems || []).reduce((acc, item) => acc + (Number(item.periods) || 0), 0);
+  const totalTopics = (course.modules || []).reduce((acc, m) => acc + (m.subtopics?.length || 0) + (m.mainTopic ? 1 : 0), 0);
+  const totalPeriods = course.courseType === 'PRACTICAL'
+    ? (course.experiments || []).length * 3
+    : (totalLecturePeriods > 0 ? totalLecturePeriods : totalModulePeriods);
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Minimal Sleek Header Bar - Compact single row, no redundant details */}
@@ -543,135 +556,293 @@ export const CourseWizard: React.FC = () => {
             {/* Center Wizard Form Container */}
             <div className="flex-1 w-full bg-white border border-slate-200 border-t-4 border-t-[#800020] rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col justify-between">
               <div>
+                {/* ============================================================== */}
+                {/* PERSISTENT TCE INSTITUTIONAL COURSE HEADER (OFFICIAL TABLE)   */}
+                {/* ============================================================== */}
+                <div className="mb-6">
+                  {/* Official 3-Column Header Table matching TCE Standard */}
+                  <div className="border-2 border-slate-900 bg-white shadow-xs overflow-hidden">
+                    <div className="grid grid-cols-1 md:grid-cols-12 border-collapse">
+                      {/* Column 1: Course Code */}
+                      <div
+                        onClick={() => setCurrentStep(0)}
+                        className="md:col-span-3 p-3.5 sm:p-4 flex items-center justify-center border-b md:border-b-0 md:border-r border-slate-900 bg-white cursor-pointer hover:bg-slate-50 transition-colors group"
+                        title="Click to configure Course Code in Step 1"
+                      >
+                        <span className="font-mono text-xl sm:text-2xl font-black text-slate-950 tracking-wider group-hover:text-[#7B1113] transition-colors">
+                          {course.courseCode || '26CACA0'}
+                        </span>
+                      </div>
+
+                      {/* Column 2: Course Title */}
+                      <div
+                        onClick={() => setCurrentStep(0)}
+                        className="md:col-span-5 p-3.5 sm:p-4 flex items-center justify-center text-center border-b md:border-b-0 md:border-r border-slate-900 bg-white cursor-pointer hover:bg-slate-50 transition-colors group"
+                        title="Click to edit Course Title in Step 1"
+                      >
+                        <span className="font-bold text-sm sm:text-base md:text-lg text-slate-950 uppercase tracking-wide leading-tight group-hover:text-[#7B1113] transition-colors">
+                          {course.courseName?.trim() ? (
+                            course.courseName.toUpperCase()
+                          ) : (
+                            <span className="text-slate-400 font-normal italic lowercase">
+                              (enter course title in step 1)
+                            </span>
+                          )}
+                        </span>
+                      </div>
+
+                      {/* Column 3: Category, LTP & Credits Table */}
+                      <div
+                        onClick={() => setCurrentStep(1)}
+                        className="md:col-span-4 grid grid-cols-5 border-collapse text-center cursor-pointer hover:bg-slate-50 transition-colors"
+                        title="Click to edit L-T-P and Credits in Step 2"
+                      >
+                        {/* Header Row */}
+                        <div className="p-2 text-xs font-semibold text-slate-800 border-b border-r border-slate-900 bg-white">
+                          Category
+                        </div>
+                        <div className="p-2 text-xs font-semibold text-slate-800 border-b border-r border-slate-900 bg-white">
+                          L
+                        </div>
+                        <div className="p-2 text-xs font-semibold text-slate-800 border-b border-r border-slate-900 bg-white">
+                          T
+                        </div>
+                        <div className="p-2 text-xs font-semibold text-slate-800 border-b border-r border-slate-900 bg-white">
+                          P
+                        </div>
+                        <div className="p-2 text-xs font-semibold text-slate-800 border-b border-slate-900 bg-white">
+                          Credits
+                        </div>
+
+                        {/* Value Row */}
+                        <div className="p-2.5 text-xs sm:text-sm font-bold text-slate-900 border-r border-slate-900 flex items-center justify-center">
+                          {course.categoryAbbr || 'PCC'}
+                        </div>
+                        <div className="p-2.5 text-xs sm:text-sm font-bold text-slate-900 border-r border-slate-900 flex items-center justify-center">
+                          {course.L ?? (course.courseType === 'PRACTICAL' ? 0 : 3)}
+                        </div>
+                        <div className="p-2.5 text-xs sm:text-sm font-bold text-slate-900 border-r border-slate-900 flex items-center justify-center">
+                          {course.T ?? (course.courseType === 'PRACTICAL' ? 0 : 1)}
+                        </div>
+                        <div className="p-2.5 text-xs sm:text-sm font-bold text-slate-900 border-r border-slate-900 flex items-center justify-center">
+                          {course.P ?? (course.courseType === 'PRACTICAL' ? 3 : 0)}
+                        </div>
+                        <div className="p-2.5 text-xs sm:text-sm font-black text-slate-950 flex items-center justify-center">
+                          {course.credits ?? (course.courseType === 'PRACTICAL' ? 1.5 : 4)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Syllabus Live Progress & Details Strip */}
+                  <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 px-1 text-xs">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-800 font-bold text-[11px] border border-slate-200">
+                        <span>{course.courseType}</span>
+                        <span>• Semester {course.semester || 1}</span>
+                      </span>
+
+                      <button
+                        onClick={() => setCurrentStep(5)}
+                        className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-900 font-bold text-[11px] border border-blue-200 transition-colors cursor-pointer"
+                        title="Click to view/edit Modules and Lecture Schedule"
+                      >
+                        <BookOpen className="w-3 h-3 text-blue-700" />
+                        <span>{course.modules?.length || 0} Modules</span>
+                        <span>({totalPeriods} Periods)</span>
+                      </button>
+
+                      {totalTopics > 0 && (
+                        <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-900 font-bold text-[11px] border border-emerald-200">
+                          <CheckCircle className="w-3 h-3 text-emerald-600" />
+                          <span>{totalTopics} Topics defined</span>
+                        </span>
+                      )}
+
+                      {(course.courseOutcomes || []).length > 0 && (
+                        <button
+                          onClick={() => setCurrentStep(3)}
+                          className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-purple-50 hover:bg-purple-100 text-purple-900 font-bold text-[11px] border border-purple-200 transition-colors cursor-pointer"
+                          title="Click to view/edit Course Outcomes"
+                        >
+                          <span>{course.courseOutcomes.length} COs Defined</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="text-[11px] text-slate-500 font-medium">
+                      Regulation 2026 OBE Curriculum
+                    </div>
+                  </div>
+                </div>
+
                 {/* Step 1: Course Identity */}
                 {currentStep === 0 && (
                   <div className="space-y-4">
                     <div>
                       <h2 className="text-xl font-bold text-slate-900">1. Course Code & Identity</h2>
                       <p className="text-sm text-slate-500 mt-1">
-                        Compose the standardized 5-component course code <strong>RR AA C U V</strong> and enter the formal title.
+                        Compose the standardized 5-component course code <strong>RR AA C U V</strong> directly in the cards below, and enter the formal title.
                       </p>
                     </div>
 
-                    {/* Course Code Breakdown Card */}
-                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold text-slate-700">Course Code Composition</span>
-                        <span className="font-mono text-base font-bold text-sky-700 bg-sky-100 px-3 py-0.5 rounded-lg border border-sky-200">
-                          {course.courseCode}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-5 gap-2 text-center text-xs">
-                        <div className="p-1.5 bg-white rounded-lg border border-slate-200">
-                          <span className="block text-slate-400 font-semibold">RR</span>
-                          <span className="font-bold text-slate-800">{course.regulationCode}</span>
-                          <span className="text-[10px] text-slate-500 block">Reg. 26</span>
+                    {/* Course Code Composition Card - Direct Interactive Selection */}
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                              Course Code Composition
+                            </span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                              Direct Selector
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-slate-500">
+                            Select or change any component directly in the 5 cards below (RR, AA, C, U, V).
+                          </span>
                         </div>
-                        <div className="p-1.5 bg-white rounded-lg border border-slate-200">
-                          <span className="block text-slate-400 font-semibold">AA</span>
-                          <span className="font-bold text-slate-800">{course.programmeCode}</span>
-                          <span className="text-[10px] text-slate-500 block">Programme</span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-[11px] font-semibold text-slate-500">Composed Code:</span>
+                          <span className="font-mono text-base sm:text-lg font-black text-sky-800 bg-sky-100/80 px-3 py-0.5 rounded-lg border border-sky-300 shadow-xs tracking-wider">
+                            {course.courseCode}
+                          </span>
                         </div>
-                        <div className="p-1.5 bg-white rounded-lg border border-slate-200">
-                          <span className="block text-slate-400 font-semibold">C</span>
-                          <span className="font-bold text-slate-800">{course.categoryLetter}</span>
-                          <span className="text-[10px] text-slate-500 block">Category</span>
-                        </div>
-                        <div className="p-1.5 bg-white rounded-lg border border-slate-200">
-                          <span className="block text-slate-400 font-semibold">U</span>
-                          <span className="font-bold text-slate-800">{course.uniqueLetter}</span>
-                          <span className="text-[10px] text-slate-500 block">Unique (A-Z)</span>
-                        </div>
-                        <div className="p-1.5 bg-white rounded-lg border border-slate-200">
-                          <span className="block text-slate-400 font-semibold">V</span>
-                          <span className="font-bold text-slate-800">{course.version}</span>
-                          <span className="text-[10px] text-slate-500 block">Version</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Programme Dropdown */}
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Programme (AA) <span className="text-rose-500">*</span>
-                        </label>
-                        <select
-                          value={course.programmeCode}
-                          onChange={e => updateField('programmeCode', e.target.value)}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-sky-500"
-                        >
-                          {PROGRAMME_CODES.map(p => (
-                            <option key={p.code} value={p.code}>
-                              {p.code} — {p.name}
-                            </option>
-                          ))}
-                        </select>
-                        <InlineFieldError field="programmeCode" />
                       </div>
 
-                      {/* Category Letter Dropdown */}
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Category Code (C) <span className="text-rose-500">*</span>
-                        </label>
-                        <select
-                          value={course.categoryLetter}
-                          onChange={e => updateField('categoryLetter', e.target.value)}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-sky-500"
-                        >
-                          {CATEGORY_CODES.map(c => (
-                            <option key={c.code} value={c.code}>
-                              {c.code} — {c.name} ({c.defaultAbbr})
-                            </option>
-                          ))}
-                        </select>
-                        <InlineFieldError field="categoryLetter" />
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-center text-xs">
+                        {/* 1. RR: Regulation */}
+                        <div className="p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between">
+                          <span className="block text-[11px] text-slate-400 font-bold uppercase tracking-wider">RR</span>
+                          <div className="my-1">
+                            <select
+                              value={course.regulationCode}
+                              onChange={e => updateField('regulationCode', e.target.value)}
+                              className="w-full text-center font-black text-base sm:text-lg text-slate-900 bg-transparent border-0 focus:ring-2 focus:ring-[#7B1113] rounded cursor-pointer p-0"
+                              title="Regulation Code (26)"
+                            >
+                              <option value="26">26</option>
+                            </select>
+                          </div>
+                          <span className="text-[10px] text-slate-500 block font-medium">Reg. 26</span>
+                        </div>
+
+                        {/* 2. AA: Programme Code */}
+                        <div className="p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between group">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">AA</span>
+                            <span className="text-[9px] text-[#0F2942] font-bold bg-[#0F2942]/10 px-1 rounded">Prog</span>
+                          </div>
+                          <div className="my-1">
+                            <select
+                              value={course.programmeCode}
+                              onChange={e => updateField('programmeCode', e.target.value)}
+                              className="w-full text-center font-black text-base sm:text-lg text-[#0F2942] bg-transparent border-0 focus:ring-2 focus:ring-[#0F2942] rounded cursor-pointer p-0"
+                              title="Click to select Programme"
+                            >
+                              {PROGRAMME_CODES.map(p => (
+                                <option key={p.code} value={p.code}>
+                                  {p.code} — {p.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <span
+                            className="text-[10px] text-slate-600 block font-medium truncate"
+                            title={PROGRAMME_CODES.find(p => p.code === course.programmeCode)?.name || 'Programme'}
+                          >
+                            {PROGRAMME_CODES.find(p => p.code === course.programmeCode)?.name || 'Programme'}
+                          </span>
+                        </div>
+
+                        {/* 3. C: Category Code */}
+                        <div className="p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between group">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">C</span>
+                            <span className="text-[9px] text-[#7B1113] font-bold bg-[#7B1113]/10 px-1 rounded">Cat</span>
+                          </div>
+                          <div className="my-1">
+                            <select
+                              value={course.categoryLetter}
+                              onChange={e => updateField('categoryLetter', e.target.value)}
+                              className="w-full text-center font-black text-base sm:text-lg text-[#7B1113] bg-transparent border-0 focus:ring-2 focus:ring-[#7B1113] rounded cursor-pointer p-0"
+                              title="Click to select Category"
+                            >
+                              {CATEGORY_CODES.map(c => (
+                                <option key={c.code} value={c.code}>
+                                  {c.code} — {c.name} ({c.defaultAbbr})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <span
+                            className="text-[10px] text-slate-600 block font-medium truncate"
+                            title={CATEGORY_CODES.find(c => c.code === course.categoryLetter)?.name || 'Category'}
+                          >
+                            {course.categoryAbbr || 'PCC'} ({CATEGORY_CODES.find(c => c.code === course.categoryLetter)?.name?.split(' ')[0] || 'Core'})
+                          </span>
+                        </div>
+
+                        {/* 4. U: Unique Letter */}
+                        <div className="p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between group">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">U</span>
+                            <span className="text-[9px] text-sky-700 font-bold bg-sky-100 px-1 rounded">A-Z</span>
+                          </div>
+                          <div className="my-1">
+                            <select
+                              value={course.uniqueLetter}
+                              onChange={e => updateField('uniqueLetter', e.target.value.toUpperCase())}
+                              className="w-full text-center font-black text-base sm:text-lg text-[#0F2942] bg-transparent border-0 focus:ring-2 focus:ring-[#0F2942] rounded cursor-pointer p-0"
+                              title="Click to select Unique Letter"
+                            >
+                              {VALID_UNIQUE_LETTERS.map(letter => (
+                                <option key={letter} value={letter}>
+                                  {letter}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <span className="text-[10px] text-slate-500 block font-medium">Unique (excl. I, O)</span>
+                        </div>
+
+                        {/* 5. V: Version */}
+                        <div className="p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between group">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">V</span>
+                            <span className="text-[9px] text-slate-600 font-bold bg-slate-100 px-1 rounded">Ver</span>
+                          </div>
+                          <div className="my-1">
+                            <select
+                              value={course.version}
+                              onChange={e => updateField('version', Number(e.target.value))}
+                              className="w-full text-center font-black text-base sm:text-lg text-slate-900 bg-transparent border-0 focus:ring-2 focus:ring-slate-600 rounded cursor-pointer p-0"
+                              title="Click to select Version"
+                            >
+                              {[0, 1, 2, 3, 4, 5].map(v => (
+                                <option key={v} value={v}>
+                                  {v}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <span className="text-[10px] text-slate-500 block font-medium">Version {course.version}</span>
+                        </div>
                       </div>
 
-                      {/* Unique Letter */}
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Unique Letter (U) <span className="text-rose-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          maxLength={1}
-                          value={course.uniqueLetter}
-                          onChange={e => updateField('uniqueLetter', e.target.value.toUpperCase())}
-                          className={`w-full px-3 py-2 border rounded-lg text-sm uppercase transition-all ${
-                            hasFieldError('uniqueLetter') || hasFieldError('courseCode')
-                              ? 'border-red-400 bg-red-50/20 text-slate-900 focus:ring-2 focus:ring-red-200 focus:border-red-500'
-                              : course.uniqueLetter
-                              ? 'border-emerald-400 bg-emerald-50/10 focus:ring-2 focus:ring-emerald-200 focus:border-emerald-500'
-                              : 'border-slate-300 focus:ring-2 focus:ring-sky-500'
-                          }`}
-                          placeholder="A (excluding I, O)"
-                        />
-                        <InlineFieldError field="uniqueLetter" />
-                        <InlineFieldError field="courseCode" />
-                        {!hasFieldError('uniqueLetter') && !hasFieldError('courseCode') && course.uniqueLetter && (
-                          <InlineFieldSuccess message="Unique letter verified" />
+                      <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-500">
+                        <span>Compound Unique Key: <code className="font-mono font-bold text-slate-700">{course.regulationCode}-{course.programmeCode}-{course.courseCode}-v{course.version}</code></span>
+                        {hasFieldError('uniqueLetter') || hasFieldError('courseCode') ? (
+                          <span className="text-red-600 font-semibold flex items-center space-x-1">
+                            <AlertCircle className="w-3 h-3 text-red-500" />
+                            <span>Code configuration error</span>
+                          </span>
+                        ) : (
+                          <span className="text-emerald-600 font-semibold flex items-center space-x-1">
+                            <CheckCircle className="w-3 h-3 text-emerald-500" />
+                            <span>Standard Regulation 2026 Format Validated</span>
+                          </span>
                         )}
-                        <span className="text-[11px] text-slate-500 mt-0.5 block">
-                          Single letter A-Z excluding letters "I" and "O".
-                        </span>
-                      </div>
-
-                      {/* Version */}
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Version (V)
-                        </label>
-                        <input
-                          type="number"
-                          value={course.version}
-                          onChange={(e) => updateField('version', e.target.value === '' ? '' : parseInt(e.target.value))}
-                          className="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-sky-500"
-                        />
-                        <span className="text-[11px] text-slate-500 mt-0.5 block">
-                          Starts at 0 (digit zero). Incremented on course revision.
-                        </span>
                       </div>
                     </div>
 
@@ -2632,17 +2803,40 @@ export const CourseWizard: React.FC = () => {
                               placeholder="Name (e.g. Dr. A. Kumar)"
                               className="p-2 border border-slate-300 rounded text-xs font-semibold"
                             />
-                            <input
-                              type="text"
-                              value={des.designation}
+                            <select
+                              value={
+                                ['Assistant Professor', 'Associate Professor', 'Professor'].find(
+                                  opt => opt.toLowerCase() === (des.designation || '').trim().toLowerCase()
+                                ) || des.designation || ''
+                              }
                               onChange={e => {
                                 const updated = [...(course.designers || [])];
                                 updated[idx] = { ...updated[idx], designation: e.target.value };
                                 updateField('designers', updated);
                               }}
-                              placeholder="Designation (e.g. Associate Professor)"
-                              className="p-2 border border-slate-300 rounded text-xs"
-                            />
+                              className={`p-2 border border-slate-300 rounded text-xs bg-white ${
+                                !des.designation ? 'text-slate-400' : 'text-slate-800'
+                              }`}
+                            >
+                              <option value="" disabled>
+                                Select Designation
+                              </option>
+                              {des.designation &&
+                                !['Assistant Professor', 'Associate Professor', 'Professor'].some(
+                                  opt => opt.toLowerCase() === (des.designation || '').trim().toLowerCase()
+                                ) && (
+                                  <option value={des.designation}>{des.designation}</option>
+                                )}
+                              <option value="Assistant Professor" className="text-slate-800">
+                                Assistant Professor
+                              </option>
+                              <option value="Associate Professor" className="text-slate-800">
+                                Associate Professor
+                              </option>
+                              <option value="Professor" className="text-slate-800">
+                                Professor
+                              </option>
+                            </select>
                             <input
                               type="text"
                               value={des.department}
