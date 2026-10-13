@@ -17,6 +17,7 @@ import {
   validateCourse,
   computeCourseCode,
   computeCredits,
+  suggestCoWeightages,
   countWords,
   PROGRAMME_CODES,
   CATEGORY_CODES,
@@ -47,6 +48,7 @@ import {
   Plus,
   Trash2,
   Sparkles,
+  RotateCcw,
   Info,
   Check,
   RefreshCw,
@@ -307,6 +309,152 @@ export const CourseWizard: React.FC = () => {
 
       return updated;
     });
+  };
+
+  // Auto-fill Assessment Pattern table based on Course Outcomes
+  const handleAutoFillAssessment = () => {
+    const cos = course.courseOutcomes || [];
+    if (cos.length === 0) {
+      alert('Please add Course Outcomes in Step 3 first before auto-filling the assessment pattern.');
+      return;
+    }
+
+    const n = cos.length;
+    let weights = cos.map(c => Number(c.weightage) || 0);
+    const totalW = weights.reduce((a, b) => a + b, 0);
+    if (totalW !== 100) {
+      weights = suggestCoWeightages(cos);
+    }
+    if (!weights || weights.length !== n || weights.reduce((a, b) => a + b, 0) !== 100) {
+      const base = Math.floor(100 / n);
+      weights = new Array(n).fill(base);
+      weights[n - 1] += 100 - base * n;
+    }
+
+    if (course.courseType === 'TCP') {
+      const mid = Math.max(1, Math.floor(n / 2));
+      const distribute = (indices: number[]) => {
+        const col = new Array(n).fill(0);
+        const subW = indices.map(i => weights[i]);
+        const sum = subW.reduce((a, b) => a + b, 0) || 1;
+        let acc = 0;
+        indices.forEach((idx, k) => {
+          if (k === indices.length - 1) {
+            col[idx] = 100 - acc;
+          } else {
+            const v = Math.round((weights[idx] / sum) * 100);
+            col[idx] = v;
+            acc += v;
+          }
+        });
+        return col;
+      };
+
+      const t1Indices = Array.from({ length: mid }, (_, i) => i);
+      const t2Indices = Array.from({ length: n - mid }, (_, i) => i + mid);
+      const allIndices = Array.from({ length: n }, (_, i) => i);
+
+      const t1 = distribute(t1Indices);
+      const t2 = distribute(t2Indices);
+      const ca = distribute(allIndices);
+      const model = distribute(allIndices);
+      const term = [...weights];
+      term[term.length - 1] += 100 - term.reduce((a, b) => a + b, 0);
+
+      const matrix = cos.map((c, i) => ({
+        coNo: c.coNo,
+        theoryCat1: t1[i],
+        theoryCat2: t2[i],
+        practicalCa: ca[i],
+        practicalModel: model[i],
+        tcpTerminal: term[i],
+      }));
+      updateField('assessmentMatrix', matrix);
+      return;
+    }
+
+    // Default THEORY course type
+    if (n === 1) {
+      updateField('assessmentMatrix', [
+        {
+          coNo: cos[0].coNo,
+          cat1: 100,
+          assignment1: 100,
+          cat2: 100,
+          assignment2: 100,
+          terminalExam: 100,
+        },
+      ]);
+      return;
+    }
+
+    const mid = Math.max(1, Math.floor(n / 2));
+    const distributeColumn = (indices: number[]) => {
+      const col = new Array(n).fill(0);
+      const subsetWeights = indices.map(i => weights[i]);
+      const sumW = subsetWeights.reduce((a, b) => a + b, 0) || 1;
+      let allocated = 0;
+      indices.forEach((idx, k) => {
+        if (k === indices.length - 1) {
+          col[idx] = 100 - allocated;
+        } else {
+          const val = Math.round((weights[idx] / sumW) * 100);
+          col[idx] = val;
+          allocated += val;
+        }
+      });
+      return col;
+    };
+
+    const cat1Indices = Array.from({ length: mid }, (_, i) => i);
+    const assign1Indices = Array.from({ length: Math.min(n, mid + 1) }, (_, i) => i);
+    const cat2Indices = Array.from({ length: n - mid }, (_, i) => i + mid);
+    const assign2Indices = Array.from({ length: n - Math.max(0, mid > 2 ? mid : mid - 1) }, (_, i) => i + Math.max(0, mid > 2 ? mid : mid - 1));
+
+    const cat1Col = distributeColumn(cat1Indices);
+    const assign1Col = distributeColumn(assign1Indices);
+    const cat2Col = distributeColumn(cat2Indices);
+    const assign2Col = distributeColumn(assign2Indices);
+    const terminalCol = [...weights];
+    const tDiff = 100 - terminalCol.reduce((a, b) => a + b, 0);
+    terminalCol[terminalCol.length - 1] += tDiff;
+
+    const matrix = cos.map((c, i) => ({
+      coNo: c.coNo,
+      cat1: cat1Col[i],
+      assignment1: assign1Col[i],
+      cat2: cat2Col[i],
+      assignment2: assign2Col[i],
+      terminalExam: terminalCol[i],
+    }));
+
+    updateField('assessmentMatrix', matrix);
+  };
+
+  // Reset Assessment Pattern table for manual entry
+  const handleResetAssessment = () => {
+    const cos = course.courseOutcomes || [];
+    if (course.courseType === 'TCP') {
+      const resetMatrix = cos.map(c => ({
+        coNo: c.coNo,
+        theoryCat1: 0,
+        theoryCat2: 0,
+        practicalCa: 0,
+        practicalModel: 0,
+        tcpTerminal: 0,
+      }));
+      updateField('assessmentMatrix', resetMatrix);
+    } else {
+      const resetMatrix = cos.map(c => ({
+        coNo: c.coNo,
+        cat1: 0,
+        assignment1: 0,
+        cat2: 0,
+        assignment2: 0,
+        terminalExam: 0,
+      }));
+      updateField('assessmentMatrix', resetMatrix);
+    }
   };
 
   // Stepper definition
@@ -1404,15 +1552,35 @@ export const CourseWizard: React.FC = () => {
                                 Mark percentage distribution across Continuous Assessment Tests (CAT 1, CAT 2), Assignments (1, 2), and Terminal Examination for each Course Outcome. Each column must sum to exactly 100%.
                               </p>
                             </div>
-                            <div className="text-xs font-semibold px-3 py-1 bg-slate-100 text-slate-700 rounded-lg border border-slate-200">
-                              {(course.courseOutcomes || []).length} COs Configured
+                            <div className="flex flex-wrap items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={handleAutoFillAssessment}
+                                className="px-3 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-xs"
+                                title="Automatically populate marks distribution based on Course Outcomes"
+                              >
+                                <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+                                <span>Fill based on COs</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleResetAssessment}
+                                className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-xs"
+                                title="Reset all values to 0 to fill manually"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                                <span>Reset (Fill Manually)</span>
+                              </button>
+                              <div className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg border border-slate-200">
+                                {(course.courseOutcomes || []).length} COs Configured
+                              </div>
                             </div>
                           </div>
 
                           {(course.courseOutcomes || []).length === 0 ? (
                             <div className="p-6 bg-amber-50 border border-amber-200 rounded-xl text-center">
                               <p className="text-xs text-amber-800 font-semibold">
-                                No Course Outcomes defined yet. Please return to Step 4 (Course Outcomes) to add COs first.
+                                No Course Outcomes defined yet. Please return to Step 3 (Course Outcomes) to add COs first.
                               </p>
                             </div>
                           ) : (
@@ -1588,8 +1756,43 @@ export const CourseWizard: React.FC = () => {
 
                     {/* TCP Dual Matrix */}
                     {course.courseType === 'TCP' && (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-xs text-left border border-slate-200 rounded-xl overflow-hidden">
+                      <div className="space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div>
+                            <h3 className="text-base font-bold text-slate-900">
+                              TCP Assessment Pattern (Theory & Practical Mark Distribution)
+                            </h3>
+                            <p className="text-xs text-slate-500">
+                              Mark percentage distribution across Theory CATs, Practical CA, Model Test, and Terminal Exam.
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={handleAutoFillAssessment}
+                              className="px-3 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-xs"
+                              title="Automatically populate marks distribution based on Course Outcomes"
+                            >
+                              <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+                              <span>Fill based on COs</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleResetAssessment}
+                              className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-xs"
+                              title="Reset all values to 0 to fill manually"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                              <span>Reset (Fill Manually)</span>
+                            </button>
+                            <div className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg border border-slate-200">
+                              {(course.courseOutcomes || []).length} COs Configured
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs text-left border border-slate-200 rounded-xl overflow-hidden">
                           <thead className="bg-slate-100 text-slate-700 font-bold">
                             <tr>
                               <th className="p-2.5 border-b">CO</th>
@@ -1672,7 +1875,8 @@ export const CourseWizard: React.FC = () => {
                           </tfoot>
                         </table>
                       </div>
-                    )}
+                    </div>
+                  )}
                   </div>
                 )}
 
