@@ -1,4 +1,3 @@
-import puppeteer from 'puppeteer';
 import { ConfigSettingsModel } from '../models/MasterData.js';
 export function getDegreeProgramHeader(course) {
     let progCode = (course.programmeCode || '').toUpperCase();
@@ -600,6 +599,14 @@ export async function generatePdfDocument(course) {
 </body>
 </html>
   `;
+    let puppeteer;
+    try {
+        const puppeteerModule = await import('puppeteer');
+        puppeteer = puppeteerModule.default || puppeteerModule;
+    }
+    catch (err) {
+        throw new Error('PDF export requires Puppeteer runtime: ' + err.message);
+    }
     const browser = await puppeteer.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox'],

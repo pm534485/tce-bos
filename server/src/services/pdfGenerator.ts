@@ -1,4 +1,3 @@
-import puppeteer from 'puppeteer';
 import { Course } from '@syllabusforge/shared';
 import { ConfigSettingsModel } from '../models/MasterData.js';
 
@@ -578,6 +577,14 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
 </body>
 </html>
   `;
+
+  let puppeteer: any;
+  try {
+    const puppeteerModule = await import('puppeteer');
+    puppeteer = puppeteerModule.default || puppeteerModule;
+  } catch (err: any) {
+    throw new Error('PDF export requires Puppeteer runtime: ' + err.message);
+  }
 
   const browser = await puppeteer.launch({
     headless: true,
