@@ -92,7 +92,8 @@ export interface CourseOutcomeQuestions {
 export interface LectureScheduleItem {
   moduleNo: string;
   topic: string;
-  periods: number;
+  periods?: number | string;
+  coMapping?: string[] | string;
 }
 
 export interface SyllabusModule {
@@ -100,7 +101,7 @@ export interface SyllabusModule {
   mainTopic: string;
   subtopics: string[];
   periods?: number;
-  coMapping: string[]; // ['CO1', 'CO2']
+  coMapping?: string[]; // ['CO1', 'CO2'] (optional)
 }
 
 export interface LearningResource {
@@ -181,7 +182,7 @@ export interface Course {
   teExamType?: 'TCP-T' | 'TCP-P';
   preamble: string;
   isAdvanced?: boolean;
-  prerequisites: Prerequisite[] | 'Nil';
+  prerequisites: Prerequisite[] | 'Nil' | string;
   courseOutcomes: CourseOutcome[];
   assessmentMatrix: AssessmentMatrixCell[];
   modules: SyllabusModule[];
@@ -191,7 +192,6 @@ export interface Course {
   sdgActivities: SdgActivity[];
   experiments?: LabExperiment[];
   coursePlan?: LabCoursePlanItem[];
-  conceptMapImage?: string;
   poPsoMapping?: PoPsoMappingRow[];
   cognitiveAssessmentPattern?: CognitiveAssessmentRow[];
   courseAssessmentQuestions?: CourseOutcomeQuestions[];

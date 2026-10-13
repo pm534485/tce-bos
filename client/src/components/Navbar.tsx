@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { CourseType } from '@syllabusforge/shared';
@@ -28,6 +28,18 @@ export const Navbar: React.FC<NavbarProps> = ({ onNewCourse }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showTypeModal, setShowTypeModal] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [profileRef]);
 
   const handleSelectType = (type: CourseType) => {
     setShowTypeModal(false);
@@ -46,128 +58,38 @@ export const Navbar: React.FC<NavbarProps> = ({ onNewCourse }) => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 shadow-md">
-        {/* Top Utility Bar (Matches tce.edu top header) */}
-        <div className="bg-[#091A2A] text-slate-300 px-4 sm:px-6 lg:px-8 py-1.5 text-xs border-b border-[#C59B27]/40">
-          <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
-            {/* Left accreditation info */}
-            <div className="flex items-center space-x-3 text-[11px]">
-              <span className="font-semibold text-[#E2BF53] flex items-center space-x-1">
-                <Award className="w-3.5 h-3.5 text-[#E2BF53]" />
-                <span>NAAC 'A+' Grade</span>
-              </span>
-              <span className="text-slate-500">•</span>
-              <span className="hidden sm:inline text-slate-300">Autonomous Institution Affiliated to Anna University</span>
-              <span className="text-slate-500 hidden md:inline">•</span>
-              <span className="hidden md:inline text-slate-300">Estd. 1957</span>
-            </div>
-
-            {/* Right: Quick Role Switcher Pill & Live User */}
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-1 bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700 text-[11px]">
-                <span className="text-slate-400 mr-1">Switch:</span>
-                <button
-                  onClick={() => quickLogin('FACULTY')}
-                  className={`px-1.5 py-0.5 rounded transition-colors ${
-                    user?.role === 'FACULTY' ? 'bg-[#7B1113] text-white font-bold' : 'text-slate-300 hover:text-white'
-                  }`}
-                >
-                  Faculty
-                </button>
-                <button
-                  onClick={() => quickLogin('HOD')}
-                  className={`px-1.5 py-0.5 rounded transition-colors ${
-                    user?.role === 'HOD' ? 'bg-[#C59B27] text-slate-900 font-bold' : 'text-slate-300 hover:text-white'
-                  }`}
-                >
-                  HoD
-                </button>
-                <button
-                  onClick={() => quickLogin('ADMIN')}
-                  className={`px-1.5 py-0.5 rounded transition-colors ${
-                    user?.role === 'ADMIN' ? 'bg-[#7B1113] text-white font-bold' : 'text-slate-300 hover:text-white'
-                  }`}
-                >
-                  Admin
-                </button>
-              </div>
-
-              {/* User Identity Chip */}
-              {user && (
-                <div className="flex items-center space-x-1.5 text-[11px] text-slate-300 pl-2 border-l border-slate-700">
-                  <span className="font-semibold text-white">{user.name}</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#C59B27]/20 text-[#E2BF53] border border-[#C59B27]/40">
-                    {user.role}
-                  </span>
-                  <button
-                    onClick={logout}
-                    title="Sign Out"
-                    className="p-1 hover:text-rose-400 rounded transition-colors ml-1"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Main Branding Header Bar (White / Ivory with TCE Logo) */}
-        <div className="bg-white border-b border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-            {/* Official TCE Logo & App Identity */}
-            <Link to="/" className="flex items-center group">
-              <TceLogo variant="full" />
+      <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm h-[60px] flex items-center">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+          
+          {/* Left: Logo + Navigation */}
+          <div className="flex items-center space-x-8">
+            <Link to="/" className="flex items-center space-x-2 group">
+              <TceLogo variant="compact" />
             </Link>
 
-            {/* Right Action Bar */}
-            <div className="flex items-center space-x-3">
-              {/* Regulation Badge */}
-              <div className="hidden lg:flex flex-col items-end text-right pr-3 border-r border-slate-200">
-                <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Curriculum Engine</span>
-                <span className="text-xs font-bold text-[#7B1113] bg-[#7B1113]/10 px-2 py-0.5 rounded border border-[#7B1113]/20">
-                  Regulation 2026 (OBE)
-                </span>
-              </div>
-
-              {/* Create Syllabus Button (TCE Maroon with Gold Hover) */}
-              <button
-                onClick={() => setShowTypeModal(true)}
-                className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-[#7B1113] hover:bg-[#560B0D] text-white text-xs sm:text-sm font-semibold shadow-sm hover:shadow transition-all border border-[#C59B27]/30 active:scale-95"
-              >
-                <PlusCircle className="w-4 h-4 text-[#E2BF53]" />
-                <span>New Syllabus</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Primary Navigation Ribbon (TCE Maroon Bar with Gold Underline) */}
-        <div className="bg-[#7B1113] text-white border-b-4 border-[#C59B27]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-11">
-            <nav className="flex items-center space-x-1 sm:space-x-2 text-xs font-semibold">
+            <nav className="hidden md:flex items-center space-x-1 text-sm font-medium">
               <Link
                 to="/"
-                className={`px-3 py-2 rounded-md transition-all flex items-center space-x-1.5 ${
+                className={`px-3 py-1.5 rounded-md transition-all flex items-center space-x-1.5 ${
                   isActive('/')
-                    ? 'bg-[#560B0D] text-[#E2BF53] shadow-inner font-bold'
-                    : 'text-white/90 hover:bg-[#8B1E2D] hover:text-white'
+                    ? 'text-[#800020] bg-[#800020]/10 font-semibold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
-                <LayoutDashboard className="w-3.5 h-3.5" />
+                <LayoutDashboard className="w-4 h-4" />
                 <span>Dashboard</span>
               </Link>
 
               {(user?.role === 'HOD' || user?.role === 'ADMIN') && (
                 <Link
                   to="/reviews"
-                  className={`px-3 py-2 rounded-md transition-all flex items-center space-x-1.5 ${
+                  className={`px-3 py-1.5 rounded-md transition-all flex items-center space-x-1.5 ${
                     isActive('/reviews')
-                      ? 'bg-[#560B0D] text-[#E2BF53] shadow-inner font-bold'
-                      : 'text-white/90 hover:bg-[#8B1E2D] hover:text-white'
+                      ? 'text-[#800020] bg-[#800020]/10 font-semibold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
-                  <CheckSquare className="w-3.5 h-3.5 text-[#E2BF53]" />
+                  <CheckSquare className="w-4 h-4" />
                   <span>Review Queue</span>
                 </Link>
               )}
@@ -175,28 +97,86 @@ export const Navbar: React.FC<NavbarProps> = ({ onNewCourse }) => {
               {user?.role === 'ADMIN' && (
                 <Link
                   to="/admin"
-                  className={`px-3 py-2 rounded-md transition-all flex items-center space-x-1.5 ${
+                  className={`px-3 py-1.5 rounded-md transition-all flex items-center space-x-1.5 ${
                     isActive('/admin')
-                      ? 'bg-[#560B0D] text-[#E2BF53] shadow-inner font-bold'
-                      : 'text-white/90 hover:bg-[#8B1E2D] hover:text-white'
+                      ? 'text-[#800020] bg-[#800020]/10 font-semibold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#E2BF53]" />
+                  <ShieldCheck className="w-4 h-4" />
                   <span>Admin & ACM</span>
                 </Link>
               )}
             </nav>
+          </div>
 
-            {/* Quick Link to official TCE website */}
-            <a
-              href="https://www.tce.edu/"
-              target="_blank"
-              rel="noreferrer"
-              className="hidden md:flex items-center space-x-1 text-[11px] font-medium text-white/80 hover:text-[#E2BF53] transition-colors"
+          {/* Right: Actions + Profile */}
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setShowTypeModal(true)}
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#800020] hover:bg-[#660019] text-white text-sm font-medium shadow-sm transition-all"
             >
-              <span>TCE Official Website</span>
-              <ExternalLink className="w-3 h-3 text-[#E2BF53]" />
-            </a>
+              <PlusCircle className="w-4 h-4" />
+              <span>New Syllabus</span>
+            </button>
+
+            {user && (
+              <div className="relative" ref={profileRef}>
+                <button 
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="flex items-center space-x-2 p-1.5 rounded-full hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#800020]/50"
+                >
+                  <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-bold text-sm">
+                    {user.name.charAt(0)}
+                  </div>
+                  <ChevronDown className="w-4 h-4 text-slate-500" />
+                </button>
+
+                {showProfileMenu && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="px-4 py-2 border-b border-slate-100 mb-2">
+                      <p className="text-sm font-bold text-slate-900 truncate">{user.name}</p>
+                      <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                      <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold border border-slate-200">
+                        Role: {user.role}
+                      </span>
+                    </div>
+                    
+                    <div className="px-4 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                      Switch Role
+                    </div>
+                    <button
+                      onClick={() => { quickLogin('FACULTY'); setShowProfileMenu(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between ${user?.role === 'FACULTY' ? 'bg-[#800020]/5 text-[#800020] font-medium' : 'text-slate-700 hover:bg-slate-50'}`}
+                    >
+                      Faculty {user?.role === 'FACULTY' && <span className="w-1.5 h-1.5 rounded-full bg-[#800020]"></span>}
+                    </button>
+                    <button
+                      onClick={() => { quickLogin('HOD'); setShowProfileMenu(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between ${user?.role === 'HOD' ? 'bg-[#800020]/5 text-[#800020] font-medium' : 'text-slate-700 hover:bg-slate-50'}`}
+                    >
+                      HoD {user?.role === 'HOD' && <span className="w-1.5 h-1.5 rounded-full bg-[#800020]"></span>}
+                    </button>
+                    <button
+                      onClick={() => { quickLogin('ADMIN'); setShowProfileMenu(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between ${user?.role === 'ADMIN' ? 'bg-[#800020]/5 text-[#800020] font-medium' : 'text-slate-700 hover:bg-slate-50'}`}
+                    >
+                      Admin {user?.role === 'ADMIN' && <span className="w-1.5 h-1.5 rounded-full bg-[#800020]"></span>}
+                    </button>
+
+                    <div className="border-t border-slate-100 mt-2 pt-2">
+                      <button
+                        onClick={() => { logout(); setShowProfileMenu(false); }}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -204,11 +184,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onNewCourse }) => {
       {/* New Course Type Chooser Modal (TCE Academic Styling) */}
       {showTypeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full border-t-4 border-[#7B1113] overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full border-t-4 border-[#800020] overflow-hidden">
             {/* Modal Header */}
-            <div className="bg-[#FAF7F2] p-5 border-b border-slate-200">
-              <div className="flex items-center space-x-2 text-[#7B1113] mb-1">
-                <BookOpen className="w-5 h-5 text-[#C59B27]" />
+            <div className="bg-[#F8F9FB] p-5 border-b border-slate-200">
+              <div className="flex items-center space-x-2 text-[#800020] mb-1">
+                <BookOpen className="w-5 h-5 text-[#800020]" />
                 <h3 className="text-lg font-bold font-tce">Create New University Syllabus</h3>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -221,13 +201,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onNewCourse }) => {
               {/* 1. Theory */}
               <button
                 onClick={() => handleSelectType('THEORY')}
-                className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:bg-[#FAF2F3] transition-all flex items-start space-x-3.5 group"
+                className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-[#800020] hover:bg-slate-50 transition-all flex items-start space-x-3.5 group"
               >
-                <div className="w-10 h-10 rounded-lg bg-[#7B1113]/10 text-[#7B1113] flex items-center justify-center font-bold text-sm group-hover:bg-[#7B1113] group-hover:text-white transition-all flex-shrink-0">
+                <div className="w-10 h-10 rounded-lg bg-[#800020]/10 text-[#800020] flex items-center justify-center font-bold text-sm group-hover:bg-[#800020] group-hover:text-white transition-all flex-shrink-0">
                   TH
                 </div>
                 <div>
-                  <div className="font-bold text-slate-900 group-hover:text-[#7B1113] text-sm">
+                  <div className="font-bold text-slate-900 group-hover:text-[#800020] text-sm">
                     1. Theory Course
                   </div>
                   <div className="text-xs text-slate-500 mt-0.5 leading-relaxed">
@@ -239,13 +219,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onNewCourse }) => {
               {/* 2. Practical */}
               <button
                 onClick={() => handleSelectType('PRACTICAL')}
-                className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-[#0F2942] hover:bg-[#F0F4F8] transition-all flex items-start space-x-3.5 group"
+                className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all flex items-start space-x-3.5 group"
               >
-                <div className="w-10 h-10 rounded-lg bg-[#0F2942]/10 text-[#0F2942] flex items-center justify-center font-bold text-sm group-hover:bg-[#0F2942] group-hover:text-white transition-all flex-shrink-0">
+                <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm group-hover:bg-slate-200 group-hover:text-slate-900 transition-all flex-shrink-0">
                   PR
                 </div>
                 <div>
-                  <div className="font-bold text-slate-900 group-hover:text-[#0F2942] text-sm">
+                  <div className="font-bold text-slate-900 group-hover:text-slate-900 text-sm">
                     2. Practical (Laboratory) Course
                   </div>
                   <div className="text-xs text-slate-500 mt-0.5 leading-relaxed">
@@ -257,7 +237,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNewCourse }) => {
               {/* 3. TCP */}
               <button
                 onClick={() => handleSelectType('TCP')}
-                className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-[#C59B27] hover:bg-[#FDF9EE] transition-all flex items-start space-x-3.5 group"
+                className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-[#C59B27] hover:bg-slate-50 transition-all flex items-start space-x-3.5 group"
               >
                 <div className="w-10 h-10 rounded-lg bg-[#C59B27]/15 text-[#9C7A1D] flex items-center justify-center font-bold text-sm group-hover:bg-[#C59B27] group-hover:text-white transition-all flex-shrink-0">
                   TCP

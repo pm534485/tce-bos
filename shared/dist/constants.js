@@ -4,17 +4,26 @@ export const PROGRAMME_CODES = [
     { code: 'ME', name: 'Mechanical Engineering', department: 'Mechanical Engineering' },
     { code: 'EE', name: 'Electrical and Electronics Engineering', department: 'Electrical and Electronics Engineering' },
     { code: 'EC', name: 'Electronics and Communication Engineering', department: 'Electronics and Communication Engineering' },
-    { code: 'CS', name: 'Computer Science and Engineering', department: 'Computer Science and Engineering' },
+    { code: 'CS', name: 'Computer Science Engineering', department: 'Computer Science Engineering' },
     { code: 'IT', name: 'Information Technology', department: 'Information Technology' },
     { code: 'CB', name: 'Computer Science and Business Systems', department: 'Computer Science and Business Systems' },
-    { code: 'AM', name: 'Computer Science and Engineering (Artificial Intelligence and Machine Learning)', department: 'Computer Science and Engineering' },
+    { code: 'AM', name: 'Computer Science Engineering (Artificial Intelligence and Machine Learning)', department: 'Computer Science Engineering' },
     { code: 'MT', name: 'Mechatronics Engineering', department: 'Mechanical Engineering' },
     { code: 'DS', name: 'Data Science', department: 'Computer Applications' },
     { code: 'CA', name: 'Computer Applications', department: 'Computer Applications' },
     { code: 'PA', name: 'Structural Engineering', department: 'Civil Engineering' },
     { code: 'PB', name: 'Construction Engineering', department: 'Civil Engineering' },
-    { code: 'PC', name: 'Communications System', department: 'Electronics and Communication Engineering' },
-    { code: 'PD', name: 'Computer Science & Engineering', department: 'Computer Science and Engineering' },
+    { code: 'PC', name: 'Communication Systems', department: 'Electronics and Communication Engineering' },
+    { code: 'PD', name: 'Computer Science Engineering (PG)', department: 'Computer Science Engineering' },
+    { code: 'EV', name: 'ECE VLSI', department: 'Electronics and Communication Engineering' },
+    { code: 'FT', name: 'Fashion Technology', department: 'Fashion Technology' },
+    { code: 'ER', name: 'Electrical and Computer Engineering', department: 'Electrical and Electronics Engineering' },
+    { code: 'EL', name: 'Electrical and Computer Engineering', department: 'Electrical and Electronics Engineering' },
+    { code: 'MA', name: 'Mathematics Department', department: 'Mathematics' },
+    { code: 'PH', name: 'Physics Department', department: 'Physics' },
+    { code: 'CH', name: 'Chemistry Department', department: 'Chemistry' },
+    { code: 'EG', name: 'English Department', department: 'English' },
+    { code: 'CC', name: 'Common Course Code', department: 'First Year / Interdisciplinary' },
 ];
 export const CATEGORY_CODES = [
     { code: 'C', name: 'Programme Core Courses', defaultAbbr: 'PCC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
@@ -312,15 +321,28 @@ export const DOMAIN_TO_SDG_MAP = [
     { domain: 'Computer Science, Software Engineering (general)', suggestedSdgs: [4, 8, 9], rationale: 'Digital education access; decent work via tech; innovation infrastructure' },
     { domain: 'Environmental Science, Ecology, Climate Modelling', suggestedSdgs: [13, 15], rationale: 'Climate action; life on land' },
 ];
+// Table 5: Weightage for Continuous Assessments in TCP Courses / End Semester (Regulation 2026, Page 22/26)
 export const TCP_WEIGHTAGE_TABLE = [
-    { ltp: '1-0-2', credits: 2, teType: 'TCP-T', caTheoryPercent: 10, caPracticalPercent: 40, eseTheoryPercent: 50, esePracticalPercent: 0 },
-    { ltp: '1-0-2', credits: 2, teType: 'TCP-P', caTheoryPercent: 40, caPracticalPercent: 10, eseTheoryPercent: 0, esePracticalPercent: 50 },
+    { ltp: '1-0-2', credits: 2, teType: 'TCP-T', caTheoryPercent: 15, caPracticalPercent: 35, eseTheoryPercent: 50, esePracticalPercent: 0 },
+    { ltp: '1-0-2', credits: 2, teType: 'TCP-P', caTheoryPercent: 35, caPracticalPercent: 15, eseTheoryPercent: 0, esePracticalPercent: 50 },
     { ltp: '1-0-3', credits: 2.5, teType: 'TCP-P', caTheoryPercent: 35, caPracticalPercent: 15, eseTheoryPercent: 0, esePracticalPercent: 50 },
     { ltp: '2-0-2', credits: 3, teType: 'TCP-P', caTheoryPercent: 30, caPracticalPercent: 20, eseTheoryPercent: 0, esePracticalPercent: 50 },
     { ltp: '2-0-2', credits: 3, teType: 'TCP-T', caTheoryPercent: 20, caPracticalPercent: 30, eseTheoryPercent: 50, esePracticalPercent: 0 },
     { ltp: '2-0-3', credits: 3.5, teType: 'TCP-P', caTheoryPercent: 35, caPracticalPercent: 15, eseTheoryPercent: 0, esePracticalPercent: 50 },
+    { ltp: '2-0-4', credits: 4, teType: 'TCP-T', caTheoryPercent: 15, caPracticalPercent: 35, eseTheoryPercent: 50, esePracticalPercent: 0 },
+    { ltp: '2-0-4', credits: 4, teType: 'TCP-P', caTheoryPercent: 35, caPracticalPercent: 15, eseTheoryPercent: 0, esePracticalPercent: 50 },
     { ltp: '1-0-6', credits: 4, teType: 'TCP-P', caTheoryPercent: 15, caPracticalPercent: 35, eseTheoryPercent: 0, esePracticalPercent: 50 },
     { ltp: '3-0-2', credits: 4, teType: 'TCP-T', caTheoryPercent: 20, caPracticalPercent: 30, eseTheoryPercent: 50, esePracticalPercent: 0 },
+];
+export const REGULATION_ASSESSMENT_SUMMARY = [
+    { category: 'Theory', continuousAssessmentPercent: 40, endSemesterExaminationPercent: 60 },
+    { category: 'Theory cum practical', continuousAssessmentPercent: 50, endSemesterExaminationPercent: 50 },
+    { category: 'Laboratory', continuousAssessmentPercent: 60, endSemesterExaminationPercent: 40 },
+    { category: 'Project Work / Internship cum Project Work', continuousAssessmentPercent: 60, endSemesterExaminationPercent: 40 },
+    { category: 'Internship / Industrial Training', continuousAssessmentPercent: 100, endSemesterExaminationPercent: 0 },
+    { category: 'Industry Supported Course', continuousAssessmentPercent: 100, endSemesterExaminationPercent: 0 },
+    { category: 'Employability Enhancement Courses', continuousAssessmentPercent: 60, endSemesterExaminationPercent: 40 },
+    { category: 'Audit Course', continuousAssessmentPercent: 100, endSemesterExaminationPercent: 0 },
 ];
 export const LAB_ASSESSMENT_SPLITS = {
     1: { preLab: 20, inLab: 35, postLab: 20, total: 75 },
@@ -363,17 +385,18 @@ export const DEFAULT_CONFIG_SETTINGS = {
     regulationYear: 2026,
     regulationCode: '26',
     bosDate: '01.06.2026',
-    acmText: 'Passed in BoS Meeting 01.06.2026 | Approved in 71st Academic Council Meeting 27.06.2026',
+    acmText: 'Passed in BoS Meeting 01.06.2026 | Approved in Academic Council meeting on 27.06.2026',
     acmDate: '27.06.2026',
-    acmMeetingName: '71st Academic Council Meeting',
+    acmMeetingName: 'Academic Council Meeting',
     coShareTolerance: 3, // +/- 3 percentage points
     allowTps1: false,
+    // Regulation 2026 Table 4 & Table 8: Theory CA is 40% (Test1 30%, Act1 20%, Test2 30%, Act2 20%), Terminal Exam is 60%
     assessmentComponentWeights: {
-        cat1: 15,
-        assignment1: 10,
-        cat2: 15,
-        assignment2: 10,
-        terminal: 50,
+        cat1: 12, // 30% of CA (40 marks) = 12%
+        assignment1: 8, // 20% of CA (40 marks) = 8%
+        cat2: 12, // 30% of CA (40 marks) = 12%
+        assignment2: 8, // 20% of CA (40 marks) = 8%
+        terminal: 60, // End Semester Examination = 60%
     },
     labCoRanges: {
         cognitiveMin: 2,

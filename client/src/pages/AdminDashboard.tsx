@@ -279,6 +279,10 @@ export const AdminDashboard: React.FC = () => {
                             className={`px-2 py-0.5 rounded font-semibold text-[10px] ${
                               ca.status === 'APPROVED' || ca.status === 'FINALIZED'
                                 ? 'bg-emerald-100 text-emerald-800'
+                                : ca.status === 'SUBMITTED'
+                                ? 'bg-amber-100 text-amber-800'
+                                : ca.status === 'RETURNED'
+                                ? 'bg-red-100 text-red-800'
                                 : 'bg-slate-100 text-slate-700'
                             }`}
                           >
@@ -288,7 +292,7 @@ export const AdminDashboard: React.FC = () => {
                         <td className="p-3 text-center">
                           <span
                             className={`px-2 py-0.5 rounded-full font-bold ${
-                              ca.errorCount > 0 ? 'bg-rose-100 text-rose-800' : 'text-slate-400'
+                              ca.errorCount > 0 ? 'bg-rose-100 text-red-800' : 'text-slate-400'
                             }`}
                           >
                             {ca.errorCount}

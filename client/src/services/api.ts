@@ -88,6 +88,39 @@ export const api = {
     }),
   getExportUrl: (id: string, format: 'docx' | 'pdf' = 'docx') =>
     `/api/courses/${id}/export?format=${format}`,
+  exportCourseBlob: async (course: Course, format: 'docx' | 'pdf' = 'docx'): Promise<Blob> => {
+    const token = localStorage.getItem('syllabusforge_token');
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    // 1. Try POST /courses/export sending current course state (works for unsaved draft & live changes)
+    try {
+      const res = await fetch(`${API_BASE}/courses/export?format=${format}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ course, format }),
+      });
+      if (res.ok) {
+        return await res.blob();
+      }
+    } catch (err) {
+      console.warn('POST /courses/export failed, trying fallback', err);
+    }
+
+    // 2. Fallback to GET /courses/:id/export if _id exists
+    if (course._id) {
+      const res = await fetch(`${API_BASE}/courses/${course._id}/export?format=${format}`, {
+        headers,
+      });
+      if (res.ok) {
+        return await res.blob();
+      }
+    }
+
+    throw new Error('Export service encountered an error. Please try again.');
+  },
 
   // Master Data
   getMaster: <T = any>(collection: string) => request<T[]>(`/master/${collection}`),

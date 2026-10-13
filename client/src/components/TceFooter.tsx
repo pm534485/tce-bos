@@ -136,7 +136,7 @@ export const TceFooter: React.FC = () => {
           {/* Column 4: System Governance & Quick Action */}
           <div className="space-y-3">
             <h4 className="text-sm font-bold text-white uppercase tracking-wider border-b border-slate-700 pb-1.5">
-              SyllabusForge System
+              Academic Portal
             </h4>
             <p className="text-xs text-slate-400 leading-relaxed">
               Automated institutional compliance engine for B.E., B.Tech, M.E., M.Tech, and M.C.A. courses under Regulation 2026.

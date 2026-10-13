@@ -108,7 +108,7 @@ export const ReviewWorkspace: React.FC = () => {
                     onClick={() => setSelectedCourse(c)}
                     className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
                       isSelected
-                        ? 'border-[#7B1113] bg-[#FAF2F3] shadow-xs border-l-4 border-l-[#7B1113]'
+                        ? 'border-[#7B1113] bg-slate-50 shadow-xs border-l-4 border-l-[#7B1113]'
                         : 'border-slate-200 hover:border-slate-300 bg-white'
                     }`}
                   >
@@ -121,7 +121,7 @@ export const ReviewWorkspace: React.FC = () => {
                             : c.status === 'APPROVED' || c.status === 'FINALIZED'
                             ? 'bg-emerald-100 text-emerald-800'
                             : c.status === 'RETURNED'
-                            ? 'bg-rose-100 text-rose-800'
+                            ? 'bg-red-100 text-red-800'
                             : 'bg-slate-100 text-slate-700'
                         }`}
                       >
@@ -218,7 +218,7 @@ export const ReviewWorkspace: React.FC = () => {
                   <button
                     onClick={() => handleReviewAction('RETURN')}
                     disabled={isSubmitting}
-                    className="px-4 py-2 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs shadow-xs transition-all active:scale-95"
+                    className="px-4 py-2 rounded-xl border border-rose-300 bg-red-50 hover:bg-rose-100 text-rose-700 font-bold text-xs shadow-xs transition-all active:scale-95"
                   >
                     Return for Changes
                   </button>

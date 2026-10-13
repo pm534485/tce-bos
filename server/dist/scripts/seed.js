@@ -6,7 +6,7 @@ import { Programme } from '../models/Programme.js';
 import { Course } from '../models/Course.js';
 import { ProgrammeCodeModel, CategoryCodeModel, TpsVerbModel, LabObjectiveModel, GeneralCoPoolModel, PerformanceIndicatorModel, SdgListModel, DomainToSdgMapModel, TcpWeightageTableModel, ConfigSettingsModel, } from '../models/MasterData.js';
 import { PROGRAMME_CODES, CATEGORY_CODES, TPS_VERBS, LAB_OBJECTIVES, GENERAL_CO_POOL, PERFORMANCE_INDICATORS, SDG_LIST, DOMAIN_TO_SDG_MAP, TCP_WEIGHTAGE_TABLE, DEFAULT_CONFIG_SETTINGS, } from '@syllabusforge/shared';
-import { SEED_USERS, DEMO_THEORY_COURSE, DEMO_PRACTICAL_COURSE, DEMO_TCP_COURSE, } from '../services/seedData.js';
+import { SEED_USERS, DEMO_THEORY_COURSE, DEMO_PRACTICAL_COURSE, DEMO_TCP_COURSE, DEMO_ECE_CIRCUITS_COURSE, } from '../services/seedData.js';
 dotenv.config();
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/syllabusforge';
 export async function seedDatabase() {
@@ -81,7 +81,8 @@ export async function seedDatabase() {
     await Course.create(DEMO_THEORY_COURSE);
     await Course.create(DEMO_PRACTICAL_COURSE);
     await Course.create(DEMO_TCP_COURSE);
-    console.log('Database seeded successfully with institutional master data and 3 demo courses!');
+    await Course.create(DEMO_ECE_CIRCUITS_COURSE);
+    console.log('Database seeded successfully with institutional master data and 4 demo courses (including 26ECCA0)!');
 }
 if (process.argv[1]?.includes('seed.ts')) {
     seedDatabase()

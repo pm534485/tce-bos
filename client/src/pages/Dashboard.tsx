@@ -21,6 +21,8 @@ import {
   GraduationCap,
   Layers,
   Sparkles,
+  X,
+  Info,
 } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
@@ -32,6 +34,9 @@ export const Dashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [selectedType, setSelectedType] = useState<string>('ALL');
+  const [showBanner, setShowBanner] = useState<boolean>(() => {
+    return localStorage.getItem('tce_hide_banner') !== 'true';
+  });
 
   useEffect(() => {
     loadCourses();
@@ -91,43 +96,58 @@ export const Dashboard: React.FC = () => {
   const returnedCount = courses.filter(c => c.status === 'RETURNED').length;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* TCE Welcome Hero Banner (Styled like TCE Official Portal) */}
-      <div className="bg-gradient-to-r from-[#560B0D] via-[#7B1113] to-[#091A2A] rounded-2xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden border-b-4 border-[#C59B27]">
-        {/* Subtle decorative geometric overlay */}
-        <div className="absolute right-0 top-0 bottom-0 w-1/2 bg-white/5 transform skew-x-12 pointer-events-none" />
-        <div className="absolute -right-10 -bottom-10 w-64 h-64 rounded-full bg-[#C59B27]/10 blur-2xl pointer-events-none" />
-
-        <div className="relative z-10 max-w-3xl">
-          <div className="flex flex-wrap items-center gap-2 mb-3">
-            <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-[#C59B27] text-slate-900 shadow-sm">
-              <Award className="w-3.5 h-3.5" />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-8 space-y-4">
+      {/* Sleek Compact TCE Portal Ribbon */}
+      {showBanner ? (
+        <div className="bg-gradient-to-r from-[#560B0D] via-[#7B1113] to-[#091A2A] rounded-xl px-4 py-2.5 text-white shadow-sm relative overflow-hidden border-b-2 border-[#C59B27] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex items-center space-x-2.5">
+            <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#C59B27] text-slate-900 shadow-xs">
+              <Award className="w-3 h-3" />
               <span>Regulation 2026</span>
             </span>
-            <span className="text-xs text-white/80 font-medium">
-              Thiagarajar College of Engineering • Outcome Based Education (OBE)
+            <h1 className="text-sm font-bold tracking-tight font-tce text-white">
+              Curriculum & Syllabi Management Portal
+            </h1>
+            <span className="hidden md:inline text-xs text-white/70">
+              • Thiagarajar College of Engineering
             </span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-tce text-white">
-            Curriculum & Syllabi Management Portal
-          </h1>
-          <p className="mt-2 text-xs sm:text-sm text-slate-200 leading-relaxed max-w-2xl">
-            Design and validate curriculum documentation with automated institutional compliance, Thiagarajar Proficiency Scale (TPS 1–6) taxonomy, and direct Academic Council Meeting (ACM) export.
-          </p>
-
-          <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-white/90 pt-2 border-t border-white/10">
+          <div className="flex items-center space-x-3 text-xs text-white/90">
             <div>
-              <span className="text-[#E2BF53] font-semibold">Faculty / User:</span>{' '}
+              <span className="text-[#E2BF53] font-semibold">User:</span>{' '}
               <span className="font-bold">{user?.name}</span> ({user?.role})
             </div>
-            <div>
-              <span className="text-[#E2BF53] font-semibold">Department:</span>{' '}
-              <span>{user?.department || 'General Engineering'}</span>
+            <span className="text-white/30 hidden sm:inline">•</span>
+            <div className="hidden sm:inline text-white/80">
+              {user?.department || 'Curriculum Development Cell'}
             </div>
+            <button
+              onClick={() => {
+                setShowBanner(false);
+                localStorage.setItem('tce_hide_banner', 'true');
+              }}
+              title="Hide banner"
+              className="text-white/60 hover:text-white p-1 rounded-md hover:bg-white/10 transition-colors ml-1"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex justify-end -mb-2">
+          <button
+            onClick={() => {
+              setShowBanner(true);
+              localStorage.removeItem('tce_hide_banner');
+            }}
+            className="inline-flex items-center space-x-1 text-[11px] text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            <Info className="w-3 h-3" />
+            <span>Show Portal Header</span>
+          </button>
+        </div>
+      )}
 
       {/* Institutional Metric Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -136,7 +156,7 @@ export const Dashboard: React.FC = () => {
           onClick={() => setSelectedStatus('DRAFT')}
           className={`p-5 rounded-xl border-2 transition-all cursor-pointer bg-white relative overflow-hidden ${
             selectedStatus === 'DRAFT'
-              ? 'border-[#7B1113] bg-[#FAF2F3] shadow-md'
+              ? 'border-[#7B1113] bg-slate-50 shadow-md'
               : 'border-slate-200 hover:border-[#7B1113]/50 hover:shadow-xs'
           }`}
         >
@@ -296,9 +316,9 @@ export const Dashboard: React.FC = () => {
                         c.status === 'APPROVED' || c.status === 'FINALIZED'
                           ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                           : c.status === 'SUBMITTED'
-                          ? 'bg-sky-100 text-sky-800 border border-sky-200'
-                          : c.status === 'RETURNED'
                           ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                          : c.status === 'RETURNED'
+                          ? 'bg-red-100 text-red-800 border border-red-200'
                           : 'bg-slate-100 text-slate-700 border border-slate-200'
                       }`}
                     >

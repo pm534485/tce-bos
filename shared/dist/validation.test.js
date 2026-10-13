@@ -301,10 +301,12 @@ describe('B7: Syllabus Modules Validation', () => {
         const res = validateSyllabusModules(validModules, cos);
         expect(res.filter(r => r.severity === 'error')).toHaveLength(0);
     });
-    it('should error when a CO is not mapped to any module', () => {
-        const incompleteModules = [validModules[0]]; // CO2 missing
-        const res = validateSyllabusModules(incompleteModules, cos);
-        expect(res.some(e => e.id === 'B7_CO_NOT_COVERED_CO2')).toBe(true);
+    it('should accept modules without mandatory CO mapping', () => {
+        const modulesWithoutCoMapping = [
+            { moduleNo: 1, mainTopic: 'Introduction to Algorithms', subtopics: ['Asymptotic notations', 'Divide and conquer'] },
+        ];
+        const res = validateSyllabusModules(modulesWithoutCoMapping, cos);
+        expect(res.filter(r => r.severity === 'error')).toHaveLength(0);
     });
 });
 describe('B8: Lab-specific Sections Validation', () => {
@@ -331,15 +333,44 @@ describe('B8: Lab-specific Sections Validation', () => {
     });
 });
 describe('B9: Lecture Schedule Validation', () => {
-    it('should require total periods = 12 * credits for Theory courses', () => {
-        const modules = [
+    it('should enforce 1 credit criteria (12 to 14 hours)', () => {
+        const mod12 = [{ moduleNo: 1, mainTopic: 'M1', subtopics: ['S1'], coMapping: ['CO1'], periods: 12 }];
+        expect(validateLectureSchedule('THEORY', mod12, 1).filter(r => r.severity === 'error')).toHaveLength(0);
+        const mod14 = [{ moduleNo: 1, mainTopic: 'M1', subtopics: ['S1'], coMapping: ['CO1'], periods: 14 }];
+        expect(validateLectureSchedule('THEORY', mod14, 1).filter(r => r.severity === 'error')).toHaveLength(0);
+        const mod11 = [{ moduleNo: 1, mainTopic: 'M1', subtopics: ['S1'], coMapping: ['CO1'], periods: 11 }];
+        expect(validateLectureSchedule('THEORY', mod11, 1).some(e => e.id === 'B9_THEORY_PERIODS_MISMATCH')).toBe(true);
+        const mod15 = [{ moduleNo: 1, mainTopic: 'M1', subtopics: ['S1'], coMapping: ['CO1'], periods: 15 }];
+        expect(validateLectureSchedule('THEORY', mod15, 1).some(e => e.id === 'B9_THEORY_PERIODS_MISMATCH')).toBe(true);
+    });
+    it('should enforce 2 credits criteria (24 to 28 hours)', () => {
+        const mod24 = [{ moduleNo: 1, mainTopic: 'M1', subtopics: ['S1'], coMapping: ['CO1'], periods: 24 }];
+        expect(validateLectureSchedule('THEORY', mod24, 2).filter(r => r.severity === 'error')).toHaveLength(0);
+        const mod28 = [{ moduleNo: 1, mainTopic: 'M1', subtopics: ['S1'], coMapping: ['CO1'], periods: 28 }];
+        expect(validateLectureSchedule('THEORY', mod28, 2).filter(r => r.severity === 'error')).toHaveLength(0);
+        const mod23 = [{ moduleNo: 1, mainTopic: 'M1', subtopics: ['S1'], coMapping: ['CO1'], periods: 23 }];
+        expect(validateLectureSchedule('THEORY', mod23, 2).some(e => e.id === 'B9_THEORY_PERIODS_MISMATCH')).toBe(true);
+        const mod29 = [{ moduleNo: 1, mainTopic: 'M1', subtopics: ['S1'], coMapping: ['CO1'], periods: 29 }];
+        expect(validateLectureSchedule('THEORY', mod29, 2).some(e => e.id === 'B9_THEORY_PERIODS_MISMATCH')).toBe(true);
+    });
+    it('should enforce 3 credits criteria (strictly 36 hours)', () => {
+        const mod36 = [{ moduleNo: 1, mainTopic: 'M1', subtopics: ['S1'], coMapping: ['CO1'], periods: 36 }];
+        expect(validateLectureSchedule('THEORY', mod36, 3).filter(r => r.severity === 'error')).toHaveLength(0);
+        const mod35 = [{ moduleNo: 1, mainTopic: 'M1', subtopics: ['S1'], coMapping: ['CO1'], periods: 35 }];
+        expect(validateLectureSchedule('THEORY', mod35, 3).some(e => e.id === 'B9_THEORY_PERIODS_MISMATCH')).toBe(true);
+        const mod37 = [{ moduleNo: 1, mainTopic: 'M1', subtopics: ['S1'], coMapping: ['CO1'], periods: 37 }];
+        expect(validateLectureSchedule('THEORY', mod37, 3).some(e => e.id === 'B9_THEORY_PERIODS_MISMATCH')).toBe(true);
+    });
+    it('should enforce 4 credits criteria (strictly 48 hours)', () => {
+        const mod48 = [
             { moduleNo: 1, mainTopic: 'M1', subtopics: ['S1'], coMapping: ['CO1'], periods: 24 },
             { moduleNo: 2, mainTopic: 'M2', subtopics: ['S2'], coMapping: ['CO2'], periods: 24 },
-        ]; // total = 48 periods, credits = 4 -> expected 48
-        const res = validateLectureSchedule('THEORY', modules, 4);
-        expect(res.filter(r => r.severity === 'error')).toHaveLength(0);
-        const badRes = validateLectureSchedule('THEORY', modules, 3); // expected 36, got 48
-        expect(badRes.some(e => e.id === 'B9_THEORY_PERIODS_MISMATCH')).toBe(true);
+        ];
+        expect(validateLectureSchedule('THEORY', mod48, 4).filter(r => r.severity === 'error')).toHaveLength(0);
+        const mod47 = [{ moduleNo: 1, mainTopic: 'M1', subtopics: ['S1'], coMapping: ['CO1'], periods: 47 }];
+        expect(validateLectureSchedule('THEORY', mod47, 4).some(e => e.id === 'B9_THEORY_PERIODS_MISMATCH')).toBe(true);
+        const mod49 = [{ moduleNo: 1, mainTopic: 'M1', subtopics: ['S1'], coMapping: ['CO1'], periods: 49 }];
+        expect(validateLectureSchedule('THEORY', mod49, 4).some(e => e.id === 'B9_THEORY_PERIODS_MISMATCH')).toBe(true);
     });
 });
 describe('B10: Learning Resources Validation', () => {

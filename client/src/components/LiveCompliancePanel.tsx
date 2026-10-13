@@ -51,7 +51,7 @@ export const LiveCompliancePanel: React.FC<LiveCompliancePanelProps> = ({
             className={`px-2 py-0.5 rounded-full text-xs font-bold ${
               report.isValid
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                : 'bg-red-500/20 text-rose-300 border border-rose-500/40'
             }`}
           >
             {report.isValid ? 'BoS Ready' : `${errorCount} Issues`}
@@ -135,7 +135,7 @@ export const LiveCompliancePanel: React.FC<LiveCompliancePanelProps> = ({
               report.errors.map(err => (
                 <div
                   key={err.id}
-                  className="p-3 rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-50 transition-all text-slate-800"
+                  className="p-3 rounded-xl border border-red-200 bg-red-50/50 hover:bg-red-50 transition-all text-slate-800"
                 >
                   <div
                     className="flex items-start justify-between cursor-pointer"
@@ -144,7 +144,7 @@ export const LiveCompliancePanel: React.FC<LiveCompliancePanelProps> = ({
                     <div className="flex items-start space-x-2">
                       <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
                       <div>
-                        <div className="font-semibold text-rose-900">{err.message}</div>
+                        <div className="font-semibold text-red-900">{err.message}</div>
                         <div className="text-[11px] text-slate-500 mt-0.5 font-mono">Field: {err.field}</div>
                       </div>
                     </div>
@@ -156,12 +156,12 @@ export const LiveCompliancePanel: React.FC<LiveCompliancePanelProps> = ({
                   </div>
 
                   {expandedCard === err.id && (
-                    <div className="mt-2.5 pt-2 border-t border-rose-200/80 text-[11px] text-slate-700">
-                      <div className="font-semibold text-rose-800 flex items-center space-x-1 mb-1">
+                    <div className="mt-2.5 pt-2 border-t border-red-200/80 text-[11px] text-slate-700">
+                      <div className="font-semibold text-red-800 flex items-center space-x-1 mb-1">
                         <Sparkles className="w-3 h-3" />
                         <span>Fix Hint:</span>
                       </div>
-                      <p className="bg-white/80 p-2 rounded-lg border border-rose-200/60 text-slate-800">
+                      <p className="bg-white/80 p-2 rounded-lg border border-red-200/60 text-slate-800">
                         {err.fixHint}
                       </p>
                     </div>

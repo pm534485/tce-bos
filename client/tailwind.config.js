@@ -4,33 +4,27 @@ export default {
   theme: {
     extend: {
       colors: {
-        tce: {
-          maroon: '#7B1113',
-          maroonDark: '#560B0D',
-          maroonLight: '#94191C',
-          navy: '#0F2942',
-          navyDark: '#091A2A',
-          navyLight: '#1B3E60',
-          gold: '#C59B27',
-          goldLight: '#E2BF53',
-          goldDark: '#9C7A1D',
-          cream: '#FAF7F2',
-          surface: '#F4EFEA',
+        background: '#FAFAFC',
+        surface: '#FFFFFF',
+        border: '#E2E8F0',
+        text: {
+          DEFAULT: '#1E293B',
+          muted: '#6B7280',
         },
-        brand: {
-          50: '#FAF2F3',
-          100: '#F5E4E5',
-          500: '#94191C',
-          600: '#7B1113',
-          700: '#560B0D',
-          800: '#3D0709',
-          900: '#260405',
+        primary: {
+          DEFAULT: '#800020',
+          hover: '#660019',
         },
+        status: {
+          draft: '#6B7280',
+          review: '#F59E0B',
+          approved: '#10B981',
+          rejected: '#EF4444',
+        }
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        tce: ['Montserrat', 'Roboto', 'sans-serif'],
-        doc: ['Arial', 'sans-serif'],
+        doc: ['"Times New Roman"', 'Times', 'serif'],
       },
     },
   },

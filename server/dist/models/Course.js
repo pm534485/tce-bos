@@ -122,7 +122,8 @@ const CourseOutcomeQuestionsSchema = new Schema({
 const LectureScheduleItemSchema = new Schema({
     moduleNo: { type: String, required: false },
     topic: { type: String, required: false },
-    periods: { type: Number, default: 0 },
+    periods: { type: Schema.Types.Mixed, required: false },
+    coMapping: { type: Schema.Types.Mixed, required: false },
 }, { _id: false });
 const CourseHistorySchema = new Schema({
     version: { type: Number, required: false },
@@ -159,7 +160,6 @@ const CourseSchema = new Schema({
     sdgActivities: [SdgActivitySchema],
     experiments: [LabExperimentSchema],
     coursePlan: [LabCoursePlanItemSchema],
-    conceptMapImage: { type: String },
     poPsoMapping: [PoPsoMappingSchema],
     cognitiveAssessmentPattern: [CognitiveAssessmentRowSchema],
     courseAssessmentQuestions: [CourseOutcomeQuestionsSchema],

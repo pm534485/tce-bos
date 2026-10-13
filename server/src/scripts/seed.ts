@@ -33,6 +33,7 @@ import {
   DEMO_THEORY_COURSE,
   DEMO_PRACTICAL_COURSE,
   DEMO_TCP_COURSE,
+  DEMO_ECE_CIRCUITS_COURSE,
 } from '../services/seedData.js';
 
 dotenv.config();
@@ -119,8 +120,9 @@ export async function seedDatabase() {
   await Course.create(DEMO_THEORY_COURSE);
   await Course.create(DEMO_PRACTICAL_COURSE);
   await Course.create(DEMO_TCP_COURSE);
+  await Course.create(DEMO_ECE_CIRCUITS_COURSE);
 
-  console.log('Database seeded successfully with institutional master data and 3 demo courses!');
+  console.log('Database seeded successfully with institutional master data and 4 demo courses (including 26ECCA0)!');
 }
 
 if (process.argv[1]?.includes('seed.ts')) {

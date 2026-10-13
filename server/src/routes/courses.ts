@@ -15,14 +15,24 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response): Promise<v
 
     // Role-based visibility
     if (req.user?.role === 'FACULTY') {
-      // Faculty can see courses they created or in their department
+      // Faculty can see courses they created or in their department or programme
       filter.$or = [
         { createdBy: req.user.email },
         { department: req.user.department },
+        { programmeCode: { $in: req.user.programmeAccess || [] } },
       ];
     } else if (req.user?.role === 'HOD') {
-      // HoD can see all courses in their department
-      filter.department = req.user.department;
+      // HoD can see all courses in their department OR programmes
+      const conditions: any[] = [];
+      if (req.user.department) {
+        conditions.push({ department: req.user.department });
+      }
+      if (req.user.programmeAccess && req.user.programmeAccess.length > 0) {
+        conditions.push({ programmeCode: { $in: req.user.programmeAccess } });
+      }
+      if (conditions.length > 0) {
+        filter.$or = conditions;
+      }
     }
 
     if (programme) filter.programmeCode = programme;
@@ -41,6 +51,37 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response): Promise<v
     res.json(courses);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/courses/export (Export document from live draft course object)
+router.post('/export', async (req, res): Promise<void> => {
+  try {
+    const format = (req.query.format as string) || req.body.format || 'docx';
+    const courseData = req.body.course || req.body;
+    if (!courseData) {
+      res.status(400).json({ error: 'Course data is required for export.' });
+      return;
+    }
+
+    const safeCode = (courseData.courseCode || 'Course').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeName = (courseData.courseName || 'Syllabus').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `${safeCode}_${safeName}`;
+
+    if (format === 'pdf') {
+      const pdfBuffer = await generatePdfDocument(courseData as any);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}.pdf"`);
+      res.send(pdfBuffer);
+    } else {
+      const docxBuffer = await generateDocxDocument(courseData as any);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}.docx"`);
+      res.send(docxBuffer);
+    }
+  } catch (err: any) {
+    console.error('Export error:', err);
+    res.status(500).json({ error: `Export failed: ${err.message}` });
   }
 });
 
@@ -77,9 +118,39 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response): Promise<
       version: courseData.version !== undefined ? courseData.version : 0,
     });
 
-    courseData.createdBy = req.user?.email || 'unknown';
+    courseData.createdBy = req.user?.email || courseData.createdBy || 'unknown';
     courseData.department = courseData.department || req.user?.department || 'General';
     courseData.status = 'DRAFT';
+
+    // Check if course with this compound key already exists
+    const existing = await Course.findOne({
+      regulationCode: courseData.regulationCode || '26',
+      programmeCode: courseData.programmeCode,
+      courseCode: courseData.courseCode,
+      version: courseData.version !== undefined ? courseData.version : 0,
+    });
+
+    if (existing) {
+      if (existing.status === 'FINALIZED') {
+        res.status(400).json({
+          error: `Course ${courseData.courseCode} v${courseData.version} is finalized. Please clone as a new revision.`,
+        });
+        return;
+      }
+
+      // Update existing course document so saving a draft updates smoothly
+      const updated = await Course.findByIdAndUpdate(
+        existing._id,
+        {
+          ...courseData,
+          department: courseData.department || existing.department || req.user?.department || 'General',
+          updatedAt: new Date(),
+        },
+        { new: true, runValidators: true }
+      );
+      res.status(200).json(updated);
+      return;
+    }
 
     const course = new Course(courseData);
     await course.save();
@@ -196,8 +267,9 @@ router.post('/:id/submit', authenticate, async (req: AuthRequest, res: Response)
 
     const report = validateCourse(course.toObject() as any, existingCodes);
     if (!report.isValid) {
+      const errorMsg = report.errors.map(e => e.message).join('; ');
       res.status(400).json({
-        error: 'Cannot submit course with validation errors.',
+        error: `Cannot submit course due to compliance errors: ${errorMsg}`,
         errors: report.errors,
         warnings: report.warnings,
       });

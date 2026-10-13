@@ -195,6 +195,37 @@ export function validateLtpCredits(courseType, categoryAbbr, L, T, P, credits) {
             fixHint: 'Enter non-negative numbers for L, T, and P.',
         });
     }
+    if (courseType === 'THEORY') {
+        if (P !== 0) {
+            results.push({
+                id: 'B3_THEORY_P_ZERO',
+                field: 'P',
+                severity: 'error',
+                message: 'Theory (T) courses must have practical hours P = 0.',
+                fixHint: 'Set P = 0 for theory courses, or change Course Type to Theory cum Practical (TCP).',
+            });
+        }
+    }
+    if (courseType === 'TCP') {
+        if (L <= 0) {
+            results.push({
+                id: 'B3_TCP_L_POSITIVE',
+                field: 'L',
+                severity: 'error',
+                message: 'Theory cum Practical (TCP) courses must have lecture hours L > 0.',
+                fixHint: 'Set lecture contact hours L > 0 for TCP courses.',
+            });
+        }
+        if (P <= 0) {
+            results.push({
+                id: 'B3_TCP_P_POSITIVE',
+                field: 'P',
+                severity: 'error',
+                message: 'Theory cum Practical (TCP) courses must have practical hours P > 0.',
+                fixHint: 'Set practical contact hours P > 0 for TCP courses.',
+            });
+        }
+    }
     if (courseType === 'PRACTICAL') {
         if (L !== 0 || T !== 0) {
             results.push({
@@ -787,29 +818,8 @@ export function validateSyllabusModules(modules, cos) {
                 fixHint: 'Add subtopics separated by dashes.',
             });
         }
-        if (!mod.coMapping || mod.coMapping.length === 0) {
-            results.push({
-                id: `B7_MOD_CO_MAPPING_EMPTY_${modNum}`,
-                field: `modules.${idx}.coMapping`,
-                severity: 'error',
-                message: `Module ${modNum}: Must map to at least one Course Outcome.`,
-                fixHint: 'Select the Course Outcome(s) covered by this module.',
-            });
-        }
-        else {
+        if (mod.coMapping && mod.coMapping.length > 0) {
             mod.coMapping.forEach(coNo => coveredCoNos.add(coNo));
-        }
-    });
-    // Every CO must be covered by at least one module
-    cos.forEach(co => {
-        if (!coveredCoNos.has(co.coNo)) {
-            results.push({
-                id: `B7_CO_NOT_COVERED_${co.coNo}`,
-                field: 'modules',
-                severity: 'error',
-                message: `${co.coNo} is not mapped to any syllabus module.`,
-                fixHint: `Add ${co.coNo} to the CO mapping of at least one module.`,
-            });
         }
     });
     return results;
@@ -904,33 +914,56 @@ export function validateExperimentsAndPlan(experiments, coursePlan, cos) {
     }
     return results;
 }
+export function getExpectedHoursCriteria(credits) {
+    const c = Number(credits) || 0;
+    if (c === 1) {
+        return { minHours: 12, maxHours: 14, description: '12 to 14 hours (1 credit)' };
+    }
+    if (c === 2) {
+        return { minHours: 24, maxHours: 28, description: '24 to 28 hours (2 credits)' };
+    }
+    if (c === 3) {
+        return { minHours: 36, maxHours: 36, description: '36 hours (3 credits)' };
+    }
+    if (c === 4) {
+        return { minHours: 48, maxHours: 48, description: '48 hours (4 credits)' };
+    }
+    const exp = c * 12;
+    return { minHours: exp, maxHours: exp, description: `${exp} hours (${c} credits)` };
+}
 // B9: Lecture Schedule Validation
-export function validateLectureSchedule(courseType, modules, credits, L = 0) {
+export function validateLectureSchedule(courseType, modules, credits, L = 0, lectureScheduleItems) {
     const results = [];
-    const totalPeriods = modules.reduce((sum, m) => sum + (Number(m.periods) || 0), 0);
-    const expectedPeriods = credits * 12;
-    if (courseType === 'THEORY') {
-        if (totalPeriods !== expectedPeriods) {
+    const totalPeriods = (modules || []).reduce((sum, m) => sum + (Number(m.periods) || 0), 0);
+    const effectiveCredits = courseType === 'TCP' && L > 0 ? L : credits;
+    const criteria = getExpectedHoursCriteria(effectiveCredits);
+    if (courseType === 'THEORY' || courseType === 'TCP') {
+        if (totalPeriods > 0 && (totalPeriods < criteria.minHours || totalPeriods > criteria.maxHours)) {
+            const diffText = totalPeriods < criteria.minHours
+                ? `short by ${criteria.minHours - totalPeriods} hours (min: ${criteria.minHours} hrs)`
+                : `exceeds by ${totalPeriods - criteria.maxHours} hours (max: ${criteria.maxHours} hrs)`;
             results.push({
                 id: 'B9_THEORY_PERIODS_MISMATCH',
                 field: 'modules.periods',
                 severity: 'error',
-                message: `Total lecture periods (${totalPeriods}) does not match required 12 × credits (${expectedPeriods} periods for ${credits} credits).`,
-                fixHint: `Adjust periods across modules so the total equals exactly ${expectedPeriods}.`,
+                message: `Total lecture hours (${totalPeriods} hrs) does not match required criteria (${criteria.description}). Total hours is ${diffText}. Please correct module hours.`,
+                fixHint: `Adjust periods across modules so the total satisfies ${criteria.description}.`,
             });
         }
-    }
-    else if (courseType === 'TCP') {
-        // For TCP, guideline notes *For each credit 12 hours are to be planned
-        // If it doesn't match expected periods or 12 * L, warn
-        if (totalPeriods !== expectedPeriods && totalPeriods !== L * 12) {
-            results.push({
-                id: 'B9_TCP_PERIODS_WARNING',
-                field: 'modules.periods',
-                severity: 'warning',
-                message: `Total scheduled periods (${totalPeriods}) does not match 12 × credits (${expectedPeriods}) or 12 × L (${L * 12}).`,
-                fixHint: `Plan approximately ${expectedPeriods} periods for TCP course schedule.`,
-            });
+        if (lectureScheduleItems && lectureScheduleItems.length > 0) {
+            const scheduleTotal = lectureScheduleItems.reduce((sum, item) => sum + (Number(item.periods) || 0), 0);
+            if (scheduleTotal < criteria.minHours || scheduleTotal > criteria.maxHours) {
+                const diffText = scheduleTotal < criteria.minHours
+                    ? `short by ${criteria.minHours - scheduleTotal} hours (min: ${criteria.minHours} hrs)`
+                    : `exceeds by ${scheduleTotal - criteria.maxHours} hours (max: ${criteria.maxHours} hrs)`;
+                results.push({
+                    id: 'B9_SCHEDULE_PERIODS_MISMATCH',
+                    field: 'lectureScheduleItems',
+                    severity: 'error',
+                    message: `Total lecture schedule hours (${scheduleTotal} hrs) does not match required criteria (${criteria.description}). Total hours is ${diffText}. Please correct lecture schedule rows.`,
+                    fixHint: `Adjust periods across lecture schedule rows so the total satisfies ${criteria.description}.`,
+                });
+            }
         }
     }
     return results;
@@ -1324,12 +1357,28 @@ export function evaluateTheoryChecklist(course) {
         },
         {
             id: 17,
-            title: 'Total number of periods is correctly assigned according to the credits (1 credit = 12 periods).',
+            title: 'Total number of lecture hours is strictly assigned according to credit criteria (1 credit: 12–14 hrs, 2 credits: 24–28 hrs, 3 credits: 36 hrs, 4 credits: 48 hrs).',
             passed: (() => {
                 const totalPeriods = (course.modules || []).reduce((sum, m) => sum + (Number(m.periods) || 0), 0);
-                return totalPeriods === course.credits * 12;
+                if (totalPeriods === 0)
+                    return true; // Periods omitted from syllabus modules
+                const criteria = getExpectedHoursCriteria(course.credits);
+                return totalPeriods >= criteria.minHours && totalPeriods <= criteria.maxHours;
             })(),
-            reason: `Periods: ${(course.modules || []).reduce((sum, m) => sum + (Number(m.periods) || 0), 0)} / required: ${course.credits * 12}.`,
+            reason: (() => {
+                const totalPeriods = (course.modules || []).reduce((sum, m) => sum + (Number(m.periods) || 0), 0);
+                if (totalPeriods === 0) {
+                    return 'Periods not mentioned in syllabus modules (as per institutional format).';
+                }
+                const criteria = getExpectedHoursCriteria(course.credits);
+                if (totalPeriods < criteria.minHours) {
+                    return `Error: ${totalPeriods} hrs assigned; short by ${criteria.minHours - totalPeriods} hrs (required criteria: ${criteria.description}). Please correct module hours.`;
+                }
+                if (totalPeriods > criteria.maxHours) {
+                    return `Error: ${totalPeriods} hrs assigned; exceeds by ${totalPeriods - criteria.maxHours} hrs (allowed criteria: ${criteria.description}). Please correct module hours.`;
+                }
+                return `Periods: ${totalPeriods} hrs matches required criteria (${criteria.description}).`;
+            })(),
         },
     ];
     return items;
@@ -1365,7 +1414,7 @@ export function validateCourse(course, existingProgrammeCodes = [], tolerance = 
     }
     // B9: Lecture Schedule (Theory / TCP)
     if (course.courseType === 'THEORY' || course.courseType === 'TCP') {
-        allResults.push(...validateLectureSchedule(course.courseType, course.modules || [], course.credits, course.L));
+        allResults.push(...validateLectureSchedule(course.courseType, course.modules || [], course.credits, course.L, course.lectureScheduleItems));
     }
     // B10: Learning Resources
     allResults.push(...validateLearningResources(course.textBooks, course.referenceBooks, course.regulationYear, course.isAdvanced || course.categoryAbbr === 'PEC' || course.categoryAbbr === 'OEC'));

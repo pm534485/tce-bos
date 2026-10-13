@@ -60,6 +60,12 @@ export interface TcpWeightageRow {
     esePracticalPercent: number;
 }
 export declare const TCP_WEIGHTAGE_TABLE: TcpWeightageRow[];
+export interface CourseCategoryWeightage {
+    category: string;
+    continuousAssessmentPercent: number;
+    endSemesterExaminationPercent: number;
+}
+export declare const REGULATION_ASSESSMENT_SUMMARY: CourseCategoryWeightage[];
 export declare const LAB_ASSESSMENT_SPLITS: Record<number, {
     preLab: number;
     inLab: number;

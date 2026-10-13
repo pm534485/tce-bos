@@ -4,15 +4,20 @@
 
 @layer base {
   body {
+    @apply antialiased;
+    background-color: #FAFAFC;
+    color: #1E293B;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
   }
 }
 
 .document-view {
-  font-family: Arial, sans-serif;
+  font-family: "Times New Roman", Times, serif;
   font-size: 11pt;
   line-height: 1.25;
-  color: #111827;
+  color: #000000;
+  background-color: #FFFFFF;
 }
 
 .document-view table {
@@ -32,4 +37,232 @@
 .document-view th {
   background-color: #f3f4f6;
   font-weight: bold;
+}
+
+@layer components {
+  /* ============================================================
+     GLASS BUTTON DESIGN SYSTEM
+     Resonates background colors through frosted blur with specular
+     edges, active compression, and razor-sharp high-contrast letters.
+     ============================================================ */
+  
+  /* Universal Button Baseline */
+  button:not(.no-glass),
+  .btn-glass {
+    position: relative;
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  button:not([disabled]):not(.no-glass):hover,
+  .btn-glass:not([disabled]):hover {
+    backdrop-filter: blur(16px) saturate(200%);
+    -webkit-backdrop-filter: blur(16px) saturate(200%);
+    transform: translateY(-1px);
+  }
+
+  button:not([disabled]):not(.no-glass):active,
+  .btn-glass:not([disabled]):active {
+    transform: translateY(0) scale(0.985);
+  }
+
+  .btn-base {
+    @apply inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  /* 1. TCE Crimson / Maroon Glass Button */
+  .btn-primary,
+  .btn-glass-primary,
+  button.bg-\[\#7B1113\],
+  button.bg-\[\#800020\],
+  button.bg-primary {
+    background: rgba(123, 17, 19, 0.82) !important;
+    backdrop-filter: blur(12px) saturate(190%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(190%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.32) !important;
+    box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.45), 0 4px 14px -2px rgba(123, 17, 19, 0.35) !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4) !important;
+    letter-spacing: 0.015em !important;
+  }
+  .btn-primary:hover,
+  .btn-glass-primary:hover,
+  button.bg-\[\#7B1113\]:hover,
+  button.bg-\[\#800020\]:hover,
+  button.bg-primary:hover {
+    background: rgba(123, 17, 19, 0.94) !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.7), 0 8px 22px -4px rgba(123, 17, 19, 0.45) !important;
+  }
+
+  /* 2. Glass Sky Blue (Action / Navigation) */
+  .btn-glass-sky,
+  button.bg-sky-600,
+  button.bg-sky-700 {
+    background: rgba(2, 132, 199, 0.82) !important;
+    backdrop-filter: blur(12px) saturate(190%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(190%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.32) !important;
+    box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.45), 0 4px 14px -2px rgba(2, 132, 199, 0.35) !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+    letter-spacing: 0.015em !important;
+  }
+  .btn-glass-sky:hover,
+  button.bg-sky-600:hover,
+  button.bg-sky-700:hover {
+    background: rgba(2, 132, 199, 0.94) !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.7), 0 8px 22px -4px rgba(2, 132, 199, 0.45) !important;
+  }
+
+  /* 3. Glass Emerald Green (Save / Submit / Approve) */
+  .btn-glass-emerald,
+  button.bg-emerald-600,
+  button.bg-emerald-700 {
+    background: rgba(5, 150, 105, 0.82) !important;
+    backdrop-filter: blur(12px) saturate(190%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(190%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.32) !important;
+    box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.45), 0 4px 14px -2px rgba(5, 150, 105, 0.35) !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+    letter-spacing: 0.015em !important;
+  }
+  .btn-glass-emerald:hover,
+  button.bg-emerald-600:hover,
+  button.bg-emerald-700:hover {
+    background: rgba(5, 150, 105, 0.94) !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.7), 0 8px 22px -4px rgba(5, 150, 105, 0.45) !important;
+  }
+
+  /* 4. Glass Amber / Gold (Warning / Needs Revision) */
+  .btn-glass-amber,
+  button.bg-amber-600,
+  button.bg-amber-700 {
+    background: rgba(217, 119, 6, 0.84) !important;
+    backdrop-filter: blur(12px) saturate(190%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(190%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.45), 0 4px 14px -2px rgba(217, 119, 6, 0.35) !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+    letter-spacing: 0.015em !important;
+  }
+  .btn-glass-amber:hover,
+  button.bg-amber-600:hover,
+  button.bg-amber-700:hover {
+    background: rgba(217, 119, 6, 0.95) !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.7), 0 8px 22px -4px rgba(217, 119, 6, 0.45) !important;
+  }
+
+  /* 5. Glass Rose / Red (Reject / Delete / Clear) */
+  .btn-glass-rose,
+  button.bg-rose-600,
+  button.bg-red-600 {
+    background: rgba(225, 29, 72, 0.82) !important;
+    backdrop-filter: blur(12px) saturate(190%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(190%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.32) !important;
+    box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.45), 0 4px 14px -2px rgba(225, 29, 72, 0.35) !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+    letter-spacing: 0.015em !important;
+  }
+  .btn-glass-rose:hover,
+  button.bg-rose-600:hover,
+  button.bg-red-600:hover {
+    background: rgba(225, 29, 72, 0.94) !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.7), 0 8px 22px -4px rgba(225, 29, 72, 0.45) !important;
+  }
+
+  /* 6. Glass White / Neutral / Secondary (Resonates behind color through crystal frost) */
+  .btn-secondary,
+  .btn-glass-secondary,
+  button.bg-white {
+    background: rgba(255, 255, 255, 0.72) !important;
+    backdrop-filter: blur(12px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.9) !important;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.95), 0 3px 10px rgba(0, 0, 0, 0.04) !important;
+    color: #0F172A !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.01em !important;
+  }
+  .btn-secondary:hover,
+  .btn-glass-secondary:hover,
+  button.bg-white:hover {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border-color: rgba(255, 255, 255, 1) !important;
+    box-shadow: inset 0 1px 2.5px rgba(255, 255, 255, 1), 0 6px 18px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  /* 7. Glass Dark / Slate (Dark Backgrounds / High-contrast Actions) */
+  button.bg-slate-900,
+  button.bg-slate-800 {
+    background: rgba(15, 23, 42, 0.82) !important;
+    backdrop-filter: blur(12px) saturate(190%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(190%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.22) !important;
+    box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.35), 0 4px 14px -2px rgba(0, 0, 0, 0.25) !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35) !important;
+  }
+  button.bg-slate-900:hover,
+  button.bg-slate-800:hover {
+    background: rgba(15, 23, 42, 0.94) !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.55), 0 8px 24px -4px rgba(0, 0, 0, 0.35) !important;
+  }
+
+  /* 8. Glass Ghost / Subtle Actions */
+  .btn-ghost,
+  .btn-glass-ghost {
+    background: rgba(255, 255, 255, 0.35) !important;
+    backdrop-filter: blur(10px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(10px) saturate(160%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.7), 0 2px 6px rgba(0, 0, 0, 0.03) !important;
+    color: #1E293B !important;
+    font-weight: 600 !important;
+  }
+  .btn-ghost:hover,
+  .btn-glass-ghost:hover {
+    background: rgba(255, 255, 255, 0.7) !important;
+    border-color: rgba(255, 255, 255, 0.9) !important;
+    color: #0F172A !important;
+  }
+
+  /* 9. Dashed Add / Action Buttons */
+  button.border-dashed {
+    background: rgba(255, 255, 255, 0.45) !important;
+    backdrop-filter: blur(8px) saturate(150%) !important;
+    -webkit-backdrop-filter: blur(8px) saturate(150%) !important;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8) !important;
+    color: #334155 !important;
+    font-weight: 600 !important;
+  }
+  button.border-dashed:hover {
+    background: rgba(255, 255, 255, 0.75) !important;
+    color: #0F172A !important;
+  }
+
+  /* Form Inputs and Cards */
+  .input-base {
+    @apply flex w-full rounded-md border border-border bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .card-base {
+    @apply rounded-lg border border-border bg-surface shadow-sm;
+  }
 }

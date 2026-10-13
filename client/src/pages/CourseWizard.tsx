@@ -12,6 +12,7 @@ import {
   LabExperiment,
   LabCoursePlanItem,
   CourseDesigner,
+  LectureScheduleItem,
   validateCourse,
   computeCourseCode,
   computeCredits,
@@ -30,6 +31,7 @@ import {
   LAB_ACTIVITY_CHIPS,
   SCHWAB_HERRON_LEVELS,
   LAB_ASSESSMENT_SPLITS,
+  getExpectedHoursCriteria,
 } from '@syllabusforge/shared';
 import { LiveCompliancePanel } from '../components/LiveCompliancePanel';
 import { DocumentPreview } from '../components/DocumentPreview';
@@ -49,8 +51,9 @@ import {
   Check,
   RefreshCw,
   Copy,
-  Upload,
-  Image as ImageIcon, ChevronRight, ChevronLeft, Menu,
+  ChevronRight,
+  ChevronLeft,
+  Menu,
 } from 'lucide-react';
 
 export const CourseWizard: React.FC = () => {
@@ -61,20 +64,26 @@ export const CourseWizard: React.FC = () => {
 
   const courseTypeParam = (searchParams.get('type') as CourseType) || 'THEORY';
 
-  // Refs
-  const conceptMapInputRef = useRef<HTMLInputElement>(null);
-
   // State
   const [activeTab, setActiveTab] = useState<'wizard' | 'preview'>('wizard');
   const [currentStep, setCurrentStep] = useState<number>(0);
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [existingCodes, setExistingCodes] = useState<string[]>([]);
 
-  // Selected domain for SDG 3-step helper
-  const [selectedDomain, setSelectedDomain] = useState<string>('');
+  // Close sidebar on Escape
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsSidebarOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Local draft state for module subtopics input to allow typing smoothly
+  const [subtopicsDraft, setSubtopicsDraft] = useState<Record<number, string>>({});
 
   // Course Form State
   const [course, setCourse] = useState<Course>({
@@ -96,7 +105,7 @@ export const CourseWizard: React.FC = () => {
     teExamType: courseTypeParam === 'TCP' ? 'TCP-T' : undefined,
     preamble: '',
     isAdvanced: false,
-    prerequisites: 'Nil',
+    prerequisites: '',
     courseOutcomes: [],
     assessmentMatrix: [],
     modules: [],
@@ -109,14 +118,14 @@ export const CourseWizard: React.FC = () => {
     designers: [
       {
         name: user?.name || '',
-        designation: user?.designation || 'Assistant Professor',
-        department: user?.department || 'Computer Applications',
+        designation: user?.designation || '',
+        department: user?.department || '',
         email: user?.email || '',
       },
     ],
     status: 'DRAFT',
     createdBy: user?.email || '',
-    department: user?.department || 'Computer Applications',
+    department: user?.department || '',
     comments: [],
   });
 
@@ -125,12 +134,46 @@ export const CourseWizard: React.FC = () => {
     async function loadData() {
       try {
         const allCourses = await api.getCourses();
-        setExistingCodes(allCourses.map(c => c.courseCode));
+        const codes = allCourses.map(c => c.courseCode);
+        setExistingCodes(codes);
 
         if (id) {
           const fetched = await api.getCourse(id);
           setCourse(fetched);
           setLastSaved(new Date());
+        } else {
+          // If default 'A' is already taken in this programme/category, pick the next available letter
+          const VALID_UNIQUE_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+          const defaultCode = computeCourseCode({
+            regulationCode: '26',
+            programmeCode: user?.programmeAccess[0] || 'CA',
+            categoryLetter: 'C',
+            uniqueLetter: 'A',
+            version: 0,
+          });
+          if (codes.includes(defaultCode)) {
+            const availableLetter = VALID_UNIQUE_LETTERS.find(letter => {
+              const code = computeCourseCode({
+                regulationCode: '26',
+                programmeCode: user?.programmeAccess[0] || 'CA',
+                categoryLetter: 'C',
+                uniqueLetter: letter,
+                version: 0,
+              });
+              return !codes.includes(code);
+            }) || 'B';
+
+            setCourse(prev => {
+              const nextCode = computeCourseCode({
+                regulationCode: prev.regulationCode,
+                programmeCode: prev.programmeCode,
+                categoryLetter: prev.categoryLetter,
+                uniqueLetter: availableLetter,
+                version: prev.version,
+              });
+              return { ...prev, uniqueLetter: availableLetter, courseCode: nextCode };
+            });
+          }
         }
       } catch (err) {
         console.error('Failed to load course:', err);
@@ -140,10 +183,10 @@ export const CourseWizard: React.FC = () => {
   }, [id]);
 
   // Compute live validation report
-  const validationReport = validateCourse(
-    course,
-    existingCodes.filter(c => c !== course.courseCode)
-  );
+  const otherCodes = course._id
+    ? existingCodes.filter(c => c !== course.courseCode)
+    : existingCodes;
+  const validationReport = validateCourse(course, otherCodes);
 
   // Debounced auto-save
   const saveTimeoutRef = useRef<any>(null);
@@ -168,20 +211,22 @@ export const CourseWizard: React.FC = () => {
   }, [course]);
 
   // Handle Initial Draft Creation
-  const handleSaveDraft = async () => {
+  const handleSaveDraft = async (): Promise<Course | null> => {
     try {
       setIsSaving(true);
+      let savedCourse: Course;
       if (course._id) {
-        const updated = await api.updateCourse(course._id, course);
-        setCourse(updated);
+        savedCourse = await api.updateCourse(course._id, course);
       } else {
-        const created = await api.createCourse(course);
-        setCourse(created);
-        navigate(`/courses/${created._id}`, { replace: true });
+        savedCourse = await api.createCourse(course);
+        navigate(`/courses/${savedCourse._id}`, { replace: true });
       }
+      setCourse(savedCourse);
       setLastSaved(new Date());
+      return savedCourse;
     } catch (err: any) {
       alert(`Save error: ${err.message}`);
+      return null;
     } finally {
       setIsSaving(false);
     }
@@ -189,17 +234,23 @@ export const CourseWizard: React.FC = () => {
 
   // Submit for Review
   const handleSubmitForReview = async () => {
-    if (!course._id) {
-      await handleSaveDraft();
+    let targetCourse = course;
+    if (!targetCourse._id) {
+      const saved = await handleSaveDraft();
+      if (!saved || !saved._id) return;
+      targetCourse = saved;
     }
-    if (!course._id) return;
 
     try {
-      const res = await api.submitCourse(course._id);
+      setIsSaving(true);
+      const res = await api.submitCourse(targetCourse._id!);
       setCourse(res.course);
-      setSubmitSuccess('Syllabus submitted successfully to Department Review Queue!');
+      setSubmitSuccess('Syllabus submitted successfully to Department Review Queue (HoD)!');
+      alert('Syllabus submitted successfully to the HoD review queue!');
     } catch (err: any) {
       alert(`Submission blocked: ${err.message}`);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -251,7 +302,7 @@ export const CourseWizard: React.FC = () => {
   const steps = [
     { id: 'identity', title: '1. Course Code & Identity', desc: 'Code RR AA C U V & Title' },
     { id: 'structure', title: '2. Structure & L-T-P', desc: 'Hours, credits, semester' },
-    { id: 'preamble', title: '3. Preamble & Context', desc: 'Course context & relevance' },
+    { id: 'preamble', title: '3. Preamble & Prerequisites', desc: 'Course context & prior courses' },
     { id: 'cos', title: '4. Course Outcomes', desc: 'TPS taxonomy & weightages' },
     { id: 'assessment', title: '5. Assessment Pattern', desc: 'Continuous & Terminal exam' },
     {
@@ -260,9 +311,8 @@ export const CourseWizard: React.FC = () => {
       desc: course.courseType === 'PRACTICAL' ? 'Experiments & Annexure 1' : 'Modules & Schedule',
     },
     { id: 'resources', title: '7. Learning Resources', desc: 'Text & reference books' },
-    { id: 'sdg', title: '8. SDG Alignment', desc: 'UN SDGs & academic activities' },
-    { id: 'designers', title: '9. Designers & Prerequisites', desc: 'Faculty details & prior courses' },
-    { id: 'review', title: '10. Review & Submit', desc: '17-point compliance audit' },
+    { id: 'designers', title: '8. Course Designers', desc: 'Faculty details & emails' },
+    { id: 'review', title: '9. Review & Submit', desc: '17-point compliance audit' },
   ];
 
   return (
@@ -270,6 +320,13 @@ export const CourseWizard: React.FC = () => {
       {/* Top Banner Navigation */}
       <div className="bg-white border-b border-slate-200 px-6 py-3 sticky top-16 z-30 flex items-center justify-between shadow-xs">
         <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setIsSidebarOpen(prev => !prev)}
+            aria-label="Open sections menu"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
           <button
             onClick={() => navigate('/')}
             className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
@@ -289,9 +346,9 @@ export const CourseWizard: React.FC = () => {
                   course.status === 'APPROVED' || course.status === 'FINALIZED'
                     ? 'bg-emerald-100 text-emerald-800'
                     : course.status === 'SUBMITTED'
-                    ? 'bg-sky-100 text-sky-800'
-                    : course.status === 'RETURNED'
                     ? 'bg-amber-100 text-amber-800'
+                    : course.status === 'RETURNED'
+                    ? 'bg-red-100 text-red-800'
                     : 'bg-slate-100 text-slate-700'
                 }`}
               >
@@ -299,7 +356,7 @@ export const CourseWizard: React.FC = () => {
               </span>
             </div>
             <div className="text-xs text-slate-500">
-              {course.courseType} • {course.categoryAbbr} • Credits: {course.credits} • Reg {course.regulationYear}
+              {course.courseType}{course.courseType === 'TCP' ? ` (${course.teExamType || 'TCP-T'})` : ''} • {course.categoryAbbr} • Credits: {course.credits} • Reg {course.regulationYear}
             </div>
           </div>
         </div>
@@ -384,16 +441,25 @@ export const CourseWizard: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* Left Stepper List (Collapsible Slider) */}
-            <div className={`fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} w-72 bg-white shadow-2xl border-r border-slate-200 flex flex-col`}>
-              <div className="p-4 border-b border-[#C59B27]/40 bg-[#7B1113] text-white flex items-center justify-between sticky top-0 z-10">
+            {/* Drawer Backdrop */}
+            {isSidebarOpen && (
+              <div 
+                className="fixed inset-0 bg-slate-900/20 z-40 transition-opacity" 
+                onClick={() => setIsSidebarOpen(false)}
+                aria-hidden="true"
+              />
+            )}
+
+            {/* Left Stepper List (Collapsible Drawer) */}
+            <div className={`fixed inset-y-0 left-0 z-50 transform transition-transform duration-200 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} w-[280px] bg-white shadow-2xl flex flex-col`}>
+              <div className="p-4 border-b border-gray-100 bg-white flex items-center justify-between sticky top-0 z-10">
                 <div>
-                  <span className="text-xs font-black uppercase tracking-wider text-[#E2BF53] block font-tce">
-                    TCE SYLLABUS SECTIONS
+                  <span className="text-xs font-black uppercase tracking-wider text-[#800020] block">
+                    Syllabus Sections
                   </span>
-                  <span className="text-[10px] text-white/80">Regulation 2026 Navigation</span>
+                  <span className="text-[10px] text-slate-500">Regulation 2026 Navigation</span>
                 </div>
-                <button onClick={() => setIsSidebarOpen(false)} className="p-1 rounded-md hover:bg-white/10 text-white/80 hover:text-white transition-colors">
+                <button onClick={() => setIsSidebarOpen(false)} className="p-1 rounded-md hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition-colors">
                   <ChevronLeft className="w-5 h-5" />
                 </button>
               </div>
@@ -403,11 +469,11 @@ export const CourseWizard: React.FC = () => {
                     key={st.id}
                     onClick={() => {
                       setCurrentStep(idx);
-                      if (window.innerWidth < 768) setIsSidebarOpen(false);
+                      setIsSidebarOpen(false);
                     }}
                     className={`w-full text-left px-3 py-3 rounded-xl text-xs font-medium transition-all flex items-center justify-between ${
                       currentStep === idx
-                        ? 'bg-[#FAF2F3] text-[#7B1113] font-bold border-l-4 border-[#7B1113] shadow-xs'
+                        ? 'bg-[#800020]/10 text-[#800020] font-bold border-l-4 border-[#800020] shadow-xs'
                         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`}
                   >
@@ -428,19 +494,8 @@ export const CourseWizard: React.FC = () => {
               </div>
             </div>
 
-            {/* Floating button to open slider when closed */}
-            {!isSidebarOpen && (
-              <button
-                onClick={() => setIsSidebarOpen(true)}
-                className="fixed left-0 top-1/2 -translate-y-1/2 z-30 bg-[#7B1113] hover:bg-[#560B0D] text-white p-2.5 rounded-r-xl shadow-lg border-y border-r border-[#C59B27] transition-colors"
-                title="Open Syllabus Sections"
-              >
-                <Menu className="w-5 h-5 text-[#E2BF53]" />
-              </button>
-            )}
-
             {/* Center Wizard Form Container */}
-            <div className="flex-1 bg-white border border-slate-200 border-t-4 border-t-[#7B1113] rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col justify-between ml-12 lg:ml-0">
+            <div className="flex-1 w-full bg-white border border-slate-200 border-t-4 border-t-[#800020] rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col justify-between">
               <div>
                 {/* Step 1: Course Identity */}
                 {currentStep === 0 && (
@@ -674,6 +729,28 @@ export const CourseWizard: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* Credit to Contact Hours Calculation */}
+                    {(() => {
+                      const effCredits = (course.courseType === 'TCP' && (course.L || 0) > 0) ? course.L : course.credits;
+                      const crit = getExpectedHoursCriteria(effCredits);
+                      return (
+                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div>
+                            <span className="text-xs font-bold text-slate-800 block">
+                              {course.courseType === 'TCP' ? `Theory Lecture Hours Criteria: ${crit.description} (based on L = ${course.L || 0} credits)` : `Contact Hours Criteria: ${crit.description}`}
+                            </span>
+                            <span className="text-[11px] text-slate-500">
+                              Institutional Criteria: 1 credit = 12 to 14 hrs | 2 credits = 24 to 28 hrs | 3 credits = 36 hrs | 4 credits = 48 hrs.
+                              {course.courseType === 'TCP' ? ` For TCP, practical lab component has ${course.P || 0} hours/week.` : ''}
+                            </span>
+                          </div>
+                          <div className="text-xs font-extrabold px-3 py-1 bg-sky-100 text-sky-800 rounded-lg border border-sky-200 self-start sm:self-auto">
+                            {course.courseType === 'TCP' ? `L = ${course.L || 0} → ${crit.description}` : `${course.credits} ${course.credits === 1 ? 'Credit' : 'Credits'} → ${crit.description}`}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -723,13 +800,13 @@ export const CourseWizard: React.FC = () => {
                   </div>
                 )}
 
-                {/* Step 3: Preamble */}
+                {/* Step 3: Preamble & Prerequisites */}
                 {currentStep === 2 && (
                   <div className="space-y-6">
                     <div>
-                      <h2 className="text-xl font-bold text-slate-900">3. Course Preamble</h2>
+                      <h2 className="text-xl font-bold text-slate-900">3. Course Preamble & Prerequisites</h2>
                       <p className="text-sm text-slate-500 mt-1">
-                        Contextualizes domain, academic relevance, and industrial significance.
+                        Contextualizes domain, academic relevance, and prior foundational prerequisite courses.
                       </p>
                     </div>
 
@@ -754,6 +831,22 @@ export const CourseWizard: React.FC = () => {
                         <p>• Avoid cliché phrases: "This course covers important topics" or "Students will learn about".</p>
                         <p>• Do not repeat the Course Outcomes list verbatim.</p>
                       </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-200">
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Prerequisites
+                      </label>
+                      <input
+                        type="text"
+                        value={Array.isArray(course.prerequisites) ? '' : (course.prerequisites || '')}
+                        onChange={e => updateField('prerequisites', e.target.value)}
+                        placeholder="Nil (or e.g. 26CSCA0 : Problem Solving)"
+                        className="w-full p-2.5 border border-slate-300 rounded-lg text-xs"
+                      />
+                      <span className="text-[11px] text-slate-500 mt-0.5 block">
+                        Enter "Nil" if there are no prerequisites.
+                      </span>
                     </div>
                   </div>
                 )}
@@ -861,12 +954,13 @@ export const CourseWizard: React.FC = () => {
                               </label>
                               <textarea
                                 rows={2}
-                                value={co.statement}
+                                value={co.statement || ''}
                                 onChange={e => {
                                   const updated = [...(course.courseOutcomes || [])];
                                   updated[idx] = { ...updated[idx], statement: e.target.value };
                                   updateField('courseOutcomes', updated);
                                 }}
+                                placeholder="e.g. Apply fundamental engineering principles to solve practical domain problems."
                                 className="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-sky-500"
                               />
                             </div>
@@ -1030,10 +1124,10 @@ export const CourseWizard: React.FC = () => {
                           const n = (course.courseOutcomes || []).length + 1;
                           const newCo: CourseOutcome = {
                             coNo: `CO${n}`,
-                            statement: 'Apply fundamental engineering principles to solve practical domain problems.',
+                            statement: '',
                             tpsLevel: 3,
-                            pi: '1.1.1',
-                            weightage: 15,
+                            pi: '',
+                            weightage: 0,
                             sdgNo: 'NC',
                             sdgLevel: 0,
                           };
@@ -1044,123 +1138,6 @@ export const CourseWizard: React.FC = () => {
                         <Plus className="w-4 h-4" />
                         <span>Add Course Outcome</span>
                       </button>
-
-                      {/* Mapping with Programme Outcomes and Programme Specific Outcomes */}
-                      <div className="pt-6 border-t border-slate-200 space-y-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div>
-                            <h3 className="text-base font-bold text-slate-900">
-                              Mapping with Programme Outcomes and Programme Specific Outcomes
-                            </h3>
-                            <p className="text-xs text-slate-500">
-                              Map each Course Outcome against PO1–PO12 and PSO1–PSO3 with S (Strong), M (Medium), L (Low), or leave blank.
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const cos = course.courseOutcomes || [];
-                              const updated = cos.map(co => {
-                                const tps = co.tpsLevel || 2;
-                                return {
-                                  coNo: co.coNo,
-                                  po1: tps >= 3 ? 'S' : 'M',
-                                  po2: tps >= 4 ? 'S' : (tps === 3 ? 'S' : 'M'),
-                                  po3: tps >= 3 ? 'M' : 'L',
-                                  po4: tps >= 4 ? 'M' : '',
-                                  po5: tps >= 3 ? 'M' : '',
-                                  po6: '',
-                                  po7: '',
-                                  po8: co.sdgNo && co.sdgNo !== 'NC' ? 'L' : '',
-                                  po9: '',
-                                  po10: '',
-                                  po11: '',
-                                  po12: 'L',
-                                  pso1: tps >= 3 ? 'S' : 'M',
-                                  pso2: tps >= 4 ? 'M' : '',
-                                  pso3: '',
-                                };
-                              });
-                              updateField('poPsoMapping', updated);
-                            }}
-                            className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-semibold shadow-xs transition-colors"
-                          >
-                            <Sparkles className="w-3.5 h-3.5" />
-                            <span>Auto-fill Recommended PO/PSO Mappings</span>
-                          </button>
-                        </div>
-
-                        <div className="overflow-x-auto border border-slate-200 rounded-xl">
-                          <table className="w-full text-xs text-center border-collapse">
-                            <thead className="bg-slate-100 text-slate-700 font-bold">
-                              <tr>
-                                <th className="p-2 border-b w-14 bg-slate-200 text-slate-800">CO</th>
-                                {['PO1', 'PO2', 'PO3', 'PO4', 'PO5', 'PO6', 'PO7', 'PO8', 'PO9', 'PO10', 'PO11', 'PO12'].map(po => (
-                                  <th key={po} className="p-2 border-b min-w-[38px]">{po}</th>
-                                ))}
-                                {['PSO1', 'PSO2', 'PSO3'].map(pso => (
-                                  <th key={pso} className="p-2 border-b min-w-[42px] bg-sky-50 text-sky-800">{pso}</th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {(course.courseOutcomes || []).map(co => {
-                                const existingRow = (course.poPsoMapping || []).find(r => r.coNo === co.coNo) || { coNo: co.coNo };
-                                const cols = [
-                                  'po1', 'po2', 'po3', 'po4', 'po5', 'po6', 'po7', 'po8', 'po9', 'po10', 'po11', 'po12',
-                                  'pso1', 'pso2', 'pso3'
-                                ];
-                                return (
-                                  <tr key={co.coNo} className="border-b border-slate-100 hover:bg-slate-50/50">
-                                    <td className="p-2 font-bold bg-slate-50 text-slate-800">{co.coNo}</td>
-                                    {cols.map(cKey => {
-                                      const val = (existingRow as any)[cKey] || '';
-                                      return (
-                                        <td key={cKey} className="p-1">
-                                          <select
-                                            value={val}
-                                            onChange={e => {
-                                              const newVal = e.target.value;
-                                              const list = [...(course.poPsoMapping || [])];
-                                              const rIdx = list.findIndex(r => r.coNo === co.coNo);
-                                              if (rIdx >= 0) {
-                                                list[rIdx] = { ...list[rIdx], [cKey]: newVal };
-                                              } else {
-                                                list.push({ coNo: co.coNo, [cKey]: newVal });
-                                              }
-                                              updateField('poPsoMapping', list);
-                                            }}
-                                            className={`w-full p-1 text-center font-bold text-xs rounded border ${
-                                              val === 'S'
-                                                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                                                : val === 'M'
-                                                ? 'bg-sky-100 text-sky-800 border-sky-300'
-                                                : val === 'L'
-                                                ? 'bg-amber-100 text-amber-800 border-amber-300'
-                                                : 'bg-white text-slate-400 border-slate-200'
-                                            }`}
-                                          >
-                                            <option value="">-</option>
-                                            <option value="S">S</option>
-                                            <option value="M">M</option>
-                                            <option value="L">L</option>
-                                          </select>
-                                        </td>
-                                      );
-                                    })}
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                        <div className="flex items-center space-x-4 text-xs text-slate-500">
-                          <span>Legend:</span>
-                          <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">S = Strong</span>
-                          <span className="font-semibold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">M = Medium</span>
-                          <span className="font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">L = Low</span>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 )}
@@ -1175,310 +1152,163 @@ export const CourseWizard: React.FC = () => {
                       </p>
                     </div>
 
-                    {/* Theory: Assessment Pattern Cognitive Domain & Questions */}
+                    {/* Theory: Assessment Pattern CO-wise Matrix & Questions */}
                     {course.courseType === 'THEORY' && (
                       <div className="space-y-6">
-                        {/* Cognitive Domain Table */}
+                        {/* Course Outcomes Assessment Matrix Table */}
                         <div className="space-y-3">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div>
                               <h3 className="text-base font-bold text-slate-900">
-                                Assessment Pattern: Cognitive Domain
+                                Assessment Pattern (Course Outcomes Mark Distribution)
                               </h3>
                               <p className="text-xs text-slate-500">
-                                Bloom's Cognitive Levels mark percentage distribution across Continuous Assessment Tests (1, 2, 3) and Terminal Examination. Each column must sum to 100%.
+                                Mark percentage distribution across Continuous Assessment Tests (CAT 1, CAT 2), Assignments (1, 2), and Terminal Examination for each Course Outcome. Each column must sum to exactly 100%.
                               </p>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                updateField('cognitiveAssessmentPattern', [
-                                  { level: 'Remember', cat1: 10, cat2: 10, cat3: 10, terminalExam: 10 },
-                                  { level: 'Understand', cat1: 30, cat2: 30, cat3: 10, terminalExam: 10 },
-                                  { level: 'Apply', cat1: 60, cat2: 60, cat3: 80, terminalExam: 80 },
-                                  { level: 'Analyze', cat1: 0, cat2: 0, cat3: 0, terminalExam: 0 },
-                                  { level: 'Evaluate', cat1: 0, cat2: 0, cat3: 0, terminalExam: 0 },
-                                  { level: 'Create', cat1: 0, cat2: 0, cat3: 0, terminalExam: 0 },
-                                ]);
-                              }}
-                              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-semibold shadow-xs transition-colors"
-                            >
-                              <Sparkles className="w-3.5 h-3.5" />
-                              <span>Apply Model MCA Cognitive Distribution</span>
-                            </button>
+                            <div className="text-xs font-semibold px-3 py-1 bg-slate-100 text-slate-700 rounded-lg border border-slate-200">
+                              {(course.courseOutcomes || []).length} COs Configured
+                            </div>
                           </div>
 
-                          <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-xs">
-                            <table className="w-full text-xs text-left border-collapse">
-                              <thead className="bg-slate-100 text-slate-700 font-bold">
-                                <tr>
-                                  <th className="p-2.5 border-b w-40 bg-slate-200 text-slate-800">Cognitive Levels</th>
-                                  <th className="p-2.5 border-b text-center">CAT 1 (%)</th>
-                                  <th className="p-2.5 border-b text-center">CAT 2 (%)</th>
-                                  <th className="p-2.5 border-b text-center">CAT 3 (%)</th>
-                                  <th className="p-2.5 border-b text-center bg-sky-50 text-sky-900">Terminal Exam (%)</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {([
-                                  'Remember',
-                                  'Understand',
-                                  'Apply',
-                                  'Analyze',
-                                  'Evaluate',
-                                  'Create',
-                                ] as const).map(lvl => {
-                                  const currentPattern = course.cognitiveAssessmentPattern || [
-                                    { level: 'Remember', cat1: 10, cat2: 10, cat3: 10, terminalExam: 10 },
-                                    { level: 'Understand', cat1: 30, cat2: 30, cat3: 10, terminalExam: 10 },
-                                    { level: 'Apply', cat1: 60, cat2: 60, cat3: 80, terminalExam: 80 },
-                                    { level: 'Analyze', cat1: 0, cat2: 0, cat3: 0, terminalExam: 0 },
-                                    { level: 'Evaluate', cat1: 0, cat2: 0, cat3: 0, terminalExam: 0 },
-                                    { level: 'Create', cat1: 0, cat2: 0, cat3: 0, terminalExam: 0 },
-                                  ];
-                                  const rowData = currentPattern.find(r => r.level === lvl) || {
-                                    level: lvl,
-                                    cat1: 0,
-                                    cat2: 0,
-                                    cat3: 0,
-                                    terminalExam: 0,
-                                  };
+                          {(course.courseOutcomes || []).length === 0 ? (
+                            <div className="p-6 bg-amber-50 border border-amber-200 rounded-xl text-center">
+                              <p className="text-xs text-amber-800 font-semibold">
+                                No Course Outcomes defined yet. Please return to Step 4 (Course Outcomes) to add COs first.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-xs">
+                              <table className="w-full text-xs text-left border-collapse">
+                                <thead className="bg-slate-100 text-slate-700 font-bold">
+                                  <tr>
+                                    <th className="p-2.5 border-b w-28 bg-slate-200 text-slate-800 text-center">CO</th>
+                                    <th className="p-2.5 border-b text-center">CAT 1 (%)</th>
+                                    <th className="p-2.5 border-b text-center">Assignment 1 (%)</th>
+                                    <th className="p-2.5 border-b text-center">CAT 2 (%)</th>
+                                    <th className="p-2.5 border-b text-center">Assignment 2 (%)</th>
+                                    <th className="p-2.5 border-b text-center bg-sky-50 text-sky-900">Terminal Exam (%)</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {(course.courseOutcomes || []).map(co => {
+                                    const rowData = (course.assessmentMatrix || []).find(r => r.coNo === co.coNo) || {
+                                      coNo: co.coNo,
+                                      cat1: 0,
+                                      assignment1: 0,
+                                      cat2: 0,
+                                      assignment2: 0,
+                                      terminalExam: 0,
+                                    };
 
-                                  const updateRow = (col: 'cat1' | 'cat2' | 'cat3' | 'terminalExam', val: number) => {
-                                    const next = currentPattern.map(r =>
-                                      r.level === lvl ? { ...r, [col]: val } : r
-                                    );
-                                    if (!next.some(r => r.level === lvl)) {
-                                      next.push({ ...rowData, [col]: val });
-                                    }
-                                    updateField('cognitiveAssessmentPattern', next);
-                                  };
+                                    const updateCell = (col: 'cat1' | 'assignment1' | 'cat2' | 'assignment2' | 'terminalExam', val: number) => {
+                                      const matrix = [...(course.assessmentMatrix || [])];
+                                      const idx = matrix.findIndex(r => r.coNo === co.coNo);
+                                      if (idx >= 0) {
+                                        matrix[idx] = { ...matrix[idx], [col]: val };
+                                      } else {
+                                        matrix.push({ ...rowData, [col]: val });
+                                      }
+                                      updateField('assessmentMatrix', matrix);
+                                    };
 
-                                  return (
-                                    <tr key={lvl} className="border-b border-slate-100 hover:bg-slate-50/50">
-                                      <td className="p-2.5 font-bold text-slate-800 bg-slate-50/60">{lvl}</td>
-                                      <td className="p-2 text-center">
-                                        <input
-                                          type="number"
-                                          min={0}
-                                          max={100}
-                                          value={rowData.cat1}
-                                          onChange={e => updateRow('cat1', parseInt(e.target.value) || 0)}
-                                          className="w-16 p-1.5 border border-slate-300 rounded text-center text-xs font-semibold"
-                                        />
-                                      </td>
-                                      <td className="p-2 text-center">
-                                        <input
-                                          type="number"
-                                          min={0}
-                                          max={100}
-                                          value={rowData.cat2}
-                                          onChange={e => updateRow('cat2', parseInt(e.target.value) || 0)}
-                                          className="w-16 p-1.5 border border-slate-300 rounded text-center text-xs font-semibold"
-                                        />
-                                      </td>
-                                      <td className="p-2 text-center">
-                                        <input
-                                          type="number"
-                                          min={0}
-                                          max={100}
-                                          value={rowData.cat3}
-                                          onChange={e => updateRow('cat3', parseInt(e.target.value) || 0)}
-                                          className="w-16 p-1.5 border border-slate-300 rounded text-center text-xs font-semibold"
-                                        />
-                                      </td>
-                                      <td className="p-2 text-center bg-sky-50/30">
-                                        <input
-                                          type="number"
-                                          min={0}
-                                          max={100}
-                                          value={rowData.terminalExam}
-                                          onChange={e => updateRow('terminalExam', parseInt(e.target.value) || 0)}
-                                          className="w-16 p-1.5 border border-sky-300 bg-white rounded text-center text-xs font-bold text-sky-900"
-                                        />
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                              <tfoot className="bg-slate-100 font-bold border-t-2 border-slate-300">
-                                <tr>
-                                  <td className="p-2.5 font-extrabold text-slate-900">Total Marks (%):</td>
-                                  {(['cat1', 'cat2', 'cat3', 'terminalExam'] as const).map(col => {
-                                    const pattern = course.cognitiveAssessmentPattern || [];
-                                    const sum = pattern.reduce((acc, r) => acc + (Number((r as any)[col]) || 0), 0);
-                                    const isOk = sum === 100;
                                     return (
-                                      <td
-                                        key={col}
-                                        className={`p-2.5 text-center text-xs font-extrabold ${
-                                          isOk ? 'text-emerald-700 bg-emerald-50' : 'text-rose-600 bg-rose-50'
-                                        }`}
-                                      >
-                                        <div className="flex items-center justify-center space-x-1">
-                                          <span>{sum}%</span>
-                                          {isOk ? (
-                                            <Check className="w-3.5 h-3.5 text-emerald-600" />
-                                          ) : (
-                                            <span className="text-[10px] text-rose-500 font-normal">(!=100)</span>
-                                          )}
-                                        </div>
-                                      </td>
+                                      <tr key={co.coNo} className="border-b border-slate-100 hover:bg-slate-50/50">
+                                        <td className="p-2.5 font-bold text-slate-800 bg-slate-50/60 text-center">
+                                          <div>
+                                            <span className="font-extrabold text-sky-900">{co.coNo}</span>
+                                            <span className="block text-[10px] text-slate-400 font-normal">
+                                              TPS {co.tpsLevel} • {co.weightage}% wt
+                                            </span>
+                                          </div>
+                                        </td>
+                                        <td className="p-2 text-center">
+                                          <input
+                                            type="number"
+                                            min={0}
+                                            max={100}
+                                            value={rowData.cat1 || 0}
+                                            onChange={e => updateCell('cat1', parseInt(e.target.value) || 0)}
+                                            className="w-16 p-1.5 border border-slate-300 rounded text-center text-xs font-semibold"
+                                          />
+                                        </td>
+                                        <td className="p-2 text-center">
+                                          <input
+                                            type="number"
+                                            min={0}
+                                            max={100}
+                                            value={rowData.assignment1 || 0}
+                                            onChange={e => updateCell('assignment1', parseInt(e.target.value) || 0)}
+                                            className="w-16 p-1.5 border border-slate-300 rounded text-center text-xs font-semibold"
+                                          />
+                                        </td>
+                                        <td className="p-2 text-center">
+                                          <input
+                                            type="number"
+                                            min={0}
+                                            max={100}
+                                            value={rowData.cat2 || 0}
+                                            onChange={e => updateCell('cat2', parseInt(e.target.value) || 0)}
+                                            className="w-16 p-1.5 border border-slate-300 rounded text-center text-xs font-semibold"
+                                          />
+                                        </td>
+                                        <td className="p-2 text-center">
+                                          <input
+                                            type="number"
+                                            min={0}
+                                            max={100}
+                                            value={rowData.assignment2 || 0}
+                                            onChange={e => updateCell('assignment2', parseInt(e.target.value) || 0)}
+                                            className="w-16 p-1.5 border border-slate-300 rounded text-center text-xs font-semibold"
+                                          />
+                                        </td>
+                                        <td className="p-2 text-center bg-sky-50/30">
+                                          <input
+                                            type="number"
+                                            min={0}
+                                            max={100}
+                                            value={rowData.terminalExam || 0}
+                                            onChange={e => updateCell('terminalExam', parseInt(e.target.value) || 0)}
+                                            className="w-16 p-1.5 border border-sky-300 bg-white rounded text-center text-xs font-bold text-sky-900"
+                                          />
+                                        </td>
+                                      </tr>
                                     );
                                   })}
-                                </tr>
-                              </tfoot>
-                            </table>
-                          </div>
-                        </div>
-
-                        {/* Course Level Assessment Questions Editor */}
-                        <div className="pt-6 border-t border-slate-200 space-y-4">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div>
-                              <h3 className="text-base font-bold text-slate-900">
-                                Course Level Assessment Questions
-                              </h3>
-                              <p className="text-xs text-slate-500">
-                                Sample evaluative questions aligned per Course Outcome for CAT tests, quizzes, assignments, and terminal exams.
-                              </p>
+                                </tbody>
+                                <tfoot className="bg-slate-100 font-bold border-t-2 border-slate-300">
+                                  <tr>
+                                    <td className="p-2.5 font-extrabold text-slate-900 text-center">Total (%):</td>
+                                    {(['cat1', 'assignment1', 'cat2', 'assignment2', 'terminalExam'] as const).map(col => {
+                                      const cos = course.courseOutcomes || [];
+                                      const sum = cos.reduce((acc, co) => {
+                                        const row = (course.assessmentMatrix || []).find(r => r.coNo === co.coNo);
+                                        return acc + (Number((row as any)?.[col]) || 0);
+                                      }, 0);
+                                      const isOk = sum === 100;
+                                      return (
+                                        <td
+                                          key={col}
+                                          className={`p-2.5 text-center text-xs font-extrabold ${
+                                            isOk ? 'text-emerald-700 bg-emerald-50' : 'text-rose-600 bg-red-50'
+                                          }`}
+                                        >
+                                          <div className="flex items-center justify-center space-x-1">
+                                            <span>{sum}%</span>
+                                            {isOk ? (
+                                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                            ) : (
+                                              <span className="text-[10px] text-rose-500 font-normal">(!=100)</span>
+                                            )}
+                                          </div>
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                </tfoot>
+                              </table>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                updateField('courseAssessmentQuestions', [
-                                  {
-                                    coNo: 'CO1',
-                                    questions: [
-                                      'Suppose a circular queue of capacity (n - 1) elements is implemented with an array of n elements. Assume that insertion and deletion operations are carried out using REAR and FRONT as array index variables, respectively. Initially, REAR=FRONT=0. Give the conditions to detect queue full and queue empty?',
-                                      'Given a 5 element stack S (from top to bottom: 2, 4, 6, 8, 10), and an empty queue Q, remove elements one-by-one from S and insert them into Q, then remove them one-by-one from Q and re-insert them into S. List elements in S.',
-                                      'Given an array and a singly linked list. Which of these data structures uses more memory space to store the same number of elements? Justify your answer.'
-                                    ]
-                                  },
-                                  {
-                                    coNo: 'CO2',
-                                    questions: [
-                                      'Perform the AVL algorithm for non-AVL trees. In each case, count the number of updated links required by the AVL rotation. Given an expression tree, write an algorithm to evaluate the expression tree.',
-                                      'Construct a binary tree given Inorder: D, B, H, E, A, I, F, J, C, G and Preorder: A, B, D, E, H, C, F, I, J, G.',
-                                      'Given a red-black tree with n elements, how fast can you sort them using the tree? Demonstrate step by step.'
-                                    ]
-                                  },
-                                  {
-                                    coNo: 'CO3',
-                                    questions: [
-                                      'Given a B-Tree with H=5, M=10 and L=10, what is the maximum and minimum number of values that can be contained in the leaves of the B-Tree?',
-                                      'Given a red-black tree and a key, check whether the given key exists or not without recursion.',
-                                      'Create a Trie tree for the set of words S={ab, ba, ca, caa, caaa, baaa} over alphabet Sigma={a,b,c}.'
-                                    ]
-                                  },
-                                  {
-                                    coNo: 'CO4',
-                                    questions: [
-                                      'Given a Boolean 2D matrix, find the number of islands using disjoint set data structures.',
-                                      'Write pseudocode for make-set, find-set, and union operations using singly linked lists and weighted union rule.'
-                                    ]
-                                  },
-                                  {
-                                    coNo: 'CO5',
-                                    questions: [
-                                      'For a binary heap stored in an array, what about a d-heap? In what positions are children and parent of node i stored?',
-                                      'Show the result of inserting keys 1 to 15 in order into an initially empty leftist heap using leftist heap merge algorithm.'
-                                    ]
-                                  },
-                                  {
-                                    coNo: 'CO6',
-                                    questions: [
-                                      'Given input {4371, 1323, 6173, 4199, 4344, 9679, 1989} and hash function h(x) = x mod 10, show the resulting hash table using: (a) Separate chaining, (b) Linear probing, (c) Quadratic probing.',
-                                      'Explain carefully why search cannot stop when a tombstone is encountered in open addressing hash tables.'
-                                    ]
-                                  }
-                                ]);
-                              }}
-                              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-semibold shadow-xs transition-colors"
-                            >
-                              <Sparkles className="w-3.5 h-3.5" />
-                              <span>Auto-fill MCA Sample Questions</span>
-                            </button>
-                          </div>
-
-                          <div className="space-y-4">
-                            {(course.courseOutcomes || []).map(co => {
-                              const qGroup = (course.courseAssessmentQuestions || []).find(g => g.coNo === co.coNo) || {
-                                coNo: co.coNo,
-                                questions: []
-                              };
-                              return (
-                                <div key={co.coNo} className="p-4 border border-slate-200 rounded-xl bg-slate-50/50 space-y-3">
-                                  <div className="flex items-center justify-between">
-                                    <span className="font-bold text-xs text-slate-800">
-                                      Course Outcome {co.coNo} ({co.statement.slice(0, 70)}...)
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const list = [...(course.courseAssessmentQuestions || [])];
-                                        const gIdx = list.findIndex(g => g.coNo === co.coNo);
-                                        if (gIdx >= 0) {
-                                          list[gIdx] = {
-                                            ...list[gIdx],
-                                            questions: [...(list[gIdx].questions || []), 'New assessment question...']
-                                          };
-                                        } else {
-                                          list.push({ coNo: co.coNo, questions: ['New assessment question...'] });
-                                        }
-                                        updateField('courseAssessmentQuestions', list);
-                                      }}
-                                      className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-md bg-white border border-slate-300 hover:border-sky-500 text-slate-700 hover:text-sky-700 text-xs font-semibold"
-                                    >
-                                      <Plus className="w-3.5 h-3.5" />
-                                      <span>Add Question</span>
-                                    </button>
-                                  </div>
-
-                                  {(qGroup.questions || []).map((q, qIdx) => (
-                                    <div key={qIdx} className="flex items-start space-x-2">
-                                      <span className="font-bold text-xs text-slate-500 mt-2">{qIdx + 1}.</span>
-                                      <textarea
-                                        rows={2}
-                                        value={q}
-                                        onChange={e => {
-                                          const list = [...(course.courseAssessmentQuestions || [])];
-                                          const gIdx = list.findIndex(g => g.coNo === co.coNo);
-                                          if (gIdx >= 0) {
-                                            const updatedQ = [...(list[gIdx].questions || [])];
-                                            updatedQ[qIdx] = e.target.value;
-                                            list[gIdx] = { ...list[gIdx], questions: updatedQ };
-                                            updateField('courseAssessmentQuestions', list);
-                                          }
-                                        }}
-                                        className="flex-1 p-2 border border-slate-300 rounded-lg text-xs leading-relaxed"
-                                        placeholder="Enter question text..."
-                                      />
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const list = [...(course.courseAssessmentQuestions || [])];
-                                          const gIdx = list.findIndex(g => g.coNo === co.coNo);
-                                          if (gIdx >= 0) {
-                                            const updatedQ = (list[gIdx].questions || []).filter((_, i) => i !== qIdx);
-                                            list[gIdx] = { ...list[gIdx], questions: updatedQ };
-                                            updateField('courseAssessmentQuestions', list);
-                                          }
-                                        }}
-                                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded"
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                      </button>
-                                    </div>
-                                  ))}
-
-                                  {(qGroup.questions || []).length === 0 && (
-                                    <p className="text-xs text-slate-400 italic">No questions added yet for {co.coNo}.</p>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -1568,6 +1398,36 @@ export const CourseWizard: React.FC = () => {
                               );
                             })}
                           </tbody>
+                          <tfoot className="bg-slate-100 font-bold border-t-2 border-slate-300">
+                            <tr>
+                              <td className="p-2.5 font-extrabold text-slate-900 text-center">Total (%):</td>
+                              {(['theoryCat1', 'theoryCat2', 'practicalCa', 'practicalModel', 'tcpTerminal'] as const).map(col => {
+                                const cos = course.courseOutcomes || [];
+                                const sum = cos.reduce((acc, co) => {
+                                  const row = (course.assessmentMatrix || []).find(r => r.coNo === co.coNo);
+                                  return acc + (Number((row as any)?.[col]) || 0);
+                                }, 0);
+                                const isOk = sum === 100;
+                                return (
+                                  <td
+                                    key={col}
+                                    className={`p-2.5 text-center text-xs font-extrabold ${
+                                      isOk ? 'text-emerald-700 bg-emerald-50' : 'text-rose-600 bg-red-50'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-center space-x-1">
+                                      <span>{sum}%</span>
+                                      {isOk ? (
+                                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                      ) : (
+                                        <span className="text-[10px] text-rose-500 font-normal">(!=100)</span>
+                                      )}
+                                    </div>
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          </tfoot>
                         </table>
                       </div>
                     )}
@@ -1579,12 +1439,12 @@ export const CourseWizard: React.FC = () => {
                   <div className="space-y-6">
                     <div>
                       <h2 className="text-xl font-bold text-slate-900">
-                        {course.courseType === 'PRACTICAL' ? '6. Laboratory Experiments' : '6. Syllabus Modules & Schedule'}
+                        {course.courseType === 'PRACTICAL' ? '6. Laboratory Experiments' : '6. Syllabus Modules'}
                       </h2>
                       <p className="text-sm text-slate-500 mt-1">
                         {course.courseType === 'PRACTICAL'
                           ? 'Specify experiments with inquiry openness levels (1/2/3) and Annexure 1 course plan.'
-                          : 'Modules must contain main topic, ordered subtopics, contact periods, and CO mapping.'}
+                          : 'Modules must contain main topic and ordered subtopics.'}
                       </p>
                     </div>
 
@@ -1609,41 +1469,21 @@ export const CourseWizard: React.FC = () => {
                               </button>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                              <div className="md:col-span-3">
-                                <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                                  Main Topic Title
-                                </label>
-                                <input
-                                  type="text"
-                                  value={mod.mainTopic}
-                                  onChange={e => {
-                                    const updated = [...(course.modules || [])];
-                                    updated[idx] = { ...updated[idx], mainTopic: e.target.value };
-                                    updateField('modules', updated);
-                                  }}
-                                  placeholder="e.g. Abstract Data Types and Analysis"
-                                  className="w-full p-2 border border-slate-300 rounded-lg text-xs"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                                  Periods
-                                </label>
-                                <input
-                                  type="number"
-                                  min={1}
-                                  value={mod.periods || 0}
-                                  onChange={e => {
-                                    const val = parseInt(e.target.value) || 0;
-                                    const updated = [...(course.modules || [])];
-                                    updated[idx] = { ...updated[idx], periods: val };
-                                    updateField('modules', updated);
-                                  }}
-                                  className="w-full p-2 border border-slate-300 rounded-lg text-xs text-center font-bold"
-                                />
-                              </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                                Main Topic Title
+                              </label>
+                              <input
+                                type="text"
+                                value={mod.mainTopic || ''}
+                                onChange={e => {
+                                  const updated = [...(course.modules || [])];
+                                  updated[idx] = { ...updated[idx], mainTopic: e.target.value };
+                                  updateField('modules', updated);
+                                }}
+                                placeholder={`e.g. Module ${mod.moduleNo || idx + 1} Main Topic (e.g. DC Circuits)`}
+                                className="w-full p-2 border border-slate-300 rounded-lg text-xs"
+                              />
                             </div>
 
                             <div>
@@ -1652,62 +1492,41 @@ export const CourseWizard: React.FC = () => {
                               </label>
                               <input
                                 type="text"
-                                value={(mod.subtopics || []).join(', ')}
+                                value={
+                                  subtopicsDraft[idx] !== undefined
+                                    ? subtopicsDraft[idx]
+                                    : (mod.subtopics || []).join(', ')
+                                }
                                 onChange={e => {
-                                  const list = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+                                  const raw = e.target.value;
+                                  setSubtopicsDraft(prev => ({ ...prev, [idx]: raw }));
+                                  const list = raw.split(',').map(s => s.trim()).filter(Boolean);
                                   const updated = [...(course.modules || [])];
                                   updated[idx] = { ...updated[idx], subtopics: list };
                                   updateField('modules', updated);
                                 }}
-                                placeholder="Review of elementary data types, Big-Oh, Singly Linked List, etc."
+                                onBlur={() => {
+                                  setSubtopicsDraft(prev => {
+                                    const next = { ...prev };
+                                    delete next[idx];
+                                    return next;
+                                  });
+                                }}
+                                placeholder="e.g. Subtopic A, Subtopic B, Subtopic C (comma-separated)"
                                 className="w-full p-2 border border-slate-300 rounded-lg text-xs"
                               />
-                            </div>
-
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                                Mapped Course Outcomes
-                              </label>
-                              <div className="flex flex-wrap gap-2">
-                                {(course.courseOutcomes || []).map(co => {
-                                  const isMapped = (mod.coMapping || []).includes(co.coNo);
-                                  return (
-                                    <button
-                                      key={co.coNo}
-                                      type="button"
-                                      onClick={() => {
-                                        const currentMap = mod.coMapping || [];
-                                        const newMap = isMapped
-                                          ? currentMap.filter(c => c !== co.coNo)
-                                          : [...currentMap, co.coNo];
-                                        const updated = [...(course.modules || [])];
-                                        updated[idx] = { ...updated[idx], coMapping: newMap };
-                                        updateField('modules', updated);
-                                      }}
-                                      className={`px-2 py-1 rounded text-xs font-semibold border ${
-                                        isMapped
-                                          ? 'bg-sky-600 text-white border-sky-600'
-                                          : 'bg-white text-slate-600 border-slate-300'
-                                      }`}
-                                    >
-                                      {co.coNo}
-                                    </button>
-                                  );
-                                })}
-                              </div>
                             </div>
                           </div>
                         ))}
 
                         <button
+                          type="button"
                           onClick={() => {
                             const n = (course.modules || []).length + 1;
                             const newMod: SyllabusModule = {
                               moduleNo: n,
-                              mainTopic: `Module ${n} Topic`,
-                              subtopics: ['Subtopic A', 'Subtopic B'],
-                              periods: 12,
-                              coMapping: [`CO${Math.min(n, (course.courseOutcomes || []).length || 1)}`],
+                              mainTopic: '',
+                              subtopics: [],
                             };
                             updateField('modules', [...(course.modules || []), newMod]);
                           }}
@@ -1717,251 +1536,526 @@ export const CourseWizard: React.FC = () => {
                           <span>Add Module</span>
                         </button>
 
-                        {/* Concept Map Upload Card */}
-                        <div className="pt-6 border-t border-slate-200 space-y-3">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div>
-                              <h3 className="text-base font-bold text-slate-900 flex items-center space-x-2">
-                                <ImageIcon className="w-4 h-4 text-sky-600" />
-                                <span>Concept Map (Visual Curriculum Hierarchy)</span>
-                              </h3>
-                              <p className="text-xs text-slate-500">
-                                Upload a visual diagram or concept map depicting algorithmic linkages and course dependencies.
-                              </p>
-                            </div>
-                            <div>
-                              <input
-                                type="file"
-                                ref={conceptMapInputRef}
-                                accept="image/*"
-                                className="hidden"
-                                onChange={e => {
-                                  const file = e.target.files?.[0];
-                                  if (!file) return;
-                                  const reader = new FileReader();
-                                  reader.onload = ev => {
-                                    const result = ev.target?.result as string;
-                                    updateField('conceptMapImage', result);
-                                  };
-                                  reader.readAsDataURL(file);
-                                }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => conceptMapInputRef.current?.click()}
-                                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-semibold shadow-xs transition-colors"
-                              >
-                                <Upload className="w-3.5 h-3.5" />
-                                <span>{course.conceptMapImage ? 'Replace Concept Map' : 'Upload Concept Map Image'}</span>
-                              </button>
-                            </div>
-                          </div>
-
-                          {course.conceptMapImage ? (
-                            <div className="p-3 border border-slate-300 rounded-xl bg-slate-50 flex flex-col items-center">
-                              <img
-                                src={course.conceptMapImage}
-                                alt="Concept Map Preview"
-                                className="max-h-72 object-contain rounded-lg border border-slate-200 shadow-xs mb-3 bg-white"
-                              />
-                              <div className="flex items-center space-x-3">
-                                <button
-                                  type="button"
-                                  onClick={() => conceptMapInputRef.current?.click()}
-                                  className="text-xs text-sky-700 hover:text-sky-900 font-semibold underline"
-                                >
-                                  Change Image
-                                </button>
-                                <span className="text-slate-300">•</span>
-                                <button
-                                  type="button"
-                                  onClick={() => updateField('conceptMapImage', '')}
-                                  className="text-xs text-rose-600 hover:text-rose-800 font-semibold"
-                                >
-                                  Remove Concept Map
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div
-                              onClick={() => conceptMapInputRef.current?.click()}
-                              className="p-6 border-2 border-dashed border-slate-300 hover:border-sky-500 rounded-xl bg-slate-50 hover:bg-sky-50/30 flex flex-col items-center justify-center cursor-pointer transition-colors"
-                            >
-                              <Upload className="w-8 h-8 text-slate-400 mb-2" />
-                              <span className="text-xs font-bold text-slate-700">Click to upload Concept Map image</span>
-                              <span className="text-[11px] text-slate-400 mt-0.5">PNG, JPG, SVG, or WebP</span>
-                            </div>
-                          )}
-                        </div>
-
                         {/* Hierarchical Course Contents and Lecture Schedule */}
                         <div className="pt-6 border-t border-slate-200 space-y-4">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div>
-                              <h3 className="text-base font-bold text-slate-900">
-                                Course Contents and Lecture Schedule
-                              </h3>
-                              <p className="text-xs text-slate-500">
-                                Detailed lecture-by-lecture schedule formatted as per University MCA syllabus standard (total hours must equal {course.credits * 12} periods).
-                              </p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const targetTotal = (course.credits || 4) * 12;
-                                const mods = course.modules || [];
-                                if (mods.length === 0) {
-                                  alert('Please add modules above before generating the lecture schedule.');
-                                  return;
-                                }
-                                const items: Array<{ moduleNo: string; topic: string; periods: number }> = [];
-                                const baseP = Math.floor(targetTotal / mods.length);
-                                let rem = targetTotal;
+                          {(() => {
+                            const effectiveLectureCredits = (course.courseType === 'TCP' && (course.L || 0) > 0) ? course.L : course.credits;
+                            const lectureCriteria = getExpectedHoursCriteria(effectiveLectureCredits);
 
-                                mods.forEach((m, mIdx) => {
-                                  const mP = mIdx === mods.length - 1 ? rem : baseP;
-                                  rem -= mP;
+                            const handleSyncFromModules = () => {
+                              if (!course.modules || course.modules.length === 0) return;
+                              const items: LectureScheduleItem[] = [];
+                              course.modules.forEach((mod, mIdx) => {
+                                const modNo = String(mod.moduleNo || mIdx + 1);
+                                const modCos = Array.isArray(mod.coMapping) && mod.coMapping.length > 0
+                                  ? mod.coMapping.join(', ')
+                                  : (course.courseOutcomes && course.courseOutcomes[mIdx] ? course.courseOutcomes[mIdx].coNo : (course.courseOutcomes?.[0]?.coNo || ''));
 
-                                  items.push({
-                                    moduleNo: String(m.moduleNo || mIdx + 1),
-                                    topic: m.mainTopic,
-                                    periods: mP,
-                                  });
-
-                                  const subs = m.subtopics || [];
-                                  if (subs.length > 0) {
-                                    const subP = Math.max(1, Math.floor(mP / subs.length));
-                                    let subRem = mP;
-                                    subs.forEach((s, sIdx) => {
-                                      const p = sIdx === subs.length - 1 ? Math.max(1, subRem) : subP;
-                                      subRem -= p;
-                                      items.push({
-                                        moduleNo: `${m.moduleNo || mIdx + 1}.${sIdx + 1}`,
-                                        topic: s,
-                                        periods: p,
-                                      });
-                                    });
-                                  }
+                                items.push({
+                                  moduleNo: modNo,
+                                  topic: mod.mainTopic || `Module ${modNo}`,
+                                  periods: mod.periods ? mod.periods : '',
+                                  coMapping: modCos,
                                 });
-                                updateField('lectureScheduleItems', items);
-                              }}
-                              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-semibold shadow-xs transition-colors"
-                            >
-                              <Sparkles className="w-3.5 h-3.5" />
-                              <span>Auto-populate from Modules & Subtopics</span>
-                            </button>
-                          </div>
 
-                          <div className="overflow-x-auto border border-slate-200 rounded-xl">
-                            <table className="w-full text-xs text-left border-collapse">
-                              <thead className="bg-slate-100 text-slate-700 font-bold">
-                                <tr>
-                                  <th className="p-2.5 border-b w-28 text-center">Module No.</th>
-                                  <th className="p-2.5 border-b">Topic</th>
-                                  <th className="p-2.5 border-b w-32 text-center">No. of Lectures</th>
-                                  <th className="p-2.5 border-b w-14 text-center">Action</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {(course.lectureScheduleItems || []).map((item, idx) => {
-                                  const isHeader = !item.moduleNo.includes('.');
-                                  return (
-                                    <tr key={idx} className={`border-b border-slate-100 ${isHeader ? 'bg-slate-50/80 font-bold' : ''}`}>
-                                      <td className="p-2 text-center">
-                                        <input
-                                          type="text"
-                                          value={item.moduleNo}
-                                          onChange={e => {
-                                            const list = [...(course.lectureScheduleItems || [])];
-                                            list[idx] = { ...list[idx], moduleNo: e.target.value };
-                                            updateField('lectureScheduleItems', list);
-                                          }}
-                                          className="w-20 p-1 border border-slate-300 rounded text-center text-xs font-semibold"
-                                        />
-                                      </td>
-                                      <td className="p-2">
-                                        <input
-                                          type="text"
-                                          value={item.topic}
-                                          onChange={e => {
-                                            const list = [...(course.lectureScheduleItems || [])];
-                                            list[idx] = { ...list[idx], topic: e.target.value };
-                                            updateField('lectureScheduleItems', list);
-                                          }}
-                                          className={`w-full p-1 border border-slate-300 rounded text-xs ${isHeader ? 'font-bold text-slate-900' : ''}`}
-                                        />
-                                      </td>
-                                      <td className="p-2 text-center">
-                                        <input
-                                          type="number"
-                                          min={0}
-                                          value={item.periods || 0}
-                                          onChange={e => {
-                                            const list = [...(course.lectureScheduleItems || [])];
-                                            list[idx] = { ...list[idx], periods: parseInt(e.target.value) || 0 };
-                                            updateField('lectureScheduleItems', list);
-                                          }}
-                                          className="w-16 p-1 border border-slate-300 rounded text-center text-xs font-bold"
-                                        />
-                                      </td>
-                                      <td className="p-2 text-center">
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            const list = (course.lectureScheduleItems || []).filter((_, i) => i !== idx);
-                                            updateField('lectureScheduleItems', list);
-                                          }}
-                                          className="p-1 text-slate-400 hover:text-rose-600 rounded"
-                                        >
-                                          <Trash2 className="w-3.5 h-3.5" />
-                                        </button>
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                              <tfoot className="bg-slate-100 font-bold border-t-2 border-slate-300">
-                                <tr>
-                                  <td colSpan={2} className="p-2.5 text-right font-extrabold text-slate-900">
-                                    Total No of Hours / Periods:
-                                  </td>
-                                  <td className="p-2.5 text-center font-extrabold text-xs">
-                                    {(() => {
-                                      const sum = (course.lectureScheduleItems || []).reduce(
-                                        (acc, curr) => acc + (Number(curr.periods) || 0),
-                                        0
-                                      );
-                                      const expected = (course.credits || 0) * 12;
-                                      const matches = sum === expected;
-                                      return (
-                                        <span className={matches ? 'text-emerald-700' : 'text-amber-600'}>
-                                          {sum} / {expected} hrs
-                                        </span>
-                                      );
-                                    })()}
-                                  </td>
-                                  <td></td>
-                                </tr>
-                              </tfoot>
-                            </table>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const list = [...(course.lectureScheduleItems || [])];
-                              list.push({
-                                moduleNo: `${list.length + 1}`,
-                                topic: 'New Topic',
-                                periods: 1,
+                                if (mod.subtopics && mod.subtopics.length > 0) {
+                                  mod.subtopics.forEach((sub, sIdx) => {
+                                    items.push({
+                                      moduleNo: `${modNo}.${sIdx + 1}`,
+                                      topic: sub,
+                                      periods: '',
+                                      coMapping: modCos,
+                                    });
+                                  });
+                                }
                               });
+                              updateField('lectureScheduleItems', items);
+                            };
+
+                            const handleAutoRenumberAll = () => {
+                              const list = [...(course.lectureScheduleItems || [])];
+                              if (list.length === 0) return;
+
+                              let currentMod = 0;
+                              let currentSub = 0;
+
+                              const renumbered = list.map(item => {
+                                const isHeader = !item.moduleNo.includes('.');
+                                if (isHeader || currentMod === 0) {
+                                  currentMod += 1;
+                                  currentSub = 0;
+                                  return { ...item, moduleNo: String(currentMod) };
+                                } else {
+                                  currentSub += 1;
+                                  return { ...item, moduleNo: `${currentMod}.${currentSub}` };
+                                }
+                              });
+
+                              updateField('lectureScheduleItems', renumbered);
+                            };
+
+                            const handleAddModule = () => {
+                              const list = [...(course.lectureScheduleItems || [])];
+                              let maxMod = 0;
+                              list.forEach(x => {
+                                const n = parseInt(x.moduleNo.split('.')[0]);
+                                if (!isNaN(n) && n > maxMod) maxMod = n;
+                              });
+                              const nextMod = String(maxMod + 1);
+                              const defaultCo = course.courseOutcomes && course.courseOutcomes[maxMod]
+                                ? course.courseOutcomes[maxMod].coNo
+                                : (course.courseOutcomes?.[0]?.coNo || '');
+
+                              list.push({
+                                moduleNo: nextMod,
+                                topic: '',
+                                periods: '',
+                                coMapping: defaultCo,
+                              });
+
+                              for (let i = 1; i <= 3; i++) {
+                                list.push({
+                                  moduleNo: `${nextMod}.${i}`,
+                                  topic: '',
+                                  periods: '',
+                                  coMapping: defaultCo,
+                                });
+                              }
+
                               updateField('lectureScheduleItems', list);
-                            }}
-                            className="w-full py-2 rounded-xl border border-dashed border-slate-300 hover:border-sky-500 text-slate-600 hover:text-sky-700 text-xs font-semibold flex items-center justify-center space-x-1.5"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            <span>Add Lecture Schedule Row</span>
-                          </button>
+                            };
+
+                            const handleAddSubtopicToModule = (modNo: string) => {
+                              const list = [...(course.lectureScheduleItems || [])];
+                              const headerIdx = list.findIndex(x => x.moduleNo === modNo);
+                              const headerItem = headerIdx !== -1 ? list[headerIdx] : undefined;
+                              const headerCo = headerItem
+                                ? (Array.isArray(headerItem.coMapping) ? headerItem.coMapping.join(', ') : (headerItem.coMapping || ''))
+                                : '';
+
+                              let lastIdx = headerIdx;
+                              let subCount = 0;
+                              list.forEach((x, idx) => {
+                                if (x.moduleNo.startsWith(`${modNo}.`)) {
+                                  lastIdx = idx;
+                                  subCount++;
+                                }
+                              });
+
+                              const newItem: LectureScheduleItem = {
+                                moduleNo: `${modNo}.${subCount + 1}`,
+                                topic: '',
+                                periods: '',
+                                coMapping: headerCo,
+                              };
+
+                              if (lastIdx !== -1) {
+                                list.splice(lastIdx + 1, 0, newItem);
+                              } else {
+                                list.push(newItem);
+                              }
+                              updateField('lectureScheduleItems', list);
+                            };
+
+                            const handleSetSubtopicsCount = (modNo: string, targetCount: number) => {
+                              const list = [...(course.lectureScheduleItems || [])];
+                              const headerIdx = list.findIndex(x => x.moduleNo === modNo);
+                              if (headerIdx === -1) return;
+
+                              const headerItem = list[headerIdx];
+                              const headerCo = Array.isArray(headerItem.coMapping)
+                                ? headerItem.coMapping.join(', ')
+                                : (headerItem.coMapping || '');
+
+                              const subtopicIndices: number[] = [];
+                              list.forEach((x, idx) => {
+                                if (x.moduleNo.startsWith(`${modNo}.`)) {
+                                  subtopicIndices.push(idx);
+                                }
+                              });
+
+                              const currentCount = subtopicIndices.length;
+                              if (targetCount === currentCount) return;
+
+                              if (targetCount > currentCount) {
+                                const diff = targetCount - currentCount;
+                                const insertAfterIdx = subtopicIndices.length > 0
+                                  ? subtopicIndices[subtopicIndices.length - 1]
+                                  : headerIdx;
+                                const newItems: LectureScheduleItem[] = [];
+                                for (let k = 1; k <= diff; k++) {
+                                  newItems.push({
+                                    moduleNo: `${modNo}.${currentCount + k}`,
+                                    topic: '',
+                                    periods: '',
+                                    coMapping: headerCo,
+                                  });
+                                }
+                                list.splice(insertAfterIdx + 1, 0, ...newItems);
+                                updateField('lectureScheduleItems', list);
+                              } else {
+                                const toRemove = subtopicIndices.slice(targetCount);
+                                const filtered = list.filter((_, idx) => !toRemove.includes(idx));
+                                updateField('lectureScheduleItems', filtered);
+                              }
+                            };
+
+                            const handleDeleteScheduleItem = (idxToDelete: number) => {
+                              const list = [...(course.lectureScheduleItems || [])];
+                              const item = list[idxToDelete];
+                              if (!item) return;
+
+                              if (!item.moduleNo.includes('.')) {
+                                const modNo = item.moduleNo;
+                                const filtered = list.filter((_, i) => i !== idxToDelete && !list[i].moduleNo.startsWith(`${modNo}.`));
+                                updateField('lectureScheduleItems', filtered);
+                                return;
+                              }
+
+                              const modNo = item.moduleNo.split('.')[0];
+                              const remaining = list.filter((_, i) => i !== idxToDelete);
+
+                              let sCount = 0;
+                              const updated = remaining.map(x => {
+                                if (x.moduleNo.startsWith(`${modNo}.`)) {
+                                  sCount++;
+                                  return { ...x, moduleNo: `${modNo}.${sCount}` };
+                                }
+                                return x;
+                              });
+
+                              updateField('lectureScheduleItems', updated);
+                            };
+
+                            const handleApplyCoToModuleSubtopics = (modNo: string, coStr: string) => {
+                              const list = [...(course.lectureScheduleItems || [])];
+                              const updated = list.map(item => {
+                                if (item.moduleNo === modNo || item.moduleNo.startsWith(`${modNo}.`)) {
+                                  return { ...item, coMapping: coStr };
+                                }
+                                return item;
+                              });
+                              updateField('lectureScheduleItems', updated);
+                            };
+
+                            const scheduleItems = course.lectureScheduleItems || [];
+
+                            return (
+                              <>
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                  <div>
+                                    <h3 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
+                                      <span>Course Contents and Lecture Schedule</span>
+                                      {course.courseType === 'TCP' && (
+                                        <span className="text-[11px] font-semibold px-2 py-0.5 bg-sky-100 text-sky-800 rounded-md">
+                                          TCP Theory Component (L = {course.L || 0})
+                                        </span>
+                                      )}
+                                    </h3>
+                                    <p className="text-xs text-slate-500 mt-0.5">
+                                      Total hours must satisfy {lectureCriteria.description}: 1 cr = 12–14 hrs, 2 cr = 24–28 hrs, 3 cr = 36 hrs, 4 cr = 48 hrs.
+                                    </p>
+                                  </div>
+
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    {(course.modules && course.modules.length > 0) && (
+                                      <button
+                                        type="button"
+                                        onClick={handleSyncFromModules}
+                                        className="px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-sm"
+                                        title="Auto-fill schedule from modules and subtopics entered in Section 5"
+                                      >
+                                        <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+                                        <span>Auto-fill from Syllabus Modules</span>
+                                      </button>
+                                    )}
+
+                                    <button
+                                      type="button"
+                                      onClick={handleAddModule}
+                                      className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-sm"
+                                    >
+                                      <Plus className="w-3.5 h-3.5 text-emerald-600" />
+                                      <span>Add Module</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={handleAutoRenumberAll}
+                                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-sm"
+                                      title="Normalize all numbers sequentially (1, 1.1, 1.2 ... 2, 2.1, 2.2 ...)"
+                                    >
+                                      <RefreshCw className="w-3.5 h-3.5 text-slate-600" />
+                                      <span>Auto-renumber All</span>
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
+                                  <table className="w-full text-xs text-left border-collapse">
+                                    <thead className="bg-slate-100 text-slate-700 font-bold">
+                                      <tr>
+                                        <th className="p-2.5 border-b w-28 text-center">Module No.</th>
+                                        <th className="p-2.5 border-b min-w-[280px]">Topics</th>
+                                        <th className="p-2.5 border-b w-28 text-center">No. of Periods</th>
+                                        <th className="p-2.5 border-b w-36 text-center">Course Outcomes</th>
+                                        <th className="p-2.5 border-b w-14 text-center">Action</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {scheduleItems.length === 0 ? (
+                                        <tr>
+                                          <td colSpan={5} className="p-8 text-center text-slate-500 bg-slate-50/50">
+                                            <p className="text-sm font-semibold text-slate-700 mb-2">No lecture schedule items entered yet.</p>
+                                            <p className="text-xs text-slate-500 mb-4">
+                                              You can auto-generate the complete schedule from your syllabus modules above or create modules from scratch.
+                                            </p>
+                                            <div className="flex items-center justify-center space-x-3">
+                                              {(course.modules && course.modules.length > 0) && (
+                                                <button
+                                                  type="button"
+                                                  onClick={handleSyncFromModules}
+                                                  className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold flex items-center space-x-1.5 shadow"
+                                                >
+                                                  <Sparkles className="w-4 h-4" />
+                                                  <span>Auto-fill from Syllabus Modules</span>
+                                                </button>
+                                              )}
+                                              <button
+                                                type="button"
+                                                onClick={handleAddModule}
+                                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center space-x-1.5 shadow"
+                                              >
+                                                <Plus className="w-4 h-4" />
+                                                <span>Add Module 1</span>
+                                              </button>
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      ) : (
+                                        scheduleItems.map((item, idx) => {
+                                          const isHeader = !item.moduleNo.includes('.');
+                                          const modNo = item.moduleNo.split('.')[0] || '1';
+                                          const subtopicsCount = scheduleItems.filter(x => x.moduleNo.startsWith(`${modNo}.`)).length;
+
+                                          return (
+                                            <tr
+                                              key={idx}
+                                              className={`border-b transition-colors ${
+                                                isHeader
+                                                  ? 'bg-slate-100/95 font-bold border-t-2 border-slate-300'
+                                                  : 'bg-white hover:bg-slate-50/70 border-slate-100'
+                                              }`}
+                                            >
+                                              {/* Module No column */}
+                                              <td className="p-2 text-center align-middle">
+                                                <div className="flex items-center justify-center space-x-1">
+                                                  <input
+                                                    type="text"
+                                                    value={item.moduleNo}
+                                                    onChange={e => {
+                                                      const list = [...scheduleItems];
+                                                      list[idx] = { ...list[idx], moduleNo: e.target.value };
+                                                      updateField('lectureScheduleItems', list);
+                                                    }}
+                                                    className={`w-16 p-1 border rounded text-center text-xs font-bold ${
+                                                      isHeader
+                                                        ? 'bg-slate-200/80 border-slate-400 text-slate-900'
+                                                        : 'border-slate-300 text-slate-800 bg-slate-50/50'
+                                                    }`}
+                                                  />
+                                                </div>
+                                              </td>
+
+                                              {/* Topic column */}
+                                              <td className="p-2 align-middle">
+                                                <div className="space-y-1">
+                                                  <div className="flex items-center space-x-1.5">
+                                                    {!isHeader && (
+                                                      <span className="text-slate-300 font-bold text-xs select-none">↳</span>
+                                                    )}
+                                                    <input
+                                                      type="text"
+                                                      value={item.topic || ''}
+                                                      onChange={e => {
+                                                        const list = [...scheduleItems];
+                                                        list[idx] = { ...list[idx], topic: e.target.value };
+                                                        updateField('lectureScheduleItems', list);
+                                                      }}
+                                                      placeholder={
+                                                        isHeader
+                                                          ? `e.g. Module ${item.moduleNo} Title (e.g. Basics: Python interpreter)`
+                                                          : `e.g. Subtopic ${item.moduleNo} (e.g. Variables)`
+                                                      }
+                                                      className={`w-full p-1.5 border rounded text-xs transition-colors ${
+                                                        isHeader
+                                                          ? 'font-bold text-slate-900 border-slate-300 bg-white shadow-sm'
+                                                          : 'text-slate-700 border-slate-200 bg-white'
+                                                      }`}
+                                                    />
+                                                  </div>
+
+                                                  {/* Module Header Controls: Topics count selector */}
+                                                  {isHeader && (
+                                                    <div className="pt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-600 font-normal">
+                                                      <span className="font-semibold text-slate-700">Topics inside Module {modNo}:</span>
+                                                      <select
+                                                        value={subtopicsCount}
+                                                        onChange={e => handleSetSubtopicsCount(modNo, parseInt(e.target.value))}
+                                                        className="px-2 py-0.5 border border-slate-300 rounded bg-white text-xs font-bold text-sky-800 shadow-sm cursor-pointer"
+                                                        title="Select how many subtopics to create inside this module"
+                                                      >
+                                                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 20].map(cnt => (
+                                                          <option key={cnt} value={cnt}>
+                                                            {cnt === 0 ? '0 topics (none)' : cnt === 1 ? '1 topic' : `${cnt} topics inside`}
+                                                          </option>
+                                                        ))}
+                                                      </select>
+
+                                                      <button
+                                                        type="button"
+                                                        onClick={() => handleAddSubtopicToModule(modNo)}
+                                                        className="px-2 py-0.5 bg-white hover:bg-sky-50 text-sky-700 border border-slate-300 hover:border-sky-300 rounded text-[11px] font-semibold flex items-center space-x-1 shadow-sm transition-colors"
+                                                      >
+                                                        <Plus className="w-3 h-3 text-sky-600" />
+                                                        <span>Add Topic</span>
+                                                      </button>
+
+                                                      {item.coMapping && (
+                                                        <button
+                                                          type="button"
+                                                          onClick={() => handleApplyCoToModuleSubtopics(modNo, Array.isArray(item.coMapping) ? item.coMapping.join(', ') : (item.coMapping || ''))}
+                                                          className="text-[10px] text-slate-500 hover:text-sky-700 underline"
+                                                          title="Apply this module's Course Outcomes to all subtopics inside"
+                                                        >
+                                                          Apply CO to all topics
+                                                        </button>
+                                                      )}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </td>
+
+                                              {/* Periods column: supports optional/blank */}
+                                              <td className="p-2 text-center align-middle">
+                                                <input
+                                                  type="text"
+                                                  inputMode="numeric"
+                                                  pattern="[0-9]*"
+                                                  value={item.periods !== undefined && item.periods !== null ? String(item.periods) : ''}
+                                                  onChange={e => {
+                                                    const list = [...scheduleItems];
+                                                    const raw = e.target.value.trim();
+                                                    list[idx] = { ...list[idx], periods: raw === '' ? '' : (parseInt(raw) || 0) };
+                                                    updateField('lectureScheduleItems', list);
+                                                  }}
+                                                  placeholder="-"
+                                                  className={`w-16 p-1 border rounded text-center text-xs font-bold transition-colors ${
+                                                    isHeader
+                                                      ? 'bg-white border-slate-400 text-slate-900 shadow-sm'
+                                                      : 'border-slate-300 text-slate-800 bg-white'
+                                                  }`}
+                                                  title="Enter periods for this topic or leave blank if combined across topics"
+                                                />
+                                              </td>
+
+                                              {/* Course Outcomes column */}
+                                              <td className="p-2 text-center align-middle">
+                                                <input
+                                                  type="text"
+                                                  value={Array.isArray(item.coMapping) ? item.coMapping.join(', ') : (item.coMapping || '')}
+                                                  onChange={e => {
+                                                    const list = [...scheduleItems];
+                                                    list[idx] = { ...list[idx], coMapping: e.target.value };
+                                                    updateField('lectureScheduleItems', list);
+                                                  }}
+                                                  placeholder="e.g. CO1, CO6"
+                                                  className="w-full p-1 border border-slate-300 rounded text-xs text-center font-semibold text-slate-800 bg-white"
+                                                  title="Mapped Course Outcomes (e.g. CO1, CO6)"
+                                                />
+                                              </td>
+
+                                              {/* Action column */}
+                                              <td className="p-2 text-center align-middle">
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleDeleteScheduleItem(idx)}
+                                                  className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
+                                                  title={isHeader ? `Delete Module ${item.moduleNo} and all its topics` : `Delete Topic ${item.moduleNo}`}
+                                                >
+                                                  <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                              </td>
+                                            </tr>
+                                          );
+                                        })
+                                      )}
+                                    </tbody>
+                                    <tfoot className="bg-slate-100 font-bold border-t-2 border-slate-300">
+                                      <tr>
+                                        <td colSpan={2} className="p-2.5 text-right font-extrabold text-slate-900">
+                                          Total No of Hours / Periods:
+                                        </td>
+                                        <td className="p-2.5 text-center font-extrabold text-xs">
+                                          {(() => {
+                                            const sum = scheduleItems.reduce(
+                                              (acc, curr) => acc + (Number(curr.periods) || 0),
+                                              0
+                                            );
+                                            const matches = sum >= lectureCriteria.minHours && sum <= lectureCriteria.maxHours;
+                                            return (
+                                              <div className="flex items-center justify-center space-x-1">
+                                                <span className={matches ? 'text-emerald-700 font-extrabold' : 'text-rose-600 font-extrabold'}>
+                                                  {sum} hrs / {lectureCriteria.minHours === lectureCriteria.maxHours ? `${lectureCriteria.minHours} hrs` : `${lectureCriteria.minHours}–${lectureCriteria.maxHours} hrs`}
+                                                </span>
+                                                {matches ? (
+                                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                                ) : (
+                                                  <span className="text-[10px] text-rose-500 font-normal">
+                                                    ({sum < lectureCriteria.minHours ? `short by ${lectureCriteria.minHours - sum}` : `exceeds by ${sum - lectureCriteria.maxHours}`})
+                                                  </span>
+                                                )}
+                                              </div>
+                                            );
+                                          })()}
+                                        </td>
+                                        <td colSpan={2}></td>
+                                      </tr>
+                                    </tfoot>
+                                  </table>
+                                </div>
+
+                                <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2">
+                                  <button
+                                    type="button"
+                                    onClick={handleAddModule}
+                                    className="w-full sm:w-auto px-4 py-2 rounded-xl border border-dashed border-slate-300 hover:border-emerald-500 bg-white hover:bg-emerald-50/50 text-slate-700 hover:text-emerald-700 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors"
+                                  >
+                                    <Plus className="w-3.5 h-3.5" />
+                                    <span>Add Another Module</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const list = [...scheduleItems];
+                                      list.push({
+                                        moduleNo: '',
+                                        topic: '',
+                                        periods: '',
+                                        coMapping: '',
+                                      });
+                                      updateField('lectureScheduleItems', list);
+                                    }}
+                                    className="w-full sm:w-auto px-4 py-2 rounded-xl border border-dashed border-slate-300 hover:border-sky-500 bg-white hover:bg-sky-50/50 text-slate-700 hover:text-sky-700 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors"
+                                  >
+                                    <Plus className="w-3.5 h-3.5" />
+                                    <span>Add Custom Row</span>
+                                  </button>
+                                </div>
+                              </>
+                            );
+                          })()}
                         </div>
                       </div>
                     )}
@@ -1989,13 +2083,13 @@ export const CourseWizard: React.FC = () => {
                               <div className="md:col-span-8">
                                 <input
                                   type="text"
-                                  value={exp.name}
+                                  value={exp.name || ''}
                                   onChange={e => {
                                     const updated = [...(course.experiments || [])];
                                     updated[idx] = { ...updated[idx], name: e.target.value };
                                     updateField('experiments', updated);
                                   }}
-                                  placeholder="Experiment Title"
+                                  placeholder={`e.g. Experiment ${exp.slNo || idx + 1} Title (e.g. Implementation of Linear Data Structures)`}
                                   className="w-full p-2 border border-slate-300 rounded-lg text-xs"
                                 />
                               </div>
@@ -2021,11 +2115,12 @@ export const CourseWizard: React.FC = () => {
                         ))}
 
                         <button
+                          type="button"
                           onClick={() => {
                             const n = (course.experiments || []).length + 1;
                             const newExp: LabExperiment = {
                               slNo: n,
-                              name: `Laboratory Investigation ${n}`,
+                              name: '',
                               level: 2,
                               objectiveNos: [1],
                               coNos: ['CO1'],
@@ -2076,7 +2171,7 @@ export const CourseWizard: React.FC = () => {
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                          <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
                             <input
                               type="text"
                               value={b.authors}
@@ -2085,7 +2180,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], authors: e.target.value };
                                 updateField('textBooks', updated);
                               }}
-                              placeholder="Author(s)"
+                              placeholder="Author(s) (e.g. William H. Hayt Jr.)"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -2096,7 +2191,18 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], title: e.target.value };
                                 updateField('textBooks', updated);
                               }}
-                              placeholder="Title (in double quotes)"
+                              placeholder="Title (e.g. Engineering Circuit Analysis)"
+                              className="p-2 border border-slate-300 rounded text-xs"
+                            />
+                            <input
+                              type="text"
+                              value={b.edition || ''}
+                              onChange={e => {
+                                const updated = [...(course.textBooks || [])];
+                                updated[idx] = { ...updated[idx], edition: e.target.value };
+                                updateField('textBooks', updated);
+                              }}
+                              placeholder="Edition (e.g. 10th Edition)"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -2107,7 +2213,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], publisher: e.target.value };
                                 updateField('textBooks', updated);
                               }}
-                              placeholder="Publisher"
+                              placeholder="Publisher (e.g. McGraw Hill)"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -2127,13 +2233,15 @@ export const CourseWizard: React.FC = () => {
 
                       {(course.textBooks || []).length < 2 && (
                         <button
+                          type="button"
                           onClick={() => {
                             const newBook: LearningResource = {
                               type: 'TEXT',
-                              authors: 'Author Name',
-                              title: 'Subject Textbook',
-                              publisher: 'Academic Press',
-                              year: 2022,
+                              authors: '',
+                              title: '',
+                              edition: '',
+                              publisher: '',
+                              year: '' as any,
                             };
                             updateField('textBooks', [...(course.textBooks || []), newBook]);
                           }}
@@ -2159,6 +2267,7 @@ export const CourseWizard: React.FC = () => {
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-xs text-slate-700">Reference Book {idx + 1}</span>
                             <button
+                              type="button"
                               onClick={() => {
                                 const updated = (course.referenceBooks || []).filter((_, i) => i !== idx);
                                 updateField('referenceBooks', updated);
@@ -2168,7 +2277,7 @@ export const CourseWizard: React.FC = () => {
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                          <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
                             <input
                               type="text"
                               value={b.authors}
@@ -2177,7 +2286,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], authors: e.target.value };
                                 updateField('referenceBooks', updated);
                               }}
-                              placeholder="Author(s)"
+                              placeholder="Author(s) (e.g. Abhijit Chakrabarthi)"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -2188,7 +2297,18 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], title: e.target.value };
                                 updateField('referenceBooks', updated);
                               }}
-                              placeholder="Title"
+                              placeholder="Title (e.g. Basic Electrical Engineering)"
+                              className="p-2 border border-slate-300 rounded text-xs"
+                            />
+                            <input
+                              type="text"
+                              value={b.edition || ''}
+                              onChange={e => {
+                                const updated = [...(course.referenceBooks || [])];
+                                updated[idx] = { ...updated[idx], edition: e.target.value };
+                                updateField('referenceBooks', updated);
+                              }}
+                              placeholder="Edition (e.g. 2nd edition)"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -2199,7 +2319,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], publisher: e.target.value };
                                 updateField('referenceBooks', updated);
                               }}
-                              placeholder="Publisher"
+                              placeholder="Publisher (e.g. McGraw Hill)"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -2219,13 +2339,15 @@ export const CourseWizard: React.FC = () => {
 
                       {(course.referenceBooks || []).length < 6 && (
                         <button
+                          type="button"
                           onClick={() => {
                             const newBook: LearningResource = {
                               type: 'REFERENCE',
-                              authors: 'Reference Author',
-                              title: 'Reference Title',
-                              publisher: 'Publisher',
-                              year: 2022,
+                              authors: '',
+                              title: '',
+                              edition: '',
+                              publisher: '',
+                              year: '' as any,
                             };
                             updateField('referenceBooks', [...(course.referenceBooks || []), newBook]);
                           }}
@@ -2235,204 +2357,116 @@ export const CourseWizard: React.FC = () => {
                         </button>
                       )}
                     </div>
-                  </div>
-                )}
 
-                {/* Step 8: SDG Alignment */}
-                {currentStep === 7 && (
-                  <div className="space-y-6">
-                    <div>
-                      <h2 className="text-xl font-bold text-slate-900">8. SDG Alignment</h2>
-                      <p className="text-sm text-slate-500 mt-1">
-                        Every SDG assigned in Course Outcomes must be supported by at least one actionable academic activity with a deliverable.
-                      </p>
-                    </div>
-
-                    {/* 3-Step Guide Box */}
-                    <div className="p-4 bg-sky-50 border border-sky-200 rounded-xl space-y-3">
-                      <div className="font-bold text-xs text-sky-950 flex items-center space-x-1.5">
-                        <Sparkles className="w-4 h-4 text-sky-700" />
-                        <span>3-Step SDG Alignment Helper:</span>
+                    {/* NPTEL Courses */}
+                    <div className="space-y-3 pt-4 border-t border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="font-bold text-xs text-slate-800">
+                            NPTEL Courses / Web Resources:
+                          </span>
+                          <p className="text-[11px] text-slate-500">
+                            Format: Course Title; Instructor; Institute (or Web link)
+                          </p>
+                        </div>
+                        <span className="text-xs text-slate-500 font-semibold">
+                          {(course.webResources || []).length} added
+                        </span>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                        <div>
-                          <label className="block text-[11px] font-bold text-sky-900 mb-1">
-                            Step 1: Choose Domain
-                          </label>
-                          <select
-                            value={selectedDomain}
-                            onChange={e => setSelectedDomain(e.target.value)}
-                            className="w-full p-2 border border-sky-300 rounded bg-white text-xs"
-                          >
-                            <option value="">Select Domain...</option>
-                            {DOMAIN_TO_SDG_MAP.map(d => (
-                              <option key={d.domain} value={d.domain}>
-                                {d.domain}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-sky-900 mb-1">
-                            Step 2: Suggested SDGs
-                          </label>
-                          <div className="p-2 bg-white rounded border border-sky-200 min-h-[38px] flex items-center">
-                            {selectedDomain ? (
-                              <span className="font-bold text-sky-800">
-                                SDGs:{' '}
-                                {DOMAIN_TO_SDG_MAP.find(d => d.domain === selectedDomain)?.suggestedSdgs.join(
-                                  ', '
-                                )}
-                              </span>
-                            ) : (
-                              <span className="text-slate-400 italic">Select domain above</span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-sky-900 mb-1">
-                            Step 3: Actionable Deliverable
-                          </label>
-                          <div className="text-[11px] text-sky-800 pt-1">
-                            Ensure activity results in a Report, Presentation, Case Analysis, or Design Exercise.
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Activities List */}
-                    <div className="space-y-3">
-                      <span className="font-bold text-xs text-slate-800 block">Academic Activities:</span>
-                      {(course.sdgActivities || []).map((act, idx) => (
+                      {(course.webResources || []).map((w, idx) => (
                         <div key={idx} className="p-3 border border-slate-200 rounded-xl bg-slate-50/50 space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="font-bold text-xs text-slate-700">Activity {idx + 1}</span>
+                            <span className="font-bold text-xs text-slate-700">NPTEL Course {idx + 1}</span>
                             <button
+                              type="button"
                               onClick={() => {
-                                const updated = (course.sdgActivities || []).filter((_, i) => i !== idx);
-                                updateField('sdgActivities', updated);
+                                const updated = (course.webResources || []).filter((_, i) => i !== idx);
+                                updateField('webResources', updated);
                               }}
                               className="p-1 text-slate-400 hover:text-rose-600"
+                              title="Delete Course"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
-                            <div className="md:col-span-2">
-                              <label className="block text-[11px] font-bold text-slate-600 mb-0.5">SDG No.</label>
-                              <select
-                                value={act.sdgNo}
-                                onChange={e => {
-                                  const updated = [...(course.sdgActivities || [])];
-                                  updated[idx] = { ...updated[idx], sdgNo: parseInt(e.target.value) };
-                                  updateField('sdgActivities', updated);
-                                }}
-                                className="w-full p-2 border border-slate-300 rounded text-xs bg-white"
-                              >
-                                {SDG_LIST.map(s => (
-                                  <option key={s.no} value={s.no}>
-                                    SDG {s.no}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-
-                            <div className="md:col-span-6">
-                              <label className="block text-[11px] font-bold text-slate-600 mb-0.5">Activity Description</label>
-                              <input
-                                type="text"
-                                value={act.activity}
-                                onChange={e => {
-                                  const updated = [...(course.sdgActivities || [])];
-                                  updated[idx] = { ...updated[idx], activity: e.target.value };
-                                  updateField('sdgActivities', updated);
-                                }}
-                                placeholder="Describe academic activity linked to syllabus topic"
-                                className="w-full p-2 border border-slate-300 rounded text-xs"
-                              />
-                            </div>
-
-                            <div className="md:col-span-2">
-                              <label className="block text-[11px] font-bold text-slate-600 mb-0.5">Deliverable</label>
-                              <select
-                                value={act.deliverable}
-                                onChange={e => {
-                                  const updated = [...(course.sdgActivities || [])];
-                                  updated[idx] = { ...updated[idx], deliverable: e.target.value };
-                                  updateField('sdgActivities', updated);
-                                }}
-                                className="w-full p-2 border border-slate-300 rounded text-xs bg-white"
-                              >
-                                <option value="Report">Report</option>
-                                <option value="Presentation">Presentation</option>
-                                <option value="Case Analysis">Case Analysis</option>
-                                <option value="Problem Set">Problem Set</option>
-                                <option value="Design Exercise">Design Exercise</option>
-                              </select>
-                            </div>
-
-                            <div className="md:col-span-2">
-                              <label className="block text-[11px] font-bold text-slate-600 mb-0.5">Linked Module</label>
-                              <input
-                                type="number"
-                                min={1}
-                                value={act.linkedModuleNo || 1}
-                                onChange={e => {
-                                  const updated = [...(course.sdgActivities || [])];
-                                  updated[idx] = { ...updated[idx], linkedModuleNo: parseInt(e.target.value) || 1 };
-                                  updateField('sdgActivities', updated);
-                                }}
-                                className="w-full p-2 border border-slate-300 rounded text-xs text-center"
-                              />
-                            </div>
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                            <input
+                              type="text"
+                              value={w.title}
+                              onChange={e => {
+                                const updated = [...(course.webResources || [])];
+                                updated[idx] = { ...updated[idx], title: e.target.value };
+                                updateField('webResources', updated);
+                              }}
+                              placeholder="Course Title (e.g. Basic Electrical Circuits)"
+                              className="p-2 border border-slate-300 rounded text-xs"
+                            />
+                            <input
+                              type="text"
+                              value={w.authors || ''}
+                              onChange={e => {
+                                const updated = [...(course.webResources || [])];
+                                updated[idx] = { ...updated[idx], authors: e.target.value };
+                                updateField('webResources', updated);
+                              }}
+                              placeholder="Instructor (e.g. Prof. Ashok Kumar Pradhan)"
+                              className="p-2 border border-slate-300 rounded text-xs"
+                            />
+                            <input
+                              type="text"
+                              value={w.publisher || ''}
+                              onChange={e => {
+                                const updated = [...(course.webResources || [])];
+                                updated[idx] = { ...updated[idx], publisher: e.target.value };
+                                updateField('webResources', updated);
+                              }}
+                              placeholder="Institute (e.g. IIT Kharagpur)"
+                              className="p-2 border border-slate-300 rounded text-xs"
+                            />
+                            <input
+                              type="text"
+                              value={w.url || ''}
+                              onChange={e => {
+                                const updated = [...(course.webResources || [])];
+                                updated[idx] = { ...updated[idx], url: e.target.value };
+                                updateField('webResources', updated);
+                              }}
+                              placeholder="URL / Web Link (optional, e.g. https://nptel.ac.in/...)"
+                              className="p-2 border border-slate-300 rounded text-xs"
+                            />
                           </div>
                         </div>
                       ))}
 
                       <button
+                        type="button"
                         onClick={() => {
-                          const newAct: SdgActivity = {
-                            sdgNo: 9,
-                            activity: 'Practical case study evaluating sustainable infrastructure energy usage.',
-                            deliverable: 'Report',
-                            linkedModuleNo: 1,
+                          const newResource: LearningResource = {
+                            type: 'WEB',
+                            authors: '',
+                            title: '',
+                            publisher: '',
+                            url: '',
+                            year: '' as any,
                           };
-                          updateField('sdgActivities', [...(course.sdgActivities || []), newAct]);
+                          updateField('webResources', [...(course.webResources || []), newResource]);
                         }}
                         className="w-full py-2 rounded-xl border border-dashed border-slate-300 text-slate-600 hover:text-sky-700 text-xs font-semibold"
                       >
-                        + Add SDG Academic Activity
+                        + Add NPTEL Course
                       </button>
                     </div>
                   </div>
                 )}
 
-                {/* Step 9: Prerequisites & Designers */}
-                {currentStep === 8 && (
+                {/* Step 8: Course Designers */}
+                {currentStep === 7 && (
                   <div className="space-y-6">
                     <div>
-                      <h2 className="text-xl font-bold text-slate-900">9. Designers & Prerequisites</h2>
+                      <h2 className="text-xl font-bold text-slate-900">8. Course Designers</h2>
                       <p className="text-sm text-slate-500 mt-1">
-                        List course designers with institutional emails, and identify prior foundational prerequisites.
+                        List course designers with institutional emails.
                       </p>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Prerequisites
-                      </label>
-                      <input
-                        type="text"
-                        value={Array.isArray(course.prerequisites) ? '' : course.prerequisites}
-                        onChange={e => updateField('prerequisites', e.target.value || 'Nil')}
-                        placeholder="Nil or Course Code : Course Name"
-                        className="w-full p-2.5 border border-slate-300 rounded-lg text-xs"
-                      />
-                      <span className="text-[11px] text-slate-500 mt-0.5 block">
-                        Enter "Nil" if there are no prerequisites.
-                      </span>
                     </div>
 
                     <div className="space-y-3">
@@ -2462,7 +2496,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], name: e.target.value };
                                 updateField('designers', updated);
                               }}
-                              placeholder="Name"
+                              placeholder="Name (e.g. Dr. A. Kumar)"
                               className="p-2 border border-slate-300 rounded text-xs font-semibold"
                             />
                             <input
@@ -2473,7 +2507,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], designation: e.target.value };
                                 updateField('designers', updated);
                               }}
-                              placeholder="Designation"
+                              placeholder="Designation (e.g. Associate Professor)"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -2484,7 +2518,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], department: e.target.value };
                                 updateField('designers', updated);
                               }}
-                              placeholder="Department"
+                              placeholder="Department (e.g. Computer Science)"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -2495,8 +2529,8 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], email: e.target.value };
                                 updateField('designers', updated);
                               }}
-                              placeholder="Email ID"
-                              className="p-2 border border-slate-300 rounded text-xs font-mono"
+                              placeholder="Email ID (e.g. akumar@tce.edu)"
+                              className="p-2 border border-slate-300 rounded text-xs font-mono text-[#0000FF] underline font-medium"
                             />
                           </div>
                         </div>
@@ -2506,8 +2540,8 @@ export const CourseWizard: React.FC = () => {
                         onClick={() => {
                           const newDes: CourseDesigner = {
                             name: '',
-                            designation: 'Assistant Professor',
-                            department: course.department || 'General',
+                            designation: '',
+                            department: course.department || '',
                             email: '',
                           };
                           updateField('designers', [...(course.designers || []), newDes]);
@@ -2520,11 +2554,11 @@ export const CourseWizard: React.FC = () => {
                   </div>
                 )}
 
-                {/* Step 10: Review & Compliance Audit */}
-                {currentStep === 9 && (
+                {/* Step 9: Review & Compliance Audit */}
+                {currentStep === 8 && (
                   <div className="space-y-6">
                     <div>
-                      <h2 className="text-xl font-bold text-slate-900">10. Review & Self-Audit</h2>
+                      <h2 className="text-xl font-bold text-slate-900">9. Review & Self-Audit</h2>
                       <p className="text-sm text-slate-500 mt-1">
                         Final institutional check. Ensure all compliance checklist items pass prior to submitting for Department review.
                       </p>
@@ -2539,7 +2573,7 @@ export const CourseWizard: React.FC = () => {
                           className={`px-3 py-1 rounded-full text-xs font-bold ${
                             validationReport.isValid
                               ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-rose-100 text-rose-800'
+                              : 'bg-rose-100 text-red-800'
                           }`}
                         >
                           {validationReport.isValid ? 'Ready for Submission' : 'Requires Corrections'}
@@ -2547,11 +2581,11 @@ export const CourseWizard: React.FC = () => {
                       </div>
 
                       {validationReport.errors.length > 0 && (
-                        <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg">
-                          <span className="text-xs font-bold text-rose-900 block mb-1">
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                          <span className="text-xs font-bold text-red-900 block mb-1">
                             Blocking Issues ({validationReport.errors.length}):
                           </span>
-                          <ul className="list-disc pl-4 text-xs text-rose-800 space-y-0.5">
+                          <ul className="list-disc pl-4 text-xs text-red-800 space-y-0.5">
                             {validationReport.errors.map(e => (
                               <li key={e.id}>{e.message}</li>
                             ))}

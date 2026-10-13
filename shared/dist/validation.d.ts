@@ -1,4 +1,4 @@
-import { Course, CourseType, CourseOutcome, AssessmentMatrixCell, SyllabusModule, LearningResource, SdgActivity, LabExperiment, LabCoursePlanItem, CourseDesigner, ValidationRuleResult, CourseValidationReport } from './types.js';
+import { Course, CourseType, CourseOutcome, AssessmentMatrixCell, SyllabusModule, LearningResource, SdgActivity, LabExperiment, LabCoursePlanItem, CourseDesigner, LectureScheduleItem, ValidationRuleResult, CourseValidationReport } from './types.js';
 export declare function countWords(text: string): number;
 export declare function validateCourseName(name: string, courseType: CourseType): ValidationRuleResult[];
 export interface CourseCodeParts {
@@ -23,7 +23,13 @@ export declare function validateAssessmentPattern(courseType: CourseType, cos: C
 }): ValidationRuleResult[];
 export declare function validateSyllabusModules(modules: SyllabusModule[], cos: CourseOutcome[]): ValidationRuleResult[];
 export declare function validateExperimentsAndPlan(experiments: LabExperiment[], coursePlan: LabCoursePlanItem[], cos: CourseOutcome[]): ValidationRuleResult[];
-export declare function validateLectureSchedule(courseType: CourseType, modules: SyllabusModule[], credits: number, L?: number): ValidationRuleResult[];
+export interface CourseHoursCriteria {
+    minHours: number;
+    maxHours: number;
+    description: string;
+}
+export declare function getExpectedHoursCriteria(credits: number): CourseHoursCriteria;
+export declare function validateLectureSchedule(courseType: CourseType, modules: SyllabusModule[], credits: number, L?: number, lectureScheduleItems?: LectureScheduleItem[]): ValidationRuleResult[];
 export declare function validateLearningResources(textBooks: LearningResource[], referenceBooks: LearningResource[], regulationYear?: number, isAdvanced?: boolean): ValidationRuleResult[];
 export declare function validateSdgAlignment(cos: CourseOutcome[], sdgActivities: SdgActivity[], modules: SyllabusModule[]): ValidationRuleResult[];
 export declare function validatePrerequisitesAndDesigners(prerequisites: any, designers: CourseDesigner[]): ValidationRuleResult[];

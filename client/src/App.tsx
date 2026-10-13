@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
-import { TceFooter } from './components/TceFooter';
 import { Dashboard } from './pages/Dashboard';
 import { CourseWizard } from './pages/CourseWizard';
 import { ReviewWorkspace } from './pages/ReviewWorkspace';
@@ -17,7 +16,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: strin
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-400 text-xs">
+      <div className="min-h-screen flex items-center justify-center bg-background text-text-muted text-sm">
         Loading session...
       </div>
     );
@@ -38,9 +37,9 @@ export const AppContent: React.FC = () => {
   const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-background flex flex-col font-sans text-text">
       {user && <Navbar />}
-      <main className="flex-1">
+      <main className="flex-1 flex flex-col">
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route
@@ -86,7 +85,6 @@ export const AppContent: React.FC = () => {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-      <TceFooter />
     </div>
   );
 };
