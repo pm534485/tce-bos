@@ -60,6 +60,10 @@ router.post('/login', async (req, res) => {
             res.status(401).json({ error: 'Invalid email or password.' });
             return;
         }
+        if (!user.passwordHash) {
+            res.status(401).json({ error: 'This account was registered using Google SSO. Please sign in with Google.' });
+            return;
+        }
         const isMatch = await bcrypt.compare(password, user.passwordHash);
         if (!isMatch) {
             res.status(401).json({ error: 'Invalid email or password.' });
@@ -81,6 +85,123 @@ router.post('/login', async (req, res) => {
     }
     catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+// TCE Institutional Google Email Validation Regex
+export const TCE_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@(?:[a-zA-Z0-9-]+\.)*tce\.edu$/i;
+export function isTceEmail(email) {
+    if (!email || typeof email !== 'string')
+        return false;
+    return TCE_EMAIL_REGEX.test(email.trim());
+}
+// POST /api/auth/google - Login with Google (TCE Institutional accounts only)
+router.post('/google', async (req, res) => {
+    try {
+        let { credential, email, name, avatar, googleId } = req.body;
+        // If Google Identity Services ID token (JWT) is provided, decode payload
+        if (credential && typeof credential === 'string') {
+            try {
+                const parts = credential.split('.');
+                if (parts.length === 3) {
+                    const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf-8'));
+                    if (payload.email)
+                        email = payload.email;
+                    if (payload.name && !name)
+                        name = payload.name;
+                    if (payload.picture && !avatar)
+                        avatar = payload.picture;
+                    if (payload.sub && !googleId)
+                        googleId = payload.sub;
+                }
+            }
+            catch (decodeErr) {
+                console.warn('Could not decode Google credential JWT payload:', decodeErr);
+            }
+        }
+        if (!email) {
+            res.status(400).json({ error: 'Google institutional email is required.' });
+            return;
+        }
+        // STRICT DOMAIN REGEX VALIDATION: ONLY *.tce.edu allowed
+        if (!isTceEmail(email)) {
+            res.status(403).json({
+                error: `Access restricted: "${email}" is not an authorized Thiagarajar College of Engineering Google account. Only official institutional accounts ending with .tce.edu (e.g. faculty@tce.edu) are permitted.`,
+            });
+            return;
+        }
+        const normalizedEmail = email.trim().toLowerCase();
+        // Find or create user in MongoDB
+        let user = await User.findOne({ email: normalizedEmail });
+        if (user) {
+            // Update existing user with Google metadata
+            if (googleId)
+                user.googleId = googleId;
+            if (avatar)
+                user.avatar = avatar;
+            if (name && !user.name)
+                user.name = name;
+            user.authProvider = 'google';
+            await user.save();
+        }
+        else {
+            // Create new user for first-time Google sign-in
+            // Derive a polite display name if not provided by Google
+            const cleanName = name ||
+                normalizedEmail
+                    .split('@')[0]
+                    .replace(/[._]/g, ' ')
+                    .replace(/\b\w/g, (char) => char.toUpperCase());
+            // Auto-assign department based on subdomains or defaults
+            let department = 'Computer Applications';
+            if (normalizedEmail.includes('.ee') || normalizedEmail.includes('eee')) {
+                department = 'Electrical and Electronics Engineering';
+            }
+            else if (normalizedEmail.includes('.ec') || normalizedEmail.includes('ece')) {
+                department = 'Electronics and Communication Engineering';
+            }
+            else if (normalizedEmail.includes('.cs') || normalizedEmail.includes('cse')) {
+                department = 'Computer Science and Engineering';
+            }
+            else if (normalizedEmail.includes('.it')) {
+                department = 'Information Technology';
+            }
+            else if (normalizedEmail.includes('.me') || normalizedEmail.includes('mech')) {
+                department = 'Mechanical Engineering';
+            }
+            else if (normalizedEmail.includes('.ce') || normalizedEmail.includes('civil')) {
+                department = 'Civil Engineering';
+            }
+            user = new User({
+                name: cleanName,
+                email: normalizedEmail,
+                role: 'FACULTY',
+                department,
+                designation: 'Assistant Professor',
+                programmeAccess: ['CA', 'EE', 'EC', 'CS', 'IT', 'ME', 'CE'],
+                authProvider: 'google',
+                googleId,
+                avatar,
+            });
+            await user.save();
+        }
+        // Issue JWT token
+        const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+        res.json({
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                department: user.department,
+                designation: user.designation,
+                programmeAccess: user.programmeAccess,
+                avatar: user.avatar,
+            },
+        });
+    }
+    catch (err) {
+        res.status(500).json({ error: `Google login failed: ${err.message}` });
     }
 });
 // GET /api/auth/me

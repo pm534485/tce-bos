@@ -56,69 +56,75 @@ export const Navbar: React.FC<NavbarProps> = ({ onNewCourse }) => {
     return false;
   };
 
-  return (
-    <>
-      <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm h-[60px] flex items-center">
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-          
-          {/* Left: Logo + Navigation */}
-          <div className="flex items-center space-x-8">
-            <Link to="/" className="flex items-center space-x-2 group">
-              <TceLogo variant="compact" />
-            </Link>
+    const isCourseEditor = location.pathname.startsWith('/courses/');
 
-            <nav className="hidden md:flex items-center space-x-1 text-sm font-medium">
-              <Link
-                to="/"
-                className={`px-3 py-1.5 rounded-md transition-all flex items-center space-x-1.5 ${
-                  isActive('/')
-                    ? 'text-[#800020] bg-[#800020]/10 font-semibold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                }`}
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                <span>Dashboard</span>
+    return (
+      <>
+        <header className={`sticky top-0 z-40 bg-white border-b border-slate-200 shadow-xs flex items-center transition-all ${
+          isCourseEditor ? 'h-[46px]' : 'h-[56px]'
+        }`}>
+          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+            
+            {/* Left: Logo + Navigation */}
+            <div className="flex items-center space-x-6">
+              <Link to="/" className="flex items-center space-x-2 group">
+                <TceLogo variant="compact" />
               </Link>
 
-              {(user?.role === 'HOD' || user?.role === 'ADMIN') && (
+              <nav className="hidden md:flex items-center space-x-1 text-sm font-medium">
                 <Link
-                  to="/reviews"
-                  className={`px-3 py-1.5 rounded-md transition-all flex items-center space-x-1.5 ${
-                    isActive('/reviews')
+                  to="/"
+                  className={`px-2.5 py-1 rounded-md transition-all flex items-center space-x-1.5 ${
+                    isActive('/')
                       ? 'text-[#800020] bg-[#800020]/10 font-semibold'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
-                  <CheckSquare className="w-4 h-4" />
-                  <span>Review Queue</span>
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span>Dashboard</span>
                 </Link>
-              )}
 
-              {user?.role === 'ADMIN' && (
-                <Link
-                  to="/admin"
-                  className={`px-3 py-1.5 rounded-md transition-all flex items-center space-x-1.5 ${
-                    isActive('/admin')
-                      ? 'text-[#800020] bg-[#800020]/10 font-semibold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                  }`}
+                {(user?.role === 'HOD' || user?.role === 'ADMIN') && (
+                  <Link
+                    to="/reviews"
+                    className={`px-2.5 py-1 rounded-md transition-all flex items-center space-x-1.5 ${
+                      isActive('/reviews')
+                        ? 'text-[#800020] bg-[#800020]/10 font-semibold'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    }`}
+                  >
+                    <CheckSquare className="w-4 h-4" />
+                    <span>Review Queue</span>
+                  </Link>
+                )}
+
+                {user?.role === 'ADMIN' && (
+                  <Link
+                    to="/admin"
+                    className={`px-2.5 py-1 rounded-md transition-all flex items-center space-x-1.5 ${
+                      isActive('/admin')
+                        ? 'text-[#800020] bg-[#800020]/10 font-semibold'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    }`}
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Admin & ACM</span>
+                  </Link>
+                )}
+              </nav>
+            </div>
+
+            {/* Right: Actions + Profile */}
+            <div className="flex items-center space-x-3">
+              {!isCourseEditor && (
+                <button
+                  onClick={() => setShowTypeModal(true)}
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#800020] hover:bg-[#660019] text-white text-sm font-medium shadow-sm transition-all"
                 >
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>Admin & ACM</span>
-                </Link>
+                  <PlusCircle className="w-4 h-4" />
+                  <span>New Syllabus</span>
+                </button>
               )}
-            </nav>
-          </div>
-
-          {/* Right: Actions + Profile */}
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setShowTypeModal(true)}
-              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#800020] hover:bg-[#660019] text-white text-sm font-medium shadow-sm transition-all"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>New Syllabus</span>
-            </button>
 
             {user && (
               <div className="relative" ref={profileRef}>

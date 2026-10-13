@@ -15,9 +15,11 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response): Promise<v
 
     // Role-based visibility
     if (req.user?.role === 'FACULTY') {
-      // Faculty can see courses they created or in their department or programme
+      const userEmail = (req.user.email || '').toLowerCase();
+      // Faculty can see courses they created, are designers for, or in their department or programme
       filter.$or = [
-        { createdBy: req.user.email },
+        { createdBy: { $regex: `^${userEmail}$`, $options: 'i' } },
+        { 'designers.email': { $regex: `^${userEmail}$`, $options: 'i' } },
         { department: req.user.department },
         { programmeCode: { $in: req.user.programmeAccess || [] } },
       ];

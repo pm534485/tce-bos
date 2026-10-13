@@ -315,87 +315,133 @@ export const CourseWizard: React.FC = () => {
     { id: 'review', title: '9. Review & Submit', desc: '17-point compliance audit' },
   ];
 
+  // Real-time field-level validation helpers
+  const getFieldErrors = (fieldName: string) => {
+    return validationReport.errors.filter(e => e.field === fieldName);
+  };
+
+  const hasFieldError = (fieldName: string) => {
+    return validationReport.errors.some(e => e.field === fieldName);
+  };
+
+  // Inline highlighted error component directly below the field
+  const InlineFieldError: React.FC<{ field: string; fixHint?: boolean }> = ({ field, fixHint = true }) => {
+    const errs = getFieldErrors(field);
+    if (errs.length === 0) return null;
+    return (
+      <div className="mt-1.5 p-2 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700 flex items-start space-x-2 animate-in fade-in duration-150">
+        <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+        <div className="flex-1 space-y-0.5">
+          {errs.map(err => (
+            <div key={err.id}>
+              <span className="font-semibold">{err.message}</span>
+              {fixHint && err.fixHint && (
+                <span className="block text-[11px] text-red-600 mt-0.5">{err.fixHint}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Inline verified success badge component
+  const InlineFieldSuccess: React.FC<{ message?: string }> = ({ message = 'Verified & compliant' }) => (
+    <div className="mt-1 text-xs text-emerald-600 font-medium flex items-center space-x-1 animate-in fade-in duration-150">
+      <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+      <span>{message}</span>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Top Banner Navigation */}
-      <div className="bg-white border-b border-slate-200 px-6 py-3 sticky top-16 z-30 flex items-center justify-between shadow-xs">
-        <div className="flex items-center space-x-3">
+      {/* Minimal Sleek Header Bar - Compact single row, no redundant details */}
+      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-1.5 sticky top-[46px] z-30 flex items-center justify-between shadow-xs h-11">
+        <div className="flex items-center space-x-2.5 min-w-0">
           <button
             onClick={() => setIsSidebarOpen(prev => !prev)}
             aria-label="Open sections menu"
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+            className="p-1 rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
           >
-            <Menu className="w-5 h-5" />
+            <Menu className="w-4 h-4" />
           </button>
           <button
             onClick={() => navigate('/')}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+            className="p-1 rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
           </button>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
-                {course.courseCode}
-              </span>
-              <span className="font-bold text-slate-900 text-base">
-                {course.courseName || 'Untitled Course'}
-              </span>
-              <span
-                className={`text-xs px-2 py-0.5 rounded font-semibold ${
-                  course.status === 'APPROVED' || course.status === 'FINALIZED'
-                    ? 'bg-emerald-100 text-emerald-800'
-                    : course.status === 'SUBMITTED'
-                    ? 'bg-amber-100 text-amber-800'
-                    : course.status === 'RETURNED'
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-slate-100 text-slate-700'
-                }`}
-              >
-                {course.status}
-              </span>
-            </div>
-            <div className="text-xs text-slate-500">
-              {course.courseType}{course.courseType === 'TCP' ? ` (${course.teExamType || 'TCP-T'})` : ''} • {course.categoryAbbr} • Credits: {course.credits} • Reg {course.regulationYear}
-            </div>
+          <div className="flex items-center space-x-2 min-w-0">
+            <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200 flex-shrink-0">
+              {course.courseCode}
+            </span>
+            <span className="font-bold text-slate-900 text-sm truncate max-w-[180px] sm:max-w-xs">
+              {course.courseName || 'Untitled Course'}
+            </span>
+            <span
+              className={`text-xs px-2 py-0.5 rounded font-semibold flex-shrink-0 ${
+                course.status === 'APPROVED' || course.status === 'FINALIZED'
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : course.status === 'SUBMITTED'
+                  ? 'bg-amber-100 text-amber-800'
+                  : course.status === 'RETURNED'
+                  ? 'bg-red-100 text-red-800'
+                  : 'bg-slate-100 text-slate-700'
+              }`}
+            >
+              {course.status}
+            </span>
           </div>
         </div>
 
         {/* Tab & Action Bar */}
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2.5 flex-shrink-0">
+          {/* Live Validation Pill */}
+          {validationReport.errors.length > 0 ? (
+            <span className="hidden sm:inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+              <AlertCircle className="w-3.5 h-3.5 text-red-500 mr-1" />
+              {validationReport.errors.length} Issue{validationReport.errors.length === 1 ? '' : 's'}
+            </span>
+          ) : (
+            <span className="hidden sm:inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <CheckCircle className="w-3.5 h-3.5 text-emerald-600 mr-1" />
+              Regulation 2026 Ready
+            </span>
+          )}
+
           {/* Autosave Status */}
-          <div className="text-xs text-slate-500 hidden sm:flex items-center space-x-1.5">
+          <div className="text-xs text-slate-500 hidden md:flex items-center space-x-1">
             {isSaving ? (
               <>
-                <RefreshCw className="w-3.5 h-3.5 animate-spin text-sky-600" />
-                <span>Saving draft...</span>
+                <RefreshCw className="w-3 h-3 animate-spin text-sky-600" />
+                <span>Saving...</span>
               </>
             ) : lastSaved ? (
               <>
-                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                <Check className="w-3 h-3 text-emerald-600" />
+                <span>Saved</span>
               </>
             ) : null}
           </div>
 
           {/* Mode Switcher */}
-          <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+          <div className="flex bg-slate-100 p-0.5 rounded-lg text-xs font-semibold">
             <button
               onClick={() => setActiveTab('wizard')}
-              className={`px-3 py-1.5 rounded-lg flex items-center space-x-1.5 transition-all ${
-                activeTab === 'wizard' ? 'bg-[#7B1113] text-white shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
+              className={`px-2.5 py-1 rounded-md flex items-center space-x-1 transition-all ${
+                activeTab === 'wizard' ? 'bg-[#7B1113] text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Edit3 className="w-3.5 h-3.5" />
+              <Edit3 className="w-3 h-3" />
               <span>Form Wizard</span>
             </button>
             <button
               onClick={() => setActiveTab('preview')}
-              className={`px-3 py-1.5 rounded-lg flex items-center space-x-1.5 transition-all ${
-                activeTab === 'preview' ? 'bg-[#7B1113] text-white shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
+              className={`px-2.5 py-1 rounded-md flex items-center space-x-1 transition-all ${
+                activeTab === 'preview' ? 'bg-[#7B1113] text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Eye className="w-3.5 h-3.5" />
+              <Eye className="w-3 h-3" />
               <span>Document Preview</span>
             </button>
           </div>
@@ -403,26 +449,26 @@ export const CourseWizard: React.FC = () => {
           <button
             onClick={handleSaveDraft}
             disabled={isSaving}
-            className="px-3.5 py-1.5 rounded-lg border border-[#C59B27]/40 bg-white hover:bg-[#FAF7F2] text-[#7B1113] text-xs font-bold shadow-xs flex items-center space-x-1.5 transition-colors"
+            className="px-3 py-1 rounded-md border border-[#C59B27]/40 bg-white hover:bg-[#FAF7F2] text-[#7B1113] text-xs font-bold shadow-xs flex items-center space-x-1 transition-colors"
           >
-            <Save className="w-3.5 h-3.5 text-[#C59B27]" />
+            <Save className="w-3 h-3 text-[#C59B27]" />
             <span>Save Draft</span>
           </button>
 
           {(course.status === 'APPROVED' || course.status === 'FINALIZED') && (
             <button
               onClick={handleRevise}
-              className="px-3 py-1.5 rounded-lg bg-[#0F2942] hover:bg-[#091A2A] text-[#E2BF53] text-xs font-semibold shadow-xs flex items-center space-x-1.5"
+              className="px-2.5 py-1 rounded-md bg-[#0F2942] hover:bg-[#091A2A] text-[#E2BF53] text-xs font-semibold shadow-xs flex items-center space-x-1"
             >
-              <Copy className="w-3.5 h-3.5" />
-              <span>Clone Revision (v{course.version + 1})</span>
+              <Copy className="w-3 h-3" />
+              <span>Clone (v{course.version + 1})</span>
             </button>
           )}
         </div>
       </div>
 
       {submitSuccess && (
-        <div className="bg-emerald-50 border-b border-emerald-200 px-6 py-2.5 text-sm text-emerald-800 flex items-center justify-between">
+        <div className="bg-emerald-50 border-b border-emerald-200 px-6 py-2 text-sm text-emerald-800 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <CheckCircle className="w-4 h-4 text-emerald-600" />
             <span>{submitSuccess}</span>
@@ -433,8 +479,8 @@ export const CourseWizard: React.FC = () => {
         </div>
       )}
 
-      {/* Main Workspace */}
-      <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex gap-6">
+      {/* Main Workspace - Compact padding, full width without side panel */}
+      <div className="flex-1 max-w-5xl w-full mx-auto px-4 py-3 sm:px-6 sm:py-3.5 flex flex-col">
         {activeTab === 'preview' ? (
           <div className="flex-1">
             <DocumentPreview course={course} />
@@ -495,11 +541,11 @@ export const CourseWizard: React.FC = () => {
             </div>
 
             {/* Center Wizard Form Container */}
-            <div className="flex-1 w-full bg-white border border-slate-200 border-t-4 border-t-[#800020] rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col justify-between">
+            <div className="flex-1 w-full bg-white border border-slate-200 border-t-4 border-t-[#800020] rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col justify-between">
               <div>
                 {/* Step 1: Course Identity */}
                 {currentStep === 0 && (
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     <div>
                       <h2 className="text-xl font-bold text-slate-900">1. Course Code & Identity</h2>
                       <p className="text-sm text-slate-500 mt-1">
@@ -508,35 +554,35 @@ export const CourseWizard: React.FC = () => {
                     </div>
 
                     {/* Course Code Breakdown Card */}
-                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                      <div className="flex items-center justify-between mb-3">
+                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                      <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-bold text-slate-700">Course Code Composition</span>
-                        <span className="font-mono text-base font-bold text-sky-700 bg-sky-100 px-3 py-1 rounded-lg border border-sky-200">
+                        <span className="font-mono text-base font-bold text-sky-700 bg-sky-100 px-3 py-0.5 rounded-lg border border-sky-200">
                           {course.courseCode}
                         </span>
                       </div>
                       <div className="grid grid-cols-5 gap-2 text-center text-xs">
-                        <div className="p-2 bg-white rounded-lg border border-slate-200">
+                        <div className="p-1.5 bg-white rounded-lg border border-slate-200">
                           <span className="block text-slate-400 font-semibold">RR</span>
                           <span className="font-bold text-slate-800">{course.regulationCode}</span>
                           <span className="text-[10px] text-slate-500 block">Reg. 26</span>
                         </div>
-                        <div className="p-2 bg-white rounded-lg border border-slate-200">
+                        <div className="p-1.5 bg-white rounded-lg border border-slate-200">
                           <span className="block text-slate-400 font-semibold">AA</span>
                           <span className="font-bold text-slate-800">{course.programmeCode}</span>
                           <span className="text-[10px] text-slate-500 block">Programme</span>
                         </div>
-                        <div className="p-2 bg-white rounded-lg border border-slate-200">
+                        <div className="p-1.5 bg-white rounded-lg border border-slate-200">
                           <span className="block text-slate-400 font-semibold">C</span>
                           <span className="font-bold text-slate-800">{course.categoryLetter}</span>
                           <span className="text-[10px] text-slate-500 block">Category</span>
                         </div>
-                        <div className="p-2 bg-white rounded-lg border border-slate-200">
+                        <div className="p-1.5 bg-white rounded-lg border border-slate-200">
                           <span className="block text-slate-400 font-semibold">U</span>
                           <span className="font-bold text-slate-800">{course.uniqueLetter}</span>
                           <span className="text-[10px] text-slate-500 block">Unique (A-Z)</span>
                         </div>
-                        <div className="p-2 bg-white rounded-lg border border-slate-200">
+                        <div className="p-1.5 bg-white rounded-lg border border-slate-200">
                           <span className="block text-slate-400 font-semibold">V</span>
                           <span className="font-bold text-slate-800">{course.version}</span>
                           <span className="text-[10px] text-slate-500 block">Version</span>
@@ -561,6 +607,7 @@ export const CourseWizard: React.FC = () => {
                             </option>
                           ))}
                         </select>
+                        <InlineFieldError field="programmeCode" />
                       </div>
 
                       {/* Category Letter Dropdown */}
@@ -579,6 +626,7 @@ export const CourseWizard: React.FC = () => {
                             </option>
                           ))}
                         </select>
+                        <InlineFieldError field="categoryLetter" />
                       </div>
 
                       {/* Unique Letter */}
@@ -591,9 +639,20 @@ export const CourseWizard: React.FC = () => {
                           maxLength={1}
                           value={course.uniqueLetter}
                           onChange={e => updateField('uniqueLetter', e.target.value.toUpperCase())}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm uppercase focus:ring-2 focus:ring-sky-500"
+                          className={`w-full px-3 py-2 border rounded-lg text-sm uppercase transition-all ${
+                            hasFieldError('uniqueLetter') || hasFieldError('courseCode')
+                              ? 'border-red-400 bg-red-50/20 text-slate-900 focus:ring-2 focus:ring-red-200 focus:border-red-500'
+                              : course.uniqueLetter
+                              ? 'border-emerald-400 bg-emerald-50/10 focus:ring-2 focus:ring-emerald-200 focus:border-emerald-500'
+                              : 'border-slate-300 focus:ring-2 focus:ring-sky-500'
+                          }`}
                           placeholder="A (excluding I, O)"
                         />
+                        <InlineFieldError field="uniqueLetter" />
+                        <InlineFieldError field="courseCode" />
+                        {!hasFieldError('uniqueLetter') && !hasFieldError('courseCode') && course.uniqueLetter && (
+                          <InlineFieldSuccess message="Unique letter verified" />
+                        )}
                         <span className="text-[11px] text-slate-500 mt-0.5 block">
                           Single letter A-Z excluding letters "I" and "O".
                         </span>
@@ -635,8 +694,18 @@ export const CourseWizard: React.FC = () => {
                             ? 'AC Machines Laboratory'
                             : 'Data Structures and Applications'
                         }
-                        className="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 font-medium"
+                        className={`w-full px-3.5 py-2.5 border rounded-lg text-sm font-medium transition-all ${
+                          hasFieldError('courseName')
+                            ? 'border-red-400 bg-red-50/20 text-slate-900 focus:ring-2 focus:ring-red-200 focus:border-red-500'
+                            : (course.courseName || '').trim()
+                            ? 'border-emerald-400 bg-emerald-50/10 focus:ring-2 focus:ring-emerald-200 focus:border-emerald-500'
+                            : 'border-slate-300 focus:ring-2 focus:ring-sky-500'
+                        }`}
                       />
+                      <InlineFieldError field="courseName" />
+                      {!hasFieldError('courseName') && (course.courseName || '').trim() && (
+                        <InlineFieldSuccess message="Title verified & compliant with TCE Regulation 2026" />
+                      )}
                       <div className="mt-1 text-[11px] text-slate-500 space-y-0.5">
                         <p>• Only letters, digits and spaces. No hyphens, ampersands, or slashes.</p>
                         <p>• Title Case. Rendered in CAPITAL and BOLD on official documents.</p>
@@ -784,6 +853,15 @@ export const CourseWizard: React.FC = () => {
                       )}
                     </div>
 
+                    {/* Inline error feedback for Contact Hours & Credits */}
+                    <InlineFieldError field="credits" />
+                    <InlineFieldError field="L" />
+                    <InlineFieldError field="T" />
+                    <InlineFieldError field="P" />
+                    {!hasFieldError('credits') && !hasFieldError('L') && !hasFieldError('T') && !hasFieldError('P') && (
+                      <InlineFieldSuccess message="Contact periods and credits formula verified" />
+                    )}
+
                     {/* Advanced / Elective Flag */}
                     <div className="flex items-center space-x-2 pt-2 border-t border-slate-200">
                       <input
@@ -802,7 +880,7 @@ export const CourseWizard: React.FC = () => {
 
                 {/* Step 3: Preamble & Prerequisites */}
                 {currentStep === 2 && (
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     <div>
                       <h2 className="text-xl font-bold text-slate-900">3. Course Preamble & Prerequisites</h2>
                       <p className="text-sm text-slate-500 mt-1">
@@ -815,17 +893,37 @@ export const CourseWizard: React.FC = () => {
                         <label className="text-xs font-bold text-slate-700">
                           Preamble Statement <span className="text-rose-500">*</span>
                         </label>
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
-                          {countWords(course.preamble || '')} words
-                        </span>
+                        {countWords(course.preamble || '') < 60 ? (
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded bg-red-50 text-red-700 border border-red-200">
+                            {countWords(course.preamble || '')} / 60 words (minimum 60 required)
+                          </span>
+                        ) : countWords(course.preamble || '') <= 150 ? (
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            {countWords(course.preamble || '')} words — Compliant
+                          </span>
+                        ) : (
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+                            {countWords(course.preamble || '')} words (&gt; 150 words)
+                          </span>
+                        )}
                       </div>
                       <textarea
                         rows={6}
                         value={course.preamble}
                         onChange={e => updateField('preamble', e.target.value)}
                         placeholder="State what the course is about, connect to real-world applications and modern standards, and avoid generic clichés..."
-                        className="w-full p-3.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-sky-500 leading-relaxed"
+                        className={`w-full p-3.5 border rounded-xl text-sm leading-relaxed transition-all ${
+                          hasFieldError('preamble')
+                            ? 'border-red-400 bg-red-50/20 focus:ring-2 focus:ring-red-200 focus:border-red-500'
+                            : countWords(course.preamble || '') >= 60 && countWords(course.preamble || '') <= 150
+                            ? 'border-emerald-400 bg-emerald-50/10 focus:ring-2 focus:ring-emerald-200 focus:border-emerald-500'
+                            : 'border-slate-300 focus:ring-2 focus:ring-sky-500'
+                        }`}
                       />
+                      <InlineFieldError field="preamble" />
+                      {!hasFieldError('preamble') && countWords(course.preamble || '') >= 60 && (
+                        <InlineFieldSuccess message="Preamble word count and structure verified compliant" />
+                      )}
                       <div className="mt-2 text-[11px] text-slate-500 space-y-1">
                         <p>• Single coherent paragraph without line breaks.</p>
                         <p>• Avoid cliché phrases: "This course covers important topics" or "Students will learn about".</p>
@@ -833,7 +931,7 @@ export const CourseWizard: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="pt-4 border-t border-slate-200">
+                    <div className="pt-3 border-t border-slate-200">
                       <label className="block text-xs font-bold text-slate-700 mb-1">
                         Prerequisites
                       </label>
@@ -882,6 +980,32 @@ export const CourseWizard: React.FC = () => {
                         </button>
                       )}
                     </div>
+
+                    {/* Real-time Weightage Balance Bar & Error Alert */}
+                    {(() => {
+                      const totalW = (course.courseOutcomes || []).reduce((s, c) => s + (c.weightage || 0), 0);
+                      if (course.courseType === 'THEORY' || course.courseType === 'TCP') {
+                        if (totalW !== 100) {
+                          return (
+                            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center justify-between animate-in fade-in duration-150">
+                              <div className="flex items-center space-x-2">
+                                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                                <span className="font-semibold">Total CO Weightage must equal 100% (currently {totalW}%)</span>
+                              </div>
+                              <span className="font-bold px-2.5 py-0.5 bg-red-100 rounded text-red-800">{totalW}% / 100%</span>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center space-x-2 animate-in fade-in duration-150">
+                            <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                            <span className="font-semibold">CO Weightage balanced at 100%</span>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+                    <InlineFieldError field="courseOutcomes" />
 
                     {/* Practical General CO Pool Picker */}
                     {course.courseType === 'PRACTICAL' && (
@@ -1308,6 +1432,10 @@ export const CourseWizard: React.FC = () => {
                                 </tfoot>
                               </table>
                             </div>
+                          )}
+                          <InlineFieldError field="assessmentMatrix" />
+                          {!hasFieldError('assessmentMatrix') && (course.assessmentMatrix || []).length > 0 && (
+                            <InlineFieldSuccess message="Assessment matrix marks distribution verified" />
                           )}
                         </div>
                       </div>
@@ -2455,6 +2583,11 @@ export const CourseWizard: React.FC = () => {
                       >
                         + Add NPTEL Course
                       </button>
+                      <InlineFieldError field="textBooks" />
+                      <InlineFieldError field="referenceBooks" />
+                      {!hasFieldError('textBooks') && (course.textBooks || []).length > 0 && (
+                        <InlineFieldSuccess message="Textbooks verified compliant with publication recency guidelines" />
+                      )}
                     </div>
                   </div>
                 )}
@@ -2550,6 +2683,10 @@ export const CourseWizard: React.FC = () => {
                       >
                         + Add Additional Designer
                       </button>
+                      <InlineFieldError field="designers" />
+                      {!hasFieldError('designers') && (course.designers || []).length > 0 && (
+                        <InlineFieldSuccess message="Course designers verified with institutional emails" />
+                      )}
                     </div>
                   </div>
                 )}
@@ -2649,18 +2786,6 @@ export const CourseWizard: React.FC = () => {
                 )}
               </div>
             </div>
-
-            {/* Right Sticky Live Compliance Panel */}
-            <LiveCompliancePanel
-              report={validationReport}
-              currentStepIndex={currentStep}
-              onNavigateToStep={stepId => {
-                const idx = steps.findIndex(s => s.id === stepId);
-                if (idx >= 0) setCurrentStep(idx);
-              }}
-              onSubmit={handleSubmitForReview}
-              courseStatus={course.status}
-            />
           </>
         )}
       </div>

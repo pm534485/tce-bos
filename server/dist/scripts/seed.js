@@ -7,12 +7,30 @@ import { Course } from '../models/Course.js';
 import { ProgrammeCodeModel, CategoryCodeModel, TpsVerbModel, LabObjectiveModel, GeneralCoPoolModel, PerformanceIndicatorModel, SdgListModel, DomainToSdgMapModel, TcpWeightageTableModel, ConfigSettingsModel, } from '../models/MasterData.js';
 import { PROGRAMME_CODES, CATEGORY_CODES, TPS_VERBS, LAB_OBJECTIVES, GENERAL_CO_POOL, PERFORMANCE_INDICATORS, SDG_LIST, DOMAIN_TO_SDG_MAP, TCP_WEIGHTAGE_TABLE, DEFAULT_CONFIG_SETTINGS, } from '@syllabusforge/shared';
 import { SEED_USERS, DEMO_THEORY_COURSE, DEMO_PRACTICAL_COURSE, DEMO_TCP_COURSE, DEMO_ECE_CIRCUITS_COURSE, } from '../services/seedData.js';
+import dns from 'dns';
 dotenv.config();
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/syllabusforge';
+// Ensure SRV DNS resolution works properly on Windows environments
+try {
+    const currentServers = dns.getServers();
+    if (!currentServers.length || currentServers.includes('127.0.0.1')) {
+        dns.setServers(['8.8.8.8', '1.1.1.1']);
+    }
+}
+catch {
+    // Ignore DNS fallback error
+}
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/syllabusforge';
+function getConnectOptions(uri) {
+    const withoutProto = uri.split('://')[1] || '';
+    const pathPart = withoutProto.split('?')[0];
+    const slashIdx = pathPart.indexOf('/');
+    const db = slashIdx !== -1 ? pathPart.substring(slashIdx + 1) : '';
+    return db ? {} : { dbName: 'syllabusforge' };
+}
 export async function seedDatabase() {
     console.log(`Connecting to MongoDB at ${MONGO_URI}...`);
-    await mongoose.connect(MONGO_URI);
-    console.log('Connected to MongoDB.');
+    await mongoose.connect(MONGO_URI, getConnectOptions(MONGO_URI));
+    console.log(`Connected to MongoDB (${mongoose.connection.name}).`);
     // 1. Clear existing collections
     console.log('Clearing old collections...');
     await Promise.all([

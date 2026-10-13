@@ -7,6 +7,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  googleLogin: (data: { email?: string; name?: string; credential?: string; avatar?: string; googleId?: string }) => Promise<void>;
   quickLogin: (role: UserRole) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
@@ -43,6 +44,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(res.user);
   };
 
+  const googleLogin = async (data: { email?: string; name?: string; credential?: string; avatar?: string; googleId?: string }) => {
+    const res = await api.googleLogin(data);
+    localStorage.setItem('syllabusforge_token', res.token);
+    setToken(res.token);
+    setUser(res.user);
+  };
+
   const quickLogin = async (role: UserRole) => {
     const creds: Record<UserRole, { email: string; pass: string }> = {
       ADMIN: { email: 'admin@syllabusforge.edu', pass: 'AdminPassword2026!' },
@@ -66,6 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         token,
         isLoading,
         login,
+        googleLogin,
         quickLogin,
         logout,
         isAuthenticated: !!user,
