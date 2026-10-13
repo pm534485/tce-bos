@@ -20,7 +20,8 @@ catch {
 }
 const app = express();
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/syllabusforge';
+const ATLAS_FALLBACK_URI = 'mongodb+srv://admin:password_123@anomaly-cluster.zvatocr.mongodb.net/?appName=anomaly-cluster';
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || (process.env.VERCEL ? ATLAS_FALLBACK_URI : 'mongodb://localhost:27017/syllabusforge');
 function getConnectOptions(uri) {
     const withoutProto = uri.split('://')[1] || '';
     const pathPart = withoutProto.split('?')[0];
@@ -28,8 +29,30 @@ function getConnectOptions(uri) {
     const db = slashIdx !== -1 ? pathPart.substring(slashIdx + 1) : '';
     return db ? {} : { dbName: 'syllabusforge' };
 }
+// Ensure DB connection for serverless invocations (Vercel)
+export async function connectDB() {
+    if (mongoose.connection.readyState === 1)
+        return;
+    const uri = process.env.MONGO_URI || process.env.MONGODB_URI || ATLAS_FALLBACK_URI;
+    await mongoose.connect(uri, getConnectOptions(uri));
+}
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+// Database connection middleware before routes
+app.use(async (req, res, next) => {
+    if (req.path === '/api/health')
+        return next();
+    if (mongoose.connection.readyState !== 1) {
+        try {
+            await connectDB();
+        }
+        catch (err) {
+            console.error('Database connection error:', err);
+            return res.status(500).json({ error: 'Database connection failed: ' + err.message });
+        }
+    }
+    next();
+});
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({
@@ -59,27 +82,6 @@ if (fs.existsSync(clientDist)) {
         res.sendFile(path.join(clientDist, 'index.html'));
     });
 }
-// Ensure DB connection for serverless invocations (Vercel)
-export async function connectDB() {
-    if (mongoose.connection.readyState === 1)
-        return;
-    const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
-    if (!uri)
-        throw new Error('MONGO_URI is not set in environment variables');
-    await mongoose.connect(uri, getConnectOptions(uri));
-}
-app.use(async (req, res, next) => {
-    if (mongoose.connection.readyState !== 1) {
-        try {
-            await connectDB();
-        }
-        catch (err) {
-            console.error('Serverless DB connection error:', err);
-            return res.status(500).json({ error: 'Database connection failed: ' + err.message });
-        }
-    }
-    next();
-});
 // Connect to MongoDB and start listening (only when running standalone, not in Vercel serverless)
 async function startServer() {
     const primaryUri = MONGO_URI;
