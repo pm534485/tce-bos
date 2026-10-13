@@ -54,7 +54,6 @@ import {
   ChevronRight,
   ChevronLeft,
   Menu,
-  BookOpen,
 } from 'lucide-react';
 
 export const VALID_UNIQUE_LETTERS = [
@@ -305,7 +304,7 @@ export const CourseWizard: React.FC = () => {
 
   // Stepper definition
   const steps = [
-    { id: 'identity', title: '1. Course Code & Identity', desc: 'Code RR AA C U V & Title' },
+    { id: 'identity', title: '1. Course Code', desc: 'Code RR AA C U V & Title' },
     { id: 'structure', title: '2. Structure & L-T-P', desc: 'Hours, credits, semester' },
     { id: 'preamble', title: '3. Preamble & Prerequisites', desc: 'Course context & prior courses' },
     { id: 'cos', title: '4. Course Outcomes', desc: 'TPS taxonomy & weightages' },
@@ -357,14 +356,6 @@ export const CourseWizard: React.FC = () => {
       <span>{message}</span>
     </div>
   );
-
-  // Live counts for institutional header
-  const totalModulePeriods = (course.modules || []).reduce((acc, m) => acc + (Number(m.periods) || 0), 0);
-  const totalLecturePeriods = (course.lectureScheduleItems || []).reduce((acc, item) => acc + (Number(item.periods) || 0), 0);
-  const totalTopics = (course.modules || []).reduce((acc, m) => acc + (m.subtopics?.length || 0) + (m.mainTopic ? 1 : 0), 0);
-  const totalPeriods = course.courseType === 'PRACTICAL'
-    ? (course.experiments || []).length * 3
-    : (totalLecturePeriods > 0 ? totalLecturePeriods : totalModulePeriods);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -633,57 +624,13 @@ export const CourseWizard: React.FC = () => {
                       </div>
                     </div>
                   </div>
-
-                  {/* Syllabus Live Progress & Details Strip */}
-                  <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 px-1 text-xs">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-800 font-bold text-[11px] border border-slate-200">
-                        <span>{course.courseType}</span>
-                        <span>• Semester {course.semester || 1}</span>
-                      </span>
-
-                      <button
-                        onClick={() => setCurrentStep(5)}
-                        className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-900 font-bold text-[11px] border border-blue-200 transition-colors cursor-pointer"
-                        title="Click to view/edit Modules and Lecture Schedule"
-                      >
-                        <BookOpen className="w-3 h-3 text-blue-700" />
-                        <span>{course.modules?.length || 0} Modules</span>
-                        <span>({totalPeriods} Periods)</span>
-                      </button>
-
-                      {totalTopics > 0 && (
-                        <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-900 font-bold text-[11px] border border-emerald-200">
-                          <CheckCircle className="w-3 h-3 text-emerald-600" />
-                          <span>{totalTopics} Topics defined</span>
-                        </span>
-                      )}
-
-                      {(course.courseOutcomes || []).length > 0 && (
-                        <button
-                          onClick={() => setCurrentStep(3)}
-                          className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-md bg-purple-50 hover:bg-purple-100 text-purple-900 font-bold text-[11px] border border-purple-200 transition-colors cursor-pointer"
-                          title="Click to view/edit Course Outcomes"
-                        >
-                          <span>{course.courseOutcomes.length} COs Defined</span>
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="text-[11px] text-slate-500 font-medium">
-                      Regulation 2026 OBE Curriculum
-                    </div>
-                  </div>
                 </div>
 
                 {/* Step 1: Course Identity */}
                 {currentStep === 0 && (
                   <div className="space-y-4">
                     <div>
-                      <h2 className="text-xl font-bold text-slate-900">1. Course Code & Identity</h2>
-                      <p className="text-sm text-slate-500 mt-1">
-                        Compose the standardized 5-component course code <strong>RR AA C U V</strong> directly in the cards below, and enter the formal title.
-                      </p>
+                      <h2 className="text-xl font-bold text-slate-900">Course Code</h2>
                     </div>
 
                     {/* Course Code Composition Card - Direct Interactive Selection */}
