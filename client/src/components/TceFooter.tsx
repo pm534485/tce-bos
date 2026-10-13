@@ -7,7 +7,7 @@ export const TceFooter: React.FC = () => {
     <footer className="mt-16 bg-[#091A2A] text-slate-300 border-t-4 border-[#C59B27] font-sans">
       {/* Top Footer Banner */}
       <div className="bg-[#7B1113] text-white py-3 px-4 border-b border-[#C59B27]/30">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4 text-xs">
+        <div className="w-full px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-4 text-xs">
           <div className="flex items-center space-x-4">
             <span className="font-semibold text-[#E2BF53] flex items-center space-x-1.5">
               <Award className="w-4 h-4 text-[#E2BF53]" />
@@ -27,7 +27,7 @@ export const TceFooter: React.FC = () => {
       </div>
 
       {/* Main Footer Links & Info */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Column 1: TCE Info */}
           <div className="md:col-span-1 space-y-3">

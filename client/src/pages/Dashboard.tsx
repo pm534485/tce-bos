@@ -94,7 +94,7 @@ export const Dashboard: React.FC = () => {
   const submittedCount = courses.filter(c => c.status === 'SUBMITTED').length;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-8 space-y-4">
+    <div className="w-full px-4 sm:px-6 lg:px-8 pt-3 pb-8 space-y-4">
       {/* Sleek Compact TCE Portal Ribbon */}
       {showBanner ? (
         <div className="bg-gradient-to-r from-[#560B0D] via-[#7B1113] to-[#091A2A] rounded-xl px-4 py-2.5 text-white shadow-sm relative overflow-hidden border-b-2 border-[#C59B27] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">

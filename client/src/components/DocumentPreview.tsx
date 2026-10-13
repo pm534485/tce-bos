@@ -235,7 +235,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
   return (
     <div className="flex flex-col items-center">
       {/* Top Action Bar */}
-      <div className="w-full max-w-4xl flex items-center justify-between pb-4 mb-4 border-b border-slate-200">
+      <div className="w-full max-w-5xl flex items-center justify-between pb-4 mb-4 border-b border-slate-200">
         <div className="flex items-center space-x-2">
           <FileText className="w-5 h-5 text-sky-600" />
           <span className="font-semibold text-slate-800 text-sm">
@@ -281,7 +281,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
       </div>
 
       {downloadError && (
-        <div className="w-full max-w-4xl mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center justify-between">
+        <div className="w-full max-w-5xl mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
             <span>{downloadError}</span>
@@ -295,7 +295,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
         </div>
       )}
 
-      <div className="space-y-8 w-full max-w-4xl">
+      <div className="space-y-8 w-full max-w-5xl">
         {/* ==================== PAGE 1 SHEET ==================== */}
         <div className="bg-white p-12 sm:p-14 rounded-xl shadow-lg border border-slate-300 text-slate-900 select-text font-sans text-sm">
           {/* Running Top Right Header */}

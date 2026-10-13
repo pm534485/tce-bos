@@ -63,7 +63,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNewCourse }) => {
         <header className={`sticky top-0 z-40 bg-white border-b border-slate-200 shadow-xs flex items-center transition-all ${
           isCourseEditor ? 'h-[46px]' : 'h-[56px]'
         }`}>
-          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+          <div className="w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between">
             
             {/* Left: Logo + Navigation */}
             <div className="flex items-center space-x-6">
