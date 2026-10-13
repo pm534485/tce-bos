@@ -12,6 +12,7 @@ import {
   LabExperiment,
   LabCoursePlanItem,
   CourseDesigner,
+  Prerequisite,
   LectureScheduleItem,
   validateCourse,
   computeCourseCode,
@@ -103,6 +104,7 @@ export const CourseWizard: React.FC = () => {
     courseName: '',
     categoryAbbr: 'PCC',
     semester: 1,
+    semesterType: 'ODD',
     L: courseTypeParam === 'PRACTICAL' ? 0 : 3,
     T: courseTypeParam === 'PRACTICAL' ? 0 : 1,
     P: courseTypeParam === 'PRACTICAL' ? 3 : 0,
@@ -296,6 +298,12 @@ export const CourseWizard: React.FC = () => {
       // Recalculate credits
       if (['L', 'T', 'P'].includes(field)) {
         updated.credits = computeCredits(Number(updated.L) || 0, Number(updated.T) || 0, Number(updated.P) || 0, updated.courseType);
+      }
+
+      // Auto-sync semesterType
+      if (field === 'semester') {
+        const s = Number(value) || 1;
+        updated.semesterType = s % 2 === 0 ? 'EVEN' : 'ODD';
       }
 
       return updated;
@@ -812,7 +820,7 @@ export const CourseWizard: React.FC = () => {
 
                     {/* Contact Hours & Credits Row */}
                     <div className="pt-2 border-t border-slate-200 space-y-4">
-                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                         <div>
                           <label className="block text-xs font-bold text-slate-700 mb-1">
                             Lecture (L)
@@ -863,16 +871,45 @@ export const CourseWizard: React.FC = () => {
 
                         <div>
                           <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Sem Type
+                          </label>
+                          <select
+                            value={(course.semester || 1) % 2 === 0 ? 'EVEN' : 'ODD'}
+                            onChange={e => {
+                              const isEven = e.target.value === 'EVEN';
+                              const currentSem = course.semester || 1;
+                              const newSem = isEven
+                                ? (currentSem % 2 === 0 ? currentSem : Math.min(8, currentSem + 1))
+                                : (currentSem % 2 !== 0 ? currentSem : Math.max(1, currentSem - 1));
+                              updateField('semester', newSem);
+                              updateField('semesterType', isEven ? 'EVEN' : 'ODD');
+                            }}
+                            className="w-full px-2 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold bg-white focus:ring-2 focus:ring-sky-500 cursor-pointer"
+                          >
+                            <option value="ODD">Odd Sem</option>
+                            <option value="EVEN">Even Sem</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
                             Semester
                           </label>
-                          <input
-                            type="number"
-                            min={1}
-                            max={8}
-                            value={course.semester}
-                            onChange={e => updateField('semester', parseInt(e.target.value) || 1)}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500"
-                          />
+                          <select
+                            value={course.semester || 1}
+                            onChange={e => {
+                              const sem = parseInt(e.target.value) || 1;
+                              updateField('semester', sem);
+                              updateField('semesterType', sem % 2 === 0 ? 'EVEN' : 'ODD');
+                            }}
+                            className="w-full px-2 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold bg-white focus:ring-2 focus:ring-sky-500 cursor-pointer"
+                          >
+                            {((course.semester || 1) % 2 === 0 ? [2, 4, 6, 8] : [1, 3, 5, 7]).map(sem => (
+                              <option key={sem} value={sem}>
+                                Semester {sem}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                       </div>
 
@@ -918,75 +955,165 @@ export const CourseWizard: React.FC = () => {
                 )}
 
                 {/* Step 2: Preamble & Prerequisites */}
-                {currentStep === 1 && (
-                  <div className="space-y-4">
-                    <div>
-                      <h2 className="text-xl font-bold text-slate-900">2. Course Preamble & Prerequisites</h2>
-                      <p className="text-sm text-slate-500 mt-1">
-                        Contextualizes domain, academic relevance, and prior foundational prerequisite courses.
-                      </p>
-                    </div>
+                {currentStep === 1 && (() => {
+                  const getPrereqsArray = (prereqs: any): Prerequisite[] => {
+                    if (!prereqs) return [];
+                    if (Array.isArray(prereqs)) {
+                      return prereqs
+                        .filter(p => p && (typeof p === 'string' ? p.trim().toLowerCase() !== 'nil' : true))
+                        .map(p => {
+                          if (typeof p === 'string') {
+                            const match = p.match(/^([A-Za-z0-9]+)\s*[:\-–]?\s*(.*)$/);
+                            if (match && match[1]) {
+                              return { courseCode: match[1].trim(), courseName: (match[2] || '').trim() };
+                            }
+                            return { courseCode: '', courseName: p.trim() };
+                          }
+                          return { courseCode: p.courseCode || '', courseName: p.courseName || '' };
+                        });
+                    }
+                    if (typeof prereqs === 'string') {
+                      const trimmed = prereqs.trim();
+                      if (!trimmed || trimmed.toLowerCase() === 'nil') return [];
+                      if (trimmed.includes('\n')) {
+                        return trimmed
+                          .split('\n')
+                          .map(line => line.trim().replace(/^[•\-\*]\s*/, ''))
+                          .filter(line => line && line.toLowerCase() !== 'nil')
+                          .map(line => {
+                            const match = line.match(/^([A-Za-z0-9]+)\s*[:\-–]?\s*(.*)$/);
+                            if (match && match[1]) {
+                              return { courseCode: match[1].trim(), courseName: (match[2] || '').trim() };
+                            }
+                            return { courseCode: '', courseName: line };
+                          });
+                      }
+                      const match = trimmed.match(/^([A-Za-z0-9]+)\s*[:\-–]?\s*(.*)$/);
+                      if (match && match[1] && (match[2] || /^[0-9]{2}[A-Za-z]{2}/.test(match[1]))) {
+                        return [{ courseCode: match[1].trim(), courseName: (match[2] || '').trim() }];
+                      }
+                      return [{ courseCode: '', courseName: trimmed }];
+                    }
+                    return [];
+                  };
 
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <label className="text-xs font-bold text-slate-700">
-                          Preamble Statement <span className="text-rose-500">*</span>
-                        </label>
-                        {countWords(course.preamble || '') < 60 ? (
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded bg-red-50 text-red-700 border border-red-200">
-                            {countWords(course.preamble || '')} / 60 words (minimum 60 required)
-                          </span>
-                        ) : countWords(course.preamble || '') <= 150 ? (
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            {countWords(course.preamble || '')} words — Compliant
-                          </span>
-                        ) : (
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-                            {countWords(course.preamble || '')} words (&gt; 150 words)
-                          </span>
+                  const prereqsArray = getPrereqsArray(course.prerequisites);
+
+                  return (
+                    <div className="space-y-4">
+                      <div>
+                        <h2 className="text-xl font-bold text-slate-900">2. Course Preamble & Prerequisites</h2>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-xs font-bold text-slate-700">
+                            Preamble Statement <span className="text-rose-500">*</span>
+                          </label>
+                          {countWords(course.preamble || '') < 60 ? (
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-red-50 text-red-700 border border-red-200">
+                              {countWords(course.preamble || '')} / 60 words (minimum 60 required)
+                            </span>
+                          ) : countWords(course.preamble || '') <= 150 ? (
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              {countWords(course.preamble || '')} words — Compliant
+                            </span>
+                          ) : (
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+                              {countWords(course.preamble || '')} words (&gt; 150 words)
+                            </span>
+                          )}
+                        </div>
+                        <textarea
+                          rows={6}
+                          value={course.preamble}
+                          onChange={e => updateField('preamble', e.target.value)}
+                          placeholder="State what the course is about, connect to real-world applications and modern standards..."
+                          className={`w-full p-3.5 border rounded-xl text-sm leading-relaxed transition-all ${
+                            hasFieldError('preamble')
+                              ? 'border-red-400 bg-red-50/20 focus:ring-2 focus:ring-red-200 focus:border-red-500'
+                              : countWords(course.preamble || '') >= 60 && countWords(course.preamble || '') <= 150
+                              ? 'border-emerald-400 bg-emerald-50/10 focus:ring-2 focus:ring-emerald-200 focus:border-emerald-500'
+                              : 'border-slate-300 focus:ring-2 focus:ring-sky-500'
+                          }`}
+                        />
+                        <InlineFieldError field="preamble" />
+                        {!hasFieldError('preamble') && countWords(course.preamble || '') >= 60 && (
+                          <InlineFieldSuccess message="Preamble word count and structure verified compliant" />
                         )}
                       </div>
-                      <textarea
-                        rows={6}
-                        value={course.preamble}
-                        onChange={e => updateField('preamble', e.target.value)}
-                        placeholder="State what the course is about, connect to real-world applications and modern standards, and avoid generic clichés..."
-                        className={`w-full p-3.5 border rounded-xl text-sm leading-relaxed transition-all ${
-                          hasFieldError('preamble')
-                            ? 'border-red-400 bg-red-50/20 focus:ring-2 focus:ring-red-200 focus:border-red-500'
-                            : countWords(course.preamble || '') >= 60 && countWords(course.preamble || '') <= 150
-                            ? 'border-emerald-400 bg-emerald-50/10 focus:ring-2 focus:ring-emerald-200 focus:border-emerald-500'
-                            : 'border-slate-300 focus:ring-2 focus:ring-sky-500'
-                        }`}
-                      />
-                      <InlineFieldError field="preamble" />
-                      {!hasFieldError('preamble') && countWords(course.preamble || '') >= 60 && (
-                        <InlineFieldSuccess message="Preamble word count and structure verified compliant" />
-                      )}
-                      <div className="mt-2 text-[11px] text-slate-500 space-y-1">
-                        <p>• Single coherent paragraph without line breaks.</p>
-                        <p>• Avoid cliché phrases: "This course covers important topics" or "Students will learn about".</p>
-                        <p>• Do not repeat the Course Outcomes list verbatim.</p>
+
+                      <div className="pt-3 border-t border-slate-200 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold text-slate-700">
+                            Prerequisites
+                          </label>
+                          <span className="text-[11px] text-slate-500 font-medium">
+                            {prereqsArray.length > 0 ? `${prereqsArray.length} added` : 'None (NIL)'}
+                          </span>
+                        </div>
+
+                        {prereqsArray.length === 0 ? (
+                          <div className="p-3 border border-dashed border-slate-200 rounded-xl bg-slate-50 text-center text-xs text-slate-500">
+                            No prerequisites specified (will appear as <span className="font-semibold text-slate-700">NIL</span> on official syllabus document).
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {prereqsArray.map((p, pIdx) => (
+                              <div key={pIdx} className="flex items-center space-x-2 p-2 border border-slate-200 rounded-xl bg-slate-50/50">
+                                <span className="text-slate-400 font-black text-sm pl-1">•</span>
+                                <input
+                                  type="text"
+                                  value={p.courseCode}
+                                  onChange={e => {
+                                    const updated = [...prereqsArray];
+                                    updated[pIdx] = { ...updated[pIdx], courseCode: e.target.value.toUpperCase() };
+                                    updateField('prerequisites', updated);
+                                  }}
+                                  placeholder="Course Code (e.g. 26CSCA0)"
+                                  className="w-1/3 p-2 border border-slate-300 rounded-lg text-xs font-mono font-semibold uppercase bg-white focus:ring-2 focus:ring-sky-500"
+                                />
+                                <input
+                                  type="text"
+                                  value={p.courseName}
+                                  onChange={e => {
+                                    const updated = [...prereqsArray];
+                                    updated[pIdx] = { ...updated[pIdx], courseName: e.target.value };
+                                    updateField('prerequisites', updated);
+                                  }}
+                                  placeholder="Course Title (e.g. Problem Solving and Python Programming)"
+                                  className="flex-1 p-2 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-sky-500"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = prereqsArray.filter((_, i) => i !== pIdx);
+                                    updateField('prerequisites', updated.length > 0 ? updated : 'Nil');
+                                  }}
+                                  className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors"
+                                  title="Remove Prerequisite"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newPrereq: Prerequisite = { courseCode: '', courseName: '' };
+                            updateField('prerequisites', [...prereqsArray, newPrereq]);
+                          }}
+                          className="w-full py-2 rounded-xl border border-dashed border-slate-300 text-slate-600 hover:text-sky-700 hover:border-sky-300 text-xs font-semibold transition-colors flex items-center justify-center space-x-1"
+                        >
+                          <span>+ Add Prerequisite</span>
+                        </button>
                       </div>
                     </div>
-
-                    <div className="pt-3 border-t border-slate-200">
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Prerequisites
-                      </label>
-                      <input
-                        type="text"
-                        value={Array.isArray(course.prerequisites) ? '' : (course.prerequisites || '')}
-                        onChange={e => updateField('prerequisites', e.target.value)}
-                        placeholder="Nil (or e.g. 26CSCA0 : Problem Solving)"
-                        className="w-full p-2.5 border border-slate-300 rounded-lg text-xs"
-                      />
-                      <span className="text-[11px] text-slate-500 mt-0.5 block">
-                        Enter "Nil" if there are no prerequisites.
-                      </span>
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Step 3: Course Outcomes */}
                 {currentStep === 2 && (

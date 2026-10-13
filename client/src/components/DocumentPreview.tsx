@@ -83,13 +83,34 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
   };
 
   // 1. Prerequisites formatting
-  let prereqText = 'NIL';
-  if (typeof course.prerequisites === 'string') {
-    prereqText = course.prerequisites.trim();
-    if (prereqText.toLowerCase() === 'nil') prereqText = 'NIL';
-  } else if (Array.isArray(course.prerequisites) && course.prerequisites.length > 0) {
-    prereqText = course.prerequisites.map(p => `${p.courseCode} ${p.courseName}`).join(', ');
-  }
+  const getPrerequisiteList = (prereqs: any): string[] => {
+    if (!prereqs) return [];
+    if (Array.isArray(prereqs)) {
+      return prereqs
+        .map(p => {
+          if (typeof p === 'string') return p.trim();
+          const code = (p.courseCode || '').trim();
+          const name = (p.courseName || '').trim();
+          if (code && name) return `${code} ${name}`;
+          return code || name || '';
+        })
+        .filter(s => s && s.toLowerCase() !== 'nil');
+    }
+    if (typeof prereqs === 'string') {
+      const trimmed = prereqs.trim();
+      if (!trimmed || trimmed.toLowerCase() === 'nil') return [];
+      if (trimmed.includes('\n')) {
+        return trimmed
+          .split('\n')
+          .map(s => s.trim().replace(/^[•\-\*]\s*/, ''))
+          .filter(s => s && s.toLowerCase() !== 'nil');
+      }
+      return [trimmed];
+    }
+    return [];
+  };
+
+  const prereqList = getPrerequisiteList(course.prerequisites);
 
   // 2. Course Outcomes
   const coList = course.courseOutcomes || [];
@@ -353,9 +374,17 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
           <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
             Prerequisite
           </div>
-          <p className="text-xs text-black mt-1 mb-0">
-            {prereqText}
-          </p>
+          {prereqList.length > 0 ? (
+            <ul className="list-disc pl-5 text-xs text-black mt-1 mb-0 space-y-0.5">
+              {prereqList.map((item, idx) => (
+                <li key={idx}>{item}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-black mt-1 mb-0">
+              NIL
+            </p>
+          )}
 
           {/* Line space between sections */}
           <div className="h-3.5 my-1" />

@@ -154,6 +154,7 @@ export interface Course {
     courseName: string;
     categoryAbbr: CategoryAbbreviation;
     semester: number;
+    semesterType?: 'ODD' | 'EVEN';
     L: number;
     T: number;
     P: number;
