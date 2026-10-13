@@ -10,6 +10,8 @@ export interface User {
     department: string;
     designation: string;
     programmeAccess: string[];
+    avatar?: string;
+    authProvider?: 'local' | 'google';
 }
 export interface Prerequisite {
     courseCode: string;

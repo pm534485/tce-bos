@@ -59,7 +59,28 @@ if (fs.existsSync(clientDist)) {
         res.sendFile(path.join(clientDist, 'index.html'));
     });
 }
-// Connect to MongoDB and start listening
+// Ensure DB connection for serverless invocations (Vercel)
+export async function connectDB() {
+    if (mongoose.connection.readyState === 1)
+        return;
+    const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
+    if (!uri)
+        throw new Error('MONGO_URI is not set in environment variables');
+    await mongoose.connect(uri, getConnectOptions(uri));
+}
+app.use(async (req, res, next) => {
+    if (mongoose.connection.readyState !== 1) {
+        try {
+            await connectDB();
+        }
+        catch (err) {
+            console.error('Serverless DB connection error:', err);
+            return res.status(500).json({ error: 'Database connection failed: ' + err.message });
+        }
+    }
+    next();
+});
+// Connect to MongoDB and start listening (only when running standalone, not in Vercel serverless)
 async function startServer() {
     const primaryUri = MONGO_URI;
     const fallbackUri = 'mongodb://localhost:27017/syllabusforge';
@@ -89,6 +110,8 @@ async function startServer() {
         console.log(`SyllabusForge API Server listening on http://localhost:${PORT}`);
     });
 }
-startServer();
+if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    startServer();
+}
 export default app;
 // Trigger reload for Atlas connection - 2026-10-13
