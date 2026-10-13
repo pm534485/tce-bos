@@ -304,19 +304,18 @@ export const CourseWizard: React.FC = () => {
 
   // Stepper definition
   const steps = [
-    { id: 'identity', title: '1. Course Code', desc: 'Code RR AA C U V & Title' },
-    { id: 'structure', title: '2. Structure & L-T-P', desc: 'Hours, credits, semester' },
-    { id: 'preamble', title: '3. Preamble & Prerequisites', desc: 'Course context & prior courses' },
-    { id: 'cos', title: '4. Course Outcomes', desc: 'TPS taxonomy & weightages' },
-    { id: 'assessment', title: '5. Assessment Pattern', desc: 'Continuous & Terminal exam' },
+    { id: 'identity', title: '1. Course Code & Credits', desc: 'Code, title, L-T-P & credits' },
+    { id: 'preamble', title: '2. Preamble & Prerequisites', desc: 'Course context & prior courses' },
+    { id: 'cos', title: '3. Course Outcomes', desc: 'TPS taxonomy & weightages' },
+    { id: 'assessment', title: '4. Assessment Pattern', desc: 'Continuous & Terminal exam' },
     {
       id: 'syllabus',
-      title: course.courseType === 'PRACTICAL' ? '6. Laboratory Experiments' : '6. Syllabus & Content',
+      title: course.courseType === 'PRACTICAL' ? '5. Laboratory Experiments' : '5. Syllabus & Content',
       desc: course.courseType === 'PRACTICAL' ? 'Experiments & Annexure 1' : 'Modules & Schedule',
     },
-    { id: 'resources', title: '7. Learning Resources', desc: 'Text & reference books' },
-    { id: 'designers', title: '8. Course Designers', desc: 'Faculty details & emails' },
-    { id: 'review', title: '9. Review & Submit', desc: '17-point compliance audit' },
+    { id: 'resources', title: '6. Learning Resources', desc: 'Text & reference books' },
+    { id: 'designers', title: '7. Course Designers', desc: 'Faculty details & emails' },
+    { id: 'review', title: '8. Review & Submit', desc: '17-point compliance audit' },
   ];
 
   // Real-time field-level validation helpers
@@ -584,9 +583,9 @@ export const CourseWizard: React.FC = () => {
 
                       {/* Column 3: Category, LTP & Credits Table */}
                       <div
-                        onClick={() => setCurrentStep(1)}
+                        onClick={() => setCurrentStep(0)}
                         className="md:col-span-4 grid grid-cols-5 border-collapse text-center cursor-pointer hover:bg-slate-50 transition-colors"
-                        title="Click to edit L-T-P and Credits in Step 2"
+                        title="Click to edit Category, L-T-P and Credits"
                       >
                         {/* Header Row */}
                         <div className="p-2 text-xs font-semibold text-slate-800 border-b border-r border-slate-900 bg-white">
@@ -626,37 +625,15 @@ export const CourseWizard: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Step 1: Course Identity */}
+                {/* Step 1: Course Code & Credits */}
                 {currentStep === 0 && (
                   <div className="space-y-4">
                     <div>
-                      <h2 className="text-xl font-bold text-slate-900">Course Code</h2>
+                      <h2 className="text-xl font-bold text-slate-900">Course Code & Credits</h2>
                     </div>
 
-                    {/* Course Code Composition Card - Direct Interactive Selection */}
-                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                              Course Code Composition
-                            </span>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                              Direct Selector
-                            </span>
-                          </div>
-                          <span className="text-[11px] text-slate-500">
-                            Select or change any component directly in the 5 cards below (RR, AA, C, U, V).
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-[11px] font-semibold text-slate-500">Composed Code:</span>
-                          <span className="font-mono text-base sm:text-lg font-black text-sky-800 bg-sky-100/80 px-3 py-0.5 rounded-lg border border-sky-300 shadow-xs tracking-wider">
-                            {course.courseCode}
-                          </span>
-                        </div>
-                      </div>
-
+                    {/* Course Code 5-Component Direct Selector */}
+                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
                       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-center text-xs">
                         {/* 1. RR: Regulation */}
                         <div className="p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between">
@@ -777,180 +754,126 @@ export const CourseWizard: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-500">
-                        <span>Compound Unique Key: <code className="font-mono font-bold text-slate-700">{course.regulationCode}-{course.programmeCode}-{course.courseCode}-v{course.version}</code></span>
-                        {hasFieldError('uniqueLetter') || hasFieldError('courseCode') ? (
-                          <span className="text-red-600 font-semibold flex items-center space-x-1">
-                            <AlertCircle className="w-3 h-3 text-red-500" />
-                            <span>Code configuration error</span>
-                          </span>
-                        ) : (
-                          <span className="text-emerald-600 font-semibold flex items-center space-x-1">
-                            <CheckCircle className="w-3 h-3 text-emerald-500" />
-                            <span>Standard Regulation 2026 Format Validated</span>
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Course Title Field */}
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="text-xs font-bold text-slate-700">
-                          Course Title <span className="text-rose-500">*</span>
-                        </label>
-                        <span className="text-[11px] text-slate-400">
-                          {(course.courseName || '').length}/60 characters
-                        </span>
-                      </div>
-                      <input
-                        type="text"
-                        value={course.courseName}
-                        onChange={e => updateField('courseName', e.target.value)}
-                        placeholder={
-                          course.courseType === 'PRACTICAL'
-                            ? 'AC Machines Laboratory'
-                            : 'Data Structures and Applications'
-                        }
-                        className={`w-full px-3.5 py-2.5 border rounded-lg text-sm font-medium transition-all ${
-                          hasFieldError('courseName')
-                            ? 'border-red-400 bg-red-50/20 text-slate-900 focus:ring-2 focus:ring-red-200 focus:border-red-500'
-                            : (course.courseName || '').trim()
-                            ? 'border-emerald-400 bg-emerald-50/10 focus:ring-2 focus:ring-emerald-200 focus:border-emerald-500'
-                            : 'border-slate-300 focus:ring-2 focus:ring-sky-500'
-                        }`}
-                      />
-                      <InlineFieldError field="courseName" />
-                      {!hasFieldError('courseName') && (course.courseName || '').trim() && (
-                        <InlineFieldSuccess message="Title verified & compliant with TCE Regulation 2026" />
-                      )}
-                      <div className="mt-1 text-[11px] text-slate-500 space-y-0.5">
-                        <p>• Only letters, digits and spaces. No hyphens, ampersands, or slashes.</p>
-                        <p>• Title Case. Rendered in CAPITAL and BOLD on official documents.</p>
-                        <p>
-                          • Use "Laboratory", never "Lab". Practical courses must end with "Laboratory".
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Category Abbreviation Confirmation */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Category Abbreviation (Credit Distribution Framework) <span className="text-rose-500">*</span>
-                      </label>
-                      <select
-                        value={course.categoryAbbr}
-                        onChange={e => updateField('categoryAbbr', e.target.value as any)}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-sky-500"
-                      >
-                        {CATEGORY_ABBREVIATIONS.map(abbr => (
-                          <option key={abbr} value={abbr}>
-                            {abbr}
-                          </option>
-                        ))}
-                      </select>
-                      <span className="text-[11px] text-slate-500 mt-0.5 block">
-                        HSMC, BSC, ESC, PCC, PEC, OEC, EEC, AC. Auto-suggested from category letter.
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 2: Contact Hours, LTP & Credits */}
-                {currentStep === 1 && (
-                  <div className="space-y-6">
-                    <div>
-                      <h2 className="text-xl font-bold text-slate-900">2. Contact Hours & Credits</h2>
-                      <p className="text-sm text-slate-500 mt-1">
-                        Specify contact periods. Credits are computed automatically using <strong>Credits = L + T + P/2</strong>.
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Lecture (L)
-                        </label>
-                        <input
-                          type="number"
-                          min={0}
-                          value={course.L}
-                          disabled={course.courseType === 'PRACTICAL'}
-                          onChange={e => updateField('L', parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Tutorial (T)
-                        </label>
-                        <input
-                          type="number"
-                          min={0}
-                          value={course.T}
-                          disabled={course.courseType === 'PRACTICAL'}
-                          onChange={e => updateField('T', parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Practical (P)
-                        </label>
-                        <input
-                          type="number"
-                          min={0}
-                          value={course.P}
-                          onChange={e => updateField('P', parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500"
-                        />
-                      </div>
-
-                      <div className="p-2 bg-sky-50 border border-sky-200 rounded-lg text-center">
-                        <label className="block text-xs font-bold text-sky-900 mb-1">
-                          Credits (Computed)
-                        </label>
-                        <span className="text-xl font-extrabold text-sky-700">{course.credits}</span>
-                      </div>
-                    </div>
-
-                    {/* Credit to Contact Hours Calculation */}
-                    {(() => {
-                      const effCredits = (course.courseType === 'TCP' && (course.L || 0) > 0) ? course.L : course.credits;
-                      const crit = getExpectedHoursCriteria(effCredits);
-                      return (
-                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div>
-                            <span className="text-xs font-bold text-slate-800 block">
-                              {course.courseType === 'TCP' ? `Theory Lecture Hours Criteria: ${crit.description} (based on L = ${course.L || 0} credits)` : `Contact Hours Criteria: ${crit.description}`}
-                            </span>
-                            <span className="text-[11px] text-slate-500">
-                              Institutional Criteria: 1 credit = 12 to 14 hrs | 2 credits = 24 to 28 hrs | 3 credits = 36 hrs | 4 credits = 48 hrs.
-                              {course.courseType === 'TCP' ? ` For TCP, practical lab component has ${course.P || 0} hours/week.` : ''}
-                            </span>
-                          </div>
-                          <div className="text-xs font-extrabold px-3 py-1 bg-sky-100 text-sky-800 rounded-lg border border-sky-200 self-start sm:self-auto">
-                            {course.courseType === 'TCP' ? `L = ${course.L || 0} → ${crit.description}` : `${course.credits} ${course.credits === 1 ? 'Credit' : 'Credits'} → ${crit.description}`}
-                          </div>
+                      {(hasFieldError('uniqueLetter') || hasFieldError('courseCode')) && (
+                        <div className="mt-2 text-xs text-red-600 font-semibold flex items-center space-x-1">
+                          <AlertCircle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+                          <span>Code configuration error</span>
                         </div>
-                      );
-                    })()}
+                      )}
+                    </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Course Title Field & Category Abbreviation */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="md:col-span-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-xs font-bold text-slate-700">
+                            Course Title <span className="text-rose-500">*</span>
+                          </label>
+                          <span className="text-[11px] text-slate-400">
+                            {(course.courseName || '').length}/60 characters
+                          </span>
+                        </div>
+                        <input
+                          type="text"
+                          value={course.courseName}
+                          onChange={e => updateField('courseName', e.target.value)}
+                          placeholder={
+                            course.courseType === 'PRACTICAL'
+                              ? 'AC Machines Laboratory'
+                              : 'Data Structures and Applications'
+                          }
+                          className={`w-full px-3.5 py-2.5 border rounded-lg text-sm font-medium transition-all ${
+                            hasFieldError('courseName')
+                              ? 'border-red-400 bg-red-50/20 text-slate-900 focus:ring-2 focus:ring-red-200 focus:border-red-500'
+                              : 'border-slate-300 focus:ring-2 focus:ring-sky-500'
+                          }`}
+                        />
+                        <InlineFieldError field="courseName" />
+                      </div>
+
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">
-                          Semester
+                          Category Abbreviation <span className="text-rose-500">*</span>
                         </label>
-                        <input
-                          type="number"
-                          min={1}
-                          max={8}
-                          value={course.semester}
-                          onChange={e => updateField('semester', parseInt(e.target.value) || 1)}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500"
-                        />
+                        <select
+                          value={course.categoryAbbr}
+                          onChange={e => updateField('categoryAbbr', e.target.value as any)}
+                          className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-sky-500 font-medium"
+                        >
+                          {CATEGORY_ABBREVIATIONS.map(abbr => (
+                            <option key={abbr} value={abbr}>
+                              {abbr}
+                            </option>
+                          ))}
+                        </select>
+                        <InlineFieldError field="categoryAbbr" />
+                      </div>
+                    </div>
+
+                    {/* Contact Hours & Credits Row */}
+                    <div className="pt-2 border-t border-slate-200 space-y-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Lecture (L)
+                          </label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={course.L}
+                            disabled={course.courseType === 'PRACTICAL'}
+                            onChange={e => updateField('L', parseInt(e.target.value) || 0)}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500 disabled:bg-slate-100 disabled:text-slate-400"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Tutorial (T)
+                          </label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={course.T}
+                            disabled={course.courseType === 'PRACTICAL'}
+                            onChange={e => updateField('T', parseInt(e.target.value) || 0)}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500 disabled:bg-slate-100 disabled:text-slate-400"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Practical (P)
+                          </label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={course.P}
+                            onChange={e => updateField('P', parseInt(e.target.value) || 0)}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500"
+                          />
+                        </div>
+
+                        <div className="p-2 bg-sky-50 border border-sky-200 rounded-lg text-center flex flex-col justify-center">
+                          <label className="block text-[11px] font-bold text-sky-900 mb-0.5">
+                            Credits
+                          </label>
+                          <span className="text-lg font-extrabold text-sky-700">{course.credits}</span>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Semester
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={8}
+                            value={course.semester}
+                            onChange={e => updateField('semester', parseInt(e.target.value) || 1)}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500"
+                          />
+                        </div>
                       </div>
 
                       {/* TCP TE Exam Type */}
@@ -969,38 +892,36 @@ export const CourseWizard: React.FC = () => {
                           </select>
                         </div>
                       )}
-                    </div>
 
-                    {/* Inline error feedback for Contact Hours & Credits */}
-                    <InlineFieldError field="credits" />
-                    <InlineFieldError field="L" />
-                    <InlineFieldError field="T" />
-                    <InlineFieldError field="P" />
-                    {!hasFieldError('credits') && !hasFieldError('L') && !hasFieldError('T') && !hasFieldError('P') && (
-                      <InlineFieldSuccess message="Contact periods and credits formula verified" />
-                    )}
+                      {/* Advanced / Elective Flag */}
+                      <div className="flex items-center space-x-2 pt-1">
+                        <input
+                          type="checkbox"
+                          id="isAdvanced"
+                          checked={course.isAdvanced || false}
+                          onChange={e => updateField('isAdvanced', e.target.checked)}
+                          className="rounded text-sky-600 focus:ring-sky-500 w-4 h-4 cursor-pointer"
+                        />
+                        <label htmlFor="isAdvanced" className="text-xs text-slate-700 font-medium cursor-pointer">
+                          Classify as Advanced / Elective Course
+                        </label>
+                      </div>
 
-                    {/* Advanced / Elective Flag */}
-                    <div className="flex items-center space-x-2 pt-2 border-t border-slate-200">
-                      <input
-                        type="checkbox"
-                        id="isAdvanced"
-                        checked={course.isAdvanced || false}
-                        onChange={e => updateField('isAdvanced', e.target.checked)}
-                        className="rounded text-sky-600 focus:ring-sky-500 w-4 h-4"
-                      />
-                      <label htmlFor="isAdvanced" className="text-xs text-slate-700 font-medium">
-                        Classify as Advanced / Elective Course (triggers mandatory 5-year publication recency rule on textbooks)
-                      </label>
+                      {/* Inline error feedback */}
+                      <InlineFieldError field="credits" />
+                      <InlineFieldError field="L" />
+                      <InlineFieldError field="T" />
+                      <InlineFieldError field="P" />
+                      <InlineFieldError field="semester" />
                     </div>
                   </div>
                 )}
 
-                {/* Step 3: Preamble & Prerequisites */}
-                {currentStep === 2 && (
+                {/* Step 2: Preamble & Prerequisites */}
+                {currentStep === 1 && (
                   <div className="space-y-4">
                     <div>
-                      <h2 className="text-xl font-bold text-slate-900">3. Course Preamble & Prerequisites</h2>
+                      <h2 className="text-xl font-bold text-slate-900">2. Course Preamble & Prerequisites</h2>
                       <p className="text-sm text-slate-500 mt-1">
                         Contextualizes domain, academic relevance, and prior foundational prerequisite courses.
                       </p>
@@ -1067,12 +988,12 @@ export const CourseWizard: React.FC = () => {
                   </div>
                 )}
 
-                {/* Step 4: Course Outcomes */}
-                {currentStep === 3 && (
+                {/* Step 3: Course Outcomes */}
+                {currentStep === 2 && (
                   <div className="space-y-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h2 className="text-xl font-bold text-slate-900">4. Course Outcomes (COs)</h2>
+                        <h2 className="text-xl font-bold text-slate-900">3. Course Outcomes (COs)</h2>
                         <p className="text-sm text-slate-500 mt-1">
                           {course.courseType === 'THEORY' && '6 to 8 COs. Minimum 70% at TPS >= 3. Total weightage = 100%.'}
                           {course.courseType === 'PRACTICAL' && 'Select from General CO Pool: Cognitive (2-4), Affective (2-3), Psychomotor (2-3).'}
@@ -1384,11 +1305,11 @@ export const CourseWizard: React.FC = () => {
                   </div>
                 )}
 
-                {/* Step 5: Assessment Pattern */}
-                {currentStep === 4 && (
+                {/* Step 4: Assessment Pattern */}
+                {currentStep === 3 && (
                   <div className="space-y-6">
                     <div>
-                      <h2 className="text-xl font-bold text-slate-900">5. Assessment Pattern</h2>
+                      <h2 className="text-xl font-bold text-slate-900">4. Assessment Pattern</h2>
                       <p className="text-sm text-slate-500 mt-1">
                         Configure mark distribution across continuous assessment and terminal examination. Each component column must total 100%.
                       </p>
@@ -1680,12 +1601,12 @@ export const CourseWizard: React.FC = () => {
                   </div>
                 )}
 
-                {/* Step 6: Syllabus Modules & Experiments */}
-                {currentStep === 5 && (
+                {/* Step 5: Syllabus Modules & Experiments */}
+                {currentStep === 4 && (
                   <div className="space-y-6">
                     <div>
                       <h2 className="text-xl font-bold text-slate-900">
-                        {course.courseType === 'PRACTICAL' ? '6. Laboratory Experiments' : '6. Syllabus Modules'}
+                        {course.courseType === 'PRACTICAL' ? '5. Laboratory Experiments' : '5. Syllabus Modules'}
                       </h2>
                       <p className="text-sm text-slate-500 mt-1">
                         {course.courseType === 'PRACTICAL'
@@ -2383,11 +2304,11 @@ export const CourseWizard: React.FC = () => {
                   </div>
                 )}
 
-                {/* Step 7: Learning Resources */}
-                {currentStep === 6 && (
+                {/* Step 6: Learning Resources */}
+                {currentStep === 5 && (
                   <div className="space-y-6">
                     <div>
-                      <h2 className="text-xl font-bold text-slate-900">7. Learning Resources</h2>
+                      <h2 className="text-xl font-bold text-slate-900">6. Learning Resources</h2>
                       <p className="text-sm text-slate-500 mt-1">
                         Must specify <strong>1 to 2 Text Books</strong> and <strong>3 to 6 Reference Books</strong> with mandatory publication year.
                       </p>
@@ -2710,11 +2631,11 @@ export const CourseWizard: React.FC = () => {
                   </div>
                 )}
 
-                {/* Step 8: Course Designers */}
-                {currentStep === 7 && (
+                {/* Step 7: Course Designers */}
+                {currentStep === 6 && (
                   <div className="space-y-6">
                     <div>
-                      <h2 className="text-xl font-bold text-slate-900">8. Course Designers</h2>
+                      <h2 className="text-xl font-bold text-slate-900">7. Course Designers</h2>
                       <p className="text-sm text-slate-500 mt-1">
                         List course designers with institutional emails.
                       </p>
@@ -2832,11 +2753,11 @@ export const CourseWizard: React.FC = () => {
                   </div>
                 )}
 
-                {/* Step 9: Review & Compliance Audit */}
-                {currentStep === 8 && (
+                {/* Step 8: Review & Compliance Audit */}
+                {currentStep === 7 && (
                   <div className="space-y-6">
                     <div>
-                      <h2 className="text-xl font-bold text-slate-900">9. Review & Self-Audit</h2>
+                      <h2 className="text-xl font-bold text-slate-900">8. Review & Self-Audit</h2>
                       <p className="text-sm text-slate-500 mt-1">
                         Final institutional check. Ensure all compliance checklist items pass prior to submitting for Department review.
                       </p>
