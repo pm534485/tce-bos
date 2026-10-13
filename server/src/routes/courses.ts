@@ -7,24 +7,27 @@ import { generatePdfDocument } from '../services/pdfGenerator.js';
 
 const router = Router();
 
+// Helper to escape regex special characters
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // GET /api/courses
 router.get('/', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { programme, semester, status, courseType, search } = req.query;
+    const { programme, semester, status, courseType, search, scope } = req.query;
     const filter: any = {};
+    const andConditions: any[] = [];
 
-    // Role-based visibility
-    if (req.user?.role === 'FACULTY') {
-      const userEmail = (req.user.email || '').toLowerCase();
-      // Faculty can see courses they created, are designers for, or in their department or programme
-      filter.$or = [
-        { createdBy: { $regex: `^${userEmail}$`, $options: 'i' } },
-        { 'designers.email': { $regex: `^${userEmail}$`, $options: 'i' } },
-        { department: req.user.department },
-        { programmeCode: { $in: req.user.programmeAccess || [] } },
-      ];
-    } else if (req.user?.role === 'HOD') {
-      // HoD can see all courses in their department OR programmes
+    const userEmail = (req.user?.email || '').trim().toLowerCase();
+    const userId = String(req.user?.id || '');
+    const userName = (req.user?.name || '').trim();
+
+    // If scope is 'all', bypass user filter (used by CourseWizard for code uniqueness checks)
+    if (scope === 'all') {
+      // No user restriction
+    } else if (scope === 'review' && (req.user?.role === 'HOD' || req.user?.role === 'ADMIN')) {
+      // HoD/Admin institutional review queue: all courses in their department/programme access
       const conditions: any[] = [];
       if (req.user.department) {
         conditions.push({ department: req.user.department });
@@ -33,7 +36,26 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response): Promise<v
         conditions.push({ programmeCode: { $in: req.user.programmeAccess } });
       }
       if (conditions.length > 0) {
-        filter.$or = conditions;
+        andConditions.push({ $or: conditions });
+      }
+    } else {
+      // By default: ONLY documents saved or submitted by the logged-in user are shown
+      const userConditions: any[] = [];
+      if (userEmail) {
+        const escapedEmail = escapeRegex(userEmail);
+        userConditions.push({ createdBy: { $regex: `^${escapedEmail}$`, $options: 'i' } });
+        userConditions.push({ 'designers.email': { $regex: `^${escapedEmail}$`, $options: 'i' } });
+      }
+      if (userId) {
+        userConditions.push({ createdBy: userId });
+      }
+      if (userName) {
+        const escapedName = escapeRegex(userName);
+        userConditions.push({ 'designers.name': { $regex: `^${escapedName}$`, $options: 'i' } });
+      }
+
+      if (userConditions.length > 0) {
+        andConditions.push({ $or: userConditions });
       }
     }
 
@@ -43,10 +65,16 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response): Promise<v
     if (courseType) filter.courseType = courseType;
 
     if (search) {
-      filter.$or = [
-        { courseName: { $regex: search, $options: 'i' } },
-        { courseCode: { $regex: search, $options: 'i' } },
-      ];
+      andConditions.push({
+        $or: [
+          { courseName: { $regex: search, $options: 'i' } },
+          { courseCode: { $regex: search, $options: 'i' } },
+        ],
+      });
+    }
+
+    if (andConditions.length > 0) {
+      filter.$and = andConditions;
     }
 
     const courses = await Course.find(filter).sort({ updatedAt: -1 });

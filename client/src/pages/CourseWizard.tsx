@@ -133,7 +133,7 @@ export const CourseWizard: React.FC = () => {
   useEffect(() => {
     async function loadData() {
       try {
-        const allCourses = await api.getCourses();
+        const allCourses = await api.getCourses({ scope: 'all' });
         const codes = allCourses.map(c => c.courseCode);
         setExistingCodes(codes);
 

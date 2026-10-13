@@ -92,8 +92,6 @@ export const Dashboard: React.FC = () => {
   // Summary counts
   const draftsCount = courses.filter(c => c.status === 'DRAFT').length;
   const submittedCount = courses.filter(c => c.status === 'SUBMITTED').length;
-  const approvedCount = courses.filter(c => c.status === 'APPROVED' || c.status === 'FINALIZED').length;
-  const returnedCount = courses.filter(c => c.status === 'RETURNED').length;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 pb-8 space-y-4">
@@ -149,14 +147,14 @@ export const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Institutional Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Metric Cards: Drafts & Submitted only */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Drafts */}
         <div
-          onClick={() => setSelectedStatus('DRAFT')}
+          onClick={() => setSelectedStatus(selectedStatus === 'DRAFT' ? 'ALL' : 'DRAFT')}
           className={`p-5 rounded-xl border-2 transition-all cursor-pointer bg-white relative overflow-hidden ${
             selectedStatus === 'DRAFT'
-              ? 'border-[#7B1113] bg-slate-50 shadow-md'
+              ? 'border-[#7B1113] bg-slate-50 shadow-md ring-2 ring-[#7B1113]/20'
               : 'border-slate-200 hover:border-[#7B1113]/50 hover:shadow-xs'
           }`}
         >
@@ -166,15 +164,15 @@ export const Dashboard: React.FC = () => {
             <Edit3 className="w-4 h-4 text-[#7B1113]" />
           </div>
           <div className="text-2xl sm:text-3xl font-black text-[#7B1113]">{draftsCount}</div>
-          <div className="text-xs text-slate-500 mt-1">In formulation</div>
+          <div className="text-xs text-slate-500 mt-1">In formulation / saved drafts</div>
         </div>
 
         {/* Submitted */}
         <div
-          onClick={() => setSelectedStatus('SUBMITTED')}
+          onClick={() => setSelectedStatus(selectedStatus === 'SUBMITTED' ? 'ALL' : 'SUBMITTED')}
           className={`p-5 rounded-xl border-2 transition-all cursor-pointer bg-white relative overflow-hidden ${
             selectedStatus === 'SUBMITTED'
-              ? 'border-[#0F2942] bg-[#F0F4F8] shadow-md'
+              ? 'border-[#0F2942] bg-[#F0F4F8] shadow-md ring-2 ring-[#0F2942]/20'
               : 'border-slate-200 hover:border-[#0F2942]/50 hover:shadow-xs'
           }`}
         >
@@ -184,43 +182,7 @@ export const Dashboard: React.FC = () => {
             <Clock className="w-4 h-4 text-[#0F2942]" />
           </div>
           <div className="text-2xl sm:text-3xl font-black text-[#0F2942]">{submittedCount}</div>
-          <div className="text-xs text-slate-500 mt-1">Department review</div>
-        </div>
-
-        {/* Needs Revision */}
-        <div
-          onClick={() => setSelectedStatus('RETURNED')}
-          className={`p-5 rounded-xl border-2 transition-all cursor-pointer bg-white relative overflow-hidden ${
-            selectedStatus === 'RETURNED'
-              ? 'border-amber-600 bg-amber-50/60 shadow-md'
-              : 'border-slate-200 hover:border-amber-400 hover:shadow-xs'
-          }`}
-        >
-          <div className="absolute top-0 left-0 right-0 h-1 bg-amber-600" />
-          <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Returned</span>
-            <AlertCircle className="w-4 h-4 text-amber-600" />
-          </div>
-          <div className="text-2xl sm:text-3xl font-black text-amber-700">{returnedCount}</div>
-          <div className="text-xs text-slate-500 mt-1">Remarks to address</div>
-        </div>
-
-        {/* Approved */}
-        <div
-          onClick={() => setSelectedStatus('APPROVED')}
-          className={`p-5 rounded-xl border-2 transition-all cursor-pointer bg-white relative overflow-hidden ${
-            selectedStatus === 'APPROVED'
-              ? 'border-emerald-600 bg-emerald-50/60 shadow-md'
-              : 'border-slate-200 hover:border-emerald-400 hover:shadow-xs'
-          }`}
-        >
-          <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-600" />
-          <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">BoS / ACM Approved</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div className="text-2xl sm:text-3xl font-black text-emerald-700">{approvedCount}</div>
-          <div className="text-xs text-slate-500 mt-1">Ready for publishing</div>
+          <div className="text-xs text-slate-500 mt-1">Department review / submitted syllabi</div>
         </div>
       </div>
 
@@ -247,9 +209,6 @@ export const Dashboard: React.FC = () => {
             <option value="ALL">All Statuses</option>
             <option value="DRAFT">Draft</option>
             <option value="SUBMITTED">Submitted</option>
-            <option value="RETURNED">Returned</option>
-            <option value="APPROVED">Approved</option>
-            <option value="FINALIZED">Finalized</option>
           </select>
 
           {/* Type Filter */}
@@ -276,7 +235,18 @@ export const Dashboard: React.FC = () => {
         <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500">
           <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <h3 className="text-base font-bold text-slate-800">No course syllabi found</h3>
-          <p className="text-xs text-slate-500 mt-1">Try adjusting your filters or click "New Syllabus" above.</p>
+          <p className="text-xs text-slate-500 mt-1 mb-4">
+            {selectedStatus !== 'ALL'
+              ? `You have no documents with status "${selectedStatus}".`
+              : 'You have not saved or submitted any course syllabi yet.'}
+          </p>
+          <button
+            onClick={() => navigate('/courses/new')}
+            className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-[#7B1113] hover:bg-[#5E0D0E] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>Create New Syllabus</span>
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

@@ -28,7 +28,7 @@ export const ReviewWorkspace: React.FC = () => {
   async function loadReviewQueue() {
     try {
       setLoading(true);
-      const data = await api.getCourses();
+      const data = await api.getCourses({ scope: 'review' });
       setCourses(data);
       if (data.length > 0 && !selectedCourse) {
         setSelectedCourse(data[0]);
