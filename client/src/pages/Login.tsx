@@ -66,21 +66,35 @@ export const Login: React.FC = () => {
         throw new Error('Google did not return an authentication token.');
       }
 
-      // Client-side token payload decoding to check domain
+      // Safe base64url JWT payload decoding
+      let credEmail = '';
+      let credName = '';
+      let credAvatar = '';
+      let credSub = '';
+
       const parts = response.credential.split('.');
       if (parts.length === 3) {
         try {
-          const payload = JSON.parse(
-            decodeURIComponent(
-              escape(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
-            )
+          let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+          while (base64.length % 4) {
+            base64 += '=';
+          }
+          const jsonStr = decodeURIComponent(
+            atob(base64)
+              .split('')
+              .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+              .join('')
           );
-          const credEmail = payload.email || '';
+          const payload = JSON.parse(jsonStr);
+          credEmail = payload.email || '';
+          credName = payload.name || '';
+          credAvatar = payload.picture || '';
+          credSub = payload.sub || '';
 
-          // STRICT REGEX VALIDATION: Only *.tce.edu accounts permitted
-          if (!isAllowedEmail(credEmail)) {
+          // STRICT DOMAIN VALIDATION: Only *.tce.edu accounts permitted (e.g., faculty and students)
+          if (credEmail && !isAllowedEmail(credEmail)) {
             setError(
-              `Access restricted: "${credEmail}" is not an authorized TCE account. Only official accounts ending with @tce.edu are permitted.`
+              `Access restricted: "${credEmail}" is not an authorized TCE account. Only official accounts ending with @tce.edu or @student.tce.edu are permitted.`
             );
             setLoading(false);
             return;
@@ -91,7 +105,13 @@ export const Login: React.FC = () => {
       }
 
       // Send credential to backend to persist user in MongoDB and issue session
-      await googleLogin({ credential: response.credential });
+      await googleLogin({
+        credential: response.credential,
+        email: credEmail,
+        name: credName,
+        avatar: credAvatar,
+        googleId: credSub,
+      });
       navigate('/');
     } catch (err: any) {
       setError(err.message || 'Google authentication failed.');
@@ -112,7 +132,6 @@ export const Login: React.FC = () => {
             client_id: GOOGLE_CLIENT_ID,
             callback: handleCredentialResponse,
             auto_select: false,
-            hd: 'tce.edu', // Restrict Google OAuth prompt to @tce.edu accounts
           });
 
           googleButtonRef.current.innerHTML = '';

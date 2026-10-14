@@ -124,7 +124,9 @@ router.post('/google', async (req, res): Promise<void> => {
       try {
         const parts = credential.split('.');
         if (parts.length === 3) {
-          const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf-8'));
+          let b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+          while (b64.length % 4) b64 += '=';
+          const payload = JSON.parse(Buffer.from(b64, 'base64').toString('utf-8'));
           if (payload.email) email = payload.email;
           if (payload.name && !name) name = payload.name;
           if (payload.picture && !avatar) avatar = payload.picture;
