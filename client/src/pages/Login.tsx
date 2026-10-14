@@ -205,36 +205,21 @@ export const Login: React.FC = () => {
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-[#C59B27]/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-[#0F2942]/40 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Top: Official College Logo & Name White Card Badge */}
+        {/* Top: Official College Logo Banner Card matching tfpep.tceapps.in */}
         <div className="relative z-10">
-          <div className="bg-white text-slate-800 rounded-2xl p-4 sm:p-5 shadow-2xl max-w-sm sm:max-w-md inline-flex items-center space-x-3.5 border border-white/40">
+          <div className="bg-white rounded-2xl p-3 sm:p-4 shadow-xl max-w-[340px] sm:max-w-[400px] inline-block border border-white/40">
             <img
-              src="/tce-logo.png"
-              alt="Thiagarajar College of Engineering Crest"
-              className="w-14 h-14 sm:w-16 sm:h-16 object-contain flex-shrink-0 drop-shadow-sm"
+              src="/tce-banner.png"
+              alt="Thiagarajar College of Engineering - Since 1957"
+              className="w-full h-auto object-contain block"
             />
-            <div className="flex flex-col flex-1 min-w-0 pr-1">
-              <span className="font-serif font-extrabold text-lg sm:text-xl text-[#7B1113] tracking-tight leading-tight">
-                Thiagarajar
-              </span>
-              <span className="font-bold text-xs sm:text-sm text-slate-900 leading-tight">
-                College of Engineering
-              </span>
-              <span className="font-serif italic text-[11px] text-[#A67C1E] font-medium leading-tight mt-0.5">
-                where quality and ethics matter
-              </span>
-            </div>
-            <div className="border-l border-slate-200 pl-3 flex-shrink-0 flex flex-col items-center justify-center text-center">
-              <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Since</span>
-              <span className="text-sm sm:text-base font-black text-[#7B1113] font-serif">1957</span>
-            </div>
           </div>
         </div>
 
         {/* Middle: Prominent Portal Title */}
         <div className="relative z-10 my-auto py-10 md:py-16 max-w-xl">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.12]">
-            Syllabi<br />
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.12]">
+            TCE - Syllabi<br />
             Management Portal
           </h1>
         </div>
@@ -258,7 +243,7 @@ export const Login: React.FC = () => {
             Welcome back
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-2 mb-6 leading-relaxed">
-            Enter your official TCE institutional email to access your syllabus workspace.
+            Authenticate with your official Google account to access your syllabus workspace.
           </p>
 
           {/* Error Message Box */}
@@ -272,11 +257,43 @@ export const Login: React.FC = () => {
             </div>
           )}
 
-          {/* Institutional / Google Account Login Form */}
+          {/* Google Official GIS / SSO Button (Top section like tfpep.tceapps.in) */}
+          <div className="space-y-3">
+            <div ref={googleButtonRef} className="flex justify-center w-full min-h-[44px]" />
+
+            {!gisRendered && (
+              <button
+                type="button"
+                onClick={handleGooglePrompt}
+                disabled={loading}
+                className="w-full py-3 px-5 rounded-full bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs sm:text-sm shadow-sm border border-slate-200 hover:border-slate-300 flex items-center justify-center space-x-3 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <GoogleIcon className="w-5 h-5 flex-shrink-0" />
+                <span>Sign in with Google</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FAF7F2] text-[#7B1113] border border-[#C59B27]/40">
+                  @tce.edu
+                </span>
+              </button>
+            )}
+          </div>
+
+          {/* Divider for Direct TCE Email Sign In */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-3 text-slate-400 font-semibold tracking-wider">
+                or sign in with tce email
+              </span>
+            </div>
+          </div>
+
+          {/* Institutional TCE Email Form */}
           <form onSubmit={handleTceEmailSubmit} className="space-y-4">
             <div>
               <label htmlFor="tce-email" className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Official TCE Email or Gmail Account
+                Official TCE Email or Gmail
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -290,8 +307,7 @@ export const Login: React.FC = () => {
                     setEmail(e.target.value);
                     setError(null);
                   }}
-                  placeholder="e.g. faculty@tce.edu or name@gmail.com"
-                  autoFocus
+                  placeholder="faculty@tce.edu or name@gmail.com"
                   required
                   className={`w-full pl-10 pr-28 py-2.5 bg-slate-50 border rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white transition-all ${
                     email && !isAllowedEmail(email)
@@ -306,7 +322,6 @@ export const Login: React.FC = () => {
                 </span>
               </div>
 
-              {/* Real-time domain validation indicator */}
               {email && isAllowedEmail(email) && (
                 <div className="mt-1.5 flex items-center space-x-1.5 text-[11px] text-emerald-600 font-medium animate-in fade-in duration-150">
                   <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
@@ -343,44 +358,12 @@ export const Login: React.FC = () => {
             <button
               type="submit"
               disabled={loading || !email || !isAllowedEmail(email)}
-              className="w-full py-3 px-5 rounded-full bg-[#7B1113] hover:bg-[#600D0F] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm shadow-md hover:shadow-lg flex items-center justify-center space-x-2 transition-all active:scale-[0.98] cursor-pointer mt-2"
+              className="w-full py-3 px-5 rounded-full bg-[#7B1113] hover:bg-[#600D0F] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm shadow-md hover:shadow-lg flex items-center justify-center space-x-2 transition-all active:scale-[0.98] cursor-pointer mt-1"
             >
               <span>{loading ? 'Signing in...' : 'Sign in to Workspace'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
-
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-3 text-slate-400 font-semibold tracking-wider">
-                or continue with
-              </span>
-            </div>
-          </div>
-
-          {/* Google Official GIS / SSO Button */}
-          <div className="space-y-4">
-            <div ref={googleButtonRef} className="flex justify-center w-full min-h-[44px]" />
-
-            {!gisRendered && (
-              <button
-                type="button"
-                onClick={handleGooglePrompt}
-                disabled={loading}
-                className="w-full py-2.5 px-5 rounded-full bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs sm:text-sm shadow-sm border border-slate-200 hover:border-slate-300 flex items-center justify-center space-x-3 transition-all active:scale-[0.98] cursor-pointer"
-              >
-                <GoogleIcon className="w-5 h-5 flex-shrink-0" />
-                <span>Sign in with Google</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FAF7F2] text-[#7B1113] border border-[#C59B27]/40">
-                  @tce.edu / gmail
-                </span>
-              </button>
-            )}
-          </div>
         </div>
       </div>
     </div>

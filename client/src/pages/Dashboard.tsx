@@ -104,7 +104,7 @@ export const Dashboard: React.FC = () => {
               <span>Regulation 2026</span>
             </span>
             <h1 className="text-sm font-bold tracking-tight font-tce text-white">
-              Syllabi Management Portal
+              TCE - Syllabi Management Portal
             </h1>
             <span className="hidden md:inline text-xs text-white/70">
               • Thiagarajar College of Engineering
