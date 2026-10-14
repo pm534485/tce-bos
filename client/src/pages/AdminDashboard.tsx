@@ -356,7 +356,7 @@ export const AdminDashboard: React.FC = () => {
                 type="text"
                 value={annexureNo}
                 onChange={e => setAnnexureNo(e.target.value)}
-                placeholder="e.g. 01"
+                placeholder="Enter annexure no."
                 className="w-full p-2 border border-slate-300 rounded-lg text-xs font-bold text-center"
               />
               <span className="text-[10px] text-slate-400 mt-0.5 block">File: Annexure {annexureNo} - &lt;Prog&gt;.docx</span>

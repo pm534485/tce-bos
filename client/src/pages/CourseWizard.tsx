@@ -972,11 +972,7 @@ export const CourseWizard: React.FC = () => {
                           type="text"
                           value={course.courseName}
                           onChange={e => updateField('courseName', e.target.value)}
-                          placeholder={
-                            course.courseType === 'PRACTICAL'
-                              ? 'AC Machines Laboratory'
-                              : 'Data Structures and Applications'
-                          }
+                          placeholder="Enter course name"
                           className={`w-full px-3.5 py-2.5 border rounded-lg text-sm font-medium transition-all ${
                             hasFieldError('courseName')
                               ? 'border-red-400 bg-red-50/20 text-slate-900 focus:ring-2 focus:ring-red-200 focus:border-red-500'
@@ -1157,7 +1153,7 @@ export const CourseWizard: React.FC = () => {
                           rows={6}
                           value={course.preamble}
                           onChange={e => updateField('preamble', e.target.value)}
-                          placeholder="State what the course is about, connect to real-world applications and modern standards..."
+                          placeholder="Enter course preamble..."
                           className={`w-full p-3.5 border rounded-xl text-sm leading-relaxed transition-all ${
                             hasFieldError('preamble')
                               ? 'border-red-400 bg-red-50/20 focus:ring-2 focus:ring-red-200 focus:border-red-500'
@@ -1199,7 +1195,7 @@ export const CourseWizard: React.FC = () => {
                                     updated[pIdx] = { ...updated[pIdx], courseCode: e.target.value.toUpperCase() };
                                     updateField('prerequisites', updated);
                                   }}
-                                  placeholder="Course Code (e.g. 26CSCA0)"
+                                  placeholder="Enter course code"
                                   className="w-1/3 p-2 border border-slate-300 rounded-lg text-xs font-mono font-semibold uppercase bg-white focus:ring-2 focus:ring-sky-500"
                                 />
                                 <input
@@ -1210,7 +1206,7 @@ export const CourseWizard: React.FC = () => {
                                     updated[pIdx] = { ...updated[pIdx], courseName: e.target.value };
                                     updateField('prerequisites', updated);
                                   }}
-                                  placeholder="Course Title (e.g. Problem Solving and Python Programming)"
+                                  placeholder="Enter course title"
                                   className="flex-1 p-2 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-sky-500"
                                 />
                                 <button
@@ -1328,7 +1324,7 @@ export const CourseWizard: React.FC = () => {
                                   updated[idx] = { ...updated[idx], statement: e.target.value };
                                   updateField('courseOutcomes', updated);
                                 }}
-                                placeholder="e.g. Apply fundamental engineering principles to solve practical domain problems."
+                                placeholder="Enter course outcome statement"
                                 className="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-sky-500"
                               />
                             </div>
@@ -1375,7 +1371,7 @@ export const CourseWizard: React.FC = () => {
                                   };
                                   updateField('courseOutcomes', updated);
                                 }}
-                                placeholder="e.g. 1.2.1 or 1.2.1, 2.1.3"
+                                placeholder="Enter PI code(s)"
                                 className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-sky-500"
                               />
                               <datalist id={`pi-suggestions-${idx}`}>
@@ -1909,7 +1905,7 @@ export const CourseWizard: React.FC = () => {
                                   updated[idx] = { ...updated[idx], mainTopic: e.target.value };
                                   updateField('modules', updated);
                                 }}
-                                placeholder={`e.g. Module ${mod.moduleNo || idx + 1} Main Topic (e.g. DC Circuits)`}
+                                placeholder={`Enter Module ${mod.moduleNo || idx + 1} topic`}
                                 className="w-full p-2 border border-slate-300 rounded-lg text-xs"
                               />
                             </div>
@@ -1940,7 +1936,7 @@ export const CourseWizard: React.FC = () => {
                                     return next;
                                   });
                                 }}
-                                placeholder="e.g. Subtopic A, Subtopic B - Subtopic C (comma or dash separated)"
+                                placeholder="Enter subtopics (comma, dash or newline separated)"
                                 className="w-full p-2 border border-slate-300 rounded-lg text-xs"
                               />
                             </div>
@@ -2327,8 +2323,8 @@ export const CourseWizard: React.FC = () => {
                                                       }}
                                                       placeholder={
                                                         isHeader
-                                                          ? `e.g. Module ${item.moduleNo} Title (e.g. Basics: Python interpreter)`
-                                                          : `e.g. Subtopic ${item.moduleNo} (e.g. Variables)`
+                                                          ? `Enter Module ${item.moduleNo} title`
+                                                          : 'Enter topic / subtopic'
                                                       }
                                                       className={`w-full p-1.5 border rounded text-xs transition-colors ${
                                                         isHeader
@@ -2412,7 +2408,7 @@ export const CourseWizard: React.FC = () => {
                                                     list[idx] = { ...list[idx], coMapping: e.target.value };
                                                     updateField('lectureScheduleItems', list);
                                                   }}
-                                                  placeholder="e.g. CO1, CO6"
+                                                  placeholder="Enter mapped COs"
                                                   className="w-full p-1 border border-slate-300 rounded text-xs text-center font-semibold text-slate-800 bg-white"
                                                   title="Mapped Course Outcomes (e.g. CO1, CO6)"
                                                 />
@@ -2532,7 +2528,7 @@ export const CourseWizard: React.FC = () => {
                                     updated[idx] = { ...updated[idx], name: e.target.value };
                                     updateField('experiments', updated);
                                   }}
-                                  placeholder={`e.g. Experiment ${exp.slNo || idx + 1} Title (e.g. Implementation of Linear Data Structures)`}
+                                  placeholder={`Enter Experiment ${exp.slNo || idx + 1} title`}
                                   className="w-full p-2 border border-slate-300 rounded-lg text-xs"
                                 />
                               </div>
@@ -2623,7 +2619,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], authors: e.target.value };
                                 updateField('textBooks', updated);
                               }}
-                              placeholder="Author(s) (e.g. William H. Hayt Jr.)"
+                              placeholder="Enter author(s)"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -2634,7 +2630,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], title: e.target.value };
                                 updateField('textBooks', updated);
                               }}
-                              placeholder="Title (e.g. Engineering Circuit Analysis)"
+                              placeholder="Enter textbook title"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -2645,7 +2641,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], edition: e.target.value };
                                 updateField('textBooks', updated);
                               }}
-                              placeholder="Edition (e.g. 10th Edition)"
+                              placeholder="Enter edition"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -2656,7 +2652,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], publisher: e.target.value };
                                 updateField('textBooks', updated);
                               }}
-                              placeholder="Publisher (e.g. McGraw Hill)"
+                              placeholder="Enter publisher"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -2667,7 +2663,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], year: parseInt(e.target.value) || '' };
                                 updateField('textBooks', updated);
                               }}
-                              placeholder="Year (e.g. 2022)"
+                              placeholder="Enter publication year"
                               className="p-2 border border-slate-300 rounded text-xs font-bold"
                             />
                           </div>
@@ -2729,7 +2725,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], authors: e.target.value };
                                 updateField('referenceBooks', updated);
                               }}
-                              placeholder="Author(s) (e.g. Abhijit Chakrabarthi)"
+                              placeholder="Enter author(s)"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -2740,7 +2736,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], title: e.target.value };
                                 updateField('referenceBooks', updated);
                               }}
-                              placeholder="Title (e.g. Basic Electrical Engineering)"
+                              placeholder="Enter reference book title"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -2751,7 +2747,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], edition: e.target.value };
                                 updateField('referenceBooks', updated);
                               }}
-                              placeholder="Edition (e.g. 2nd edition)"
+                              placeholder="Enter edition"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -2762,7 +2758,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], publisher: e.target.value };
                                 updateField('referenceBooks', updated);
                               }}
-                              placeholder="Publisher (e.g. McGraw Hill)"
+                              placeholder="Enter publisher"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -2773,7 +2769,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], year: parseInt(e.target.value) || '' };
                                 updateField('referenceBooks', updated);
                               }}
-                              placeholder="Year (e.g. 2021)"
+                              placeholder="Enter publication year"
                               className="p-2 border border-slate-300 rounded text-xs font-bold"
                             />
                           </div>
@@ -2841,7 +2837,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], title: e.target.value };
                                 updateField('webResources', updated);
                               }}
-                              placeholder="Course Title (e.g. Basic Electrical Circuits)"
+                              placeholder="Enter course title / resource name"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -2852,7 +2848,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], authors: e.target.value };
                                 updateField('webResources', updated);
                               }}
-                              placeholder="Instructor (e.g. Prof. Ashok Kumar Pradhan)"
+                              placeholder="Enter instructor name"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -2863,7 +2859,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], publisher: e.target.value };
                                 updateField('webResources', updated);
                               }}
-                              placeholder="Institute (e.g. IIT Kharagpur)"
+                              placeholder="Enter institute name"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -2874,7 +2870,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], url: e.target.value };
                                 updateField('webResources', updated);
                               }}
-                              placeholder="URL / Web Link (optional, e.g. https://nptel.ac.in/...)"
+                              placeholder="Enter URL / web link"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                           </div>
@@ -2944,7 +2940,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], name: e.target.value };
                                 updateField('designers', updated);
                               }}
-                              placeholder="Name (e.g. Dr. A. Kumar)"
+                              placeholder="Enter faculty name"
                               className="p-2 border border-slate-300 rounded text-xs font-semibold"
                             />
                             <select
@@ -2989,7 +2985,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], department: e.target.value };
                                 updateField('designers', updated);
                               }}
-                              placeholder="Department (e.g. Computer Science)"
+                              placeholder="Enter department"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -3000,7 +2996,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], email: e.target.value };
                                 updateField('designers', updated);
                               }}
-                              placeholder="Email ID (e.g. akumar@tce.edu)"
+                              placeholder="Enter email ID"
                               className="p-2 border border-slate-300 rounded text-xs font-mono text-[#0000FF] underline font-medium"
                             />
                           </div>

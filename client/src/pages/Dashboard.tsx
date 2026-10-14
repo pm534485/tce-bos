@@ -192,7 +192,7 @@ export const Dashboard: React.FC = () => {
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
           <input
             type="text"
-            placeholder="Search by course code (e.g. 26CACA0) or title..."
+            placeholder="Search by course code or title..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-[#7B1113] focus:border-[#7B1113]"

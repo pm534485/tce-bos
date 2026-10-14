@@ -329,10 +329,10 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
             <tbody>
               <tr>
                 <td rowSpan={2} className={`${isTcp ? 'w-[16%]' : 'w-[18%]'} font-bold text-center align-middle border border-black p-2 text-sm`}>
-                  {course.courseCode}
+                  {course.courseCode || '______'}
                 </td>
                 <td rowSpan={2} className={`${isTcp ? 'w-[38%]' : 'w-[44%]'} font-bold uppercase text-center align-middle border border-black p-2 text-sm`}>
-                  {titleCaps}
+                  {titleCaps || '____________________'}
                 </td>
                 <td className={`text-center border border-black p-1.5 ${isTcp ? 'w-[12%]' : 'w-[14%]'}`}>Category</td>
                 <td className={`text-center border border-black p-1.5 ${isTcp ? 'w-[5%]' : 'w-[6%]'}`}>L</td>
@@ -344,11 +344,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
                 )}
               </tr>
               <tr>
-                <td className="text-center border border-black p-1.5">{course.categoryAbbr || 'PCC'}</td>
-                <td className="text-center border border-black p-1.5">{course.L}</td>
-                <td className="text-center border border-black p-1.5">{course.T}</td>
-                <td className="text-center border border-black p-1.5">{course.P}</td>
-                <td className="text-center font-bold border border-black p-1.5">{course.credits}</td>
+                <td className="text-center border border-black p-1.5">{course.categoryAbbr || '—'}</td>
+                <td className="text-center border border-black p-1.5">{course.L !== undefined && course.L !== null ? course.L : '_'}</td>
+                <td className="text-center border border-black p-1.5">{course.T !== undefined && course.T !== null ? course.T : '_'}</td>
+                <td className="text-center border border-black p-1.5">{course.P !== undefined && course.P !== null ? course.P : '_'}</td>
+                <td className="text-center font-bold border border-black p-1.5">{course.credits !== undefined && course.credits !== null ? course.credits : '_'}</td>
                 {isTcp && (
                   <td className="text-center font-bold border border-black p-1.5">{course.teExamType || 'TCP-T'}</td>
                 )}
