@@ -731,7 +731,11 @@ export const CourseWizard: React.FC = () => {
                         title="Click to configure Course Code in Step 1"
                       >
                         <span className="font-mono text-xl sm:text-2xl font-black text-slate-950 tracking-wider group-hover:text-[#7B1113] transition-colors">
-                          {course.courseCode || '26CACA0'}
+                          {course.courseName?.trim() || id ? (
+                            course.courseCode || '______'
+                          ) : (
+                            <span className="text-slate-300 font-mono tracking-widest select-none">______</span>
+                          )}
                         </span>
                       </div>
 
@@ -745,8 +749,8 @@ export const CourseWizard: React.FC = () => {
                           {course.courseName?.trim() ? (
                             course.courseName.toUpperCase()
                           ) : (
-                            <span className="text-slate-400 font-normal italic lowercase">
-                              (enter course title in step 1)
+                            <span className="text-slate-300 font-mono tracking-widest select-none">
+                              ____________________
                             </span>
                           )}
                         </span>
@@ -777,19 +781,39 @@ export const CourseWizard: React.FC = () => {
 
                         {/* Value Row */}
                         <div className="p-2.5 text-xs sm:text-sm font-bold text-slate-900 border-r border-slate-900 flex items-center justify-center">
-                          {course.categoryAbbr || 'PCC'}
+                          {course.courseName?.trim() || id ? (
+                            course.categoryAbbr || '—'
+                          ) : (
+                            <span className="text-slate-300 font-mono select-none">____</span>
+                          )}
                         </div>
                         <div className="p-2.5 text-xs sm:text-sm font-bold text-slate-900 border-r border-slate-900 flex items-center justify-center">
-                          {course.L ?? (course.courseType === 'PRACTICAL' ? 0 : 3)}
+                          {course.courseName?.trim() || id ? (
+                            course.L ?? 0
+                          ) : (
+                            <span className="text-slate-300 font-mono select-none">_</span>
+                          )}
                         </div>
                         <div className="p-2.5 text-xs sm:text-sm font-bold text-slate-900 border-r border-slate-900 flex items-center justify-center">
-                          {course.T ?? (course.courseType === 'PRACTICAL' ? 0 : 1)}
+                          {course.courseName?.trim() || id ? (
+                            course.T ?? 0
+                          ) : (
+                            <span className="text-slate-300 font-mono select-none">_</span>
+                          )}
                         </div>
                         <div className="p-2.5 text-xs sm:text-sm font-bold text-slate-900 border-r border-slate-900 flex items-center justify-center">
-                          {course.P ?? (course.courseType === 'PRACTICAL' ? 3 : 0)}
+                          {course.courseName?.trim() || id ? (
+                            course.P ?? 0
+                          ) : (
+                            <span className="text-slate-300 font-mono select-none">_</span>
+                          )}
                         </div>
                         <div className="p-2.5 text-xs sm:text-sm font-black text-slate-950 flex items-center justify-center">
-                          {course.credits ?? (course.courseType === 'PRACTICAL' ? 1.5 : 4)}
+                          {course.courseName?.trim() || id ? (
+                            course.credits ?? 0
+                          ) : (
+                            <span className="text-slate-300 font-mono select-none">_</span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -983,7 +1007,7 @@ export const CourseWizard: React.FC = () => {
 
                     {/* Contact Hours & Credits Row */}
                     <div className="pt-2 border-t border-slate-200 space-y-4">
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <div>
                           <label className="block text-xs font-bold text-slate-700 mb-1">
                             Lecture (L)
@@ -1031,49 +1055,6 @@ export const CourseWizard: React.FC = () => {
                           </label>
                           <span className="text-lg font-extrabold text-sky-700">{course.credits}</span>
                         </div>
-
-                        <div>
-                          <label className="block text-xs font-bold text-slate-700 mb-1">
-                            Sem Type
-                          </label>
-                          <select
-                            value={(course.semester || 1) % 2 === 0 ? 'EVEN' : 'ODD'}
-                            onChange={e => {
-                              const isEven = e.target.value === 'EVEN';
-                              const currentSem = course.semester || 1;
-                              const newSem = isEven
-                                ? (currentSem % 2 === 0 ? currentSem : Math.min(8, currentSem + 1))
-                                : (currentSem % 2 !== 0 ? currentSem : Math.max(1, currentSem - 1));
-                              updateField('semester', newSem);
-                              updateField('semesterType', isEven ? 'EVEN' : 'ODD');
-                            }}
-                            className="w-full px-2 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold bg-white focus:ring-2 focus:ring-sky-500 cursor-pointer"
-                          >
-                            <option value="ODD">Odd Sem</option>
-                            <option value="EVEN">Even Sem</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-bold text-slate-700 mb-1">
-                            Semester
-                          </label>
-                          <select
-                            value={course.semester || 1}
-                            onChange={e => {
-                              const sem = parseInt(e.target.value) || 1;
-                              updateField('semester', sem);
-                              updateField('semesterType', sem % 2 === 0 ? 'EVEN' : 'ODD');
-                            }}
-                            className="w-full px-2 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold bg-white focus:ring-2 focus:ring-sky-500 cursor-pointer"
-                          >
-                            {((course.semester || 1) % 2 === 0 ? [2, 4, 6, 8] : [1, 3, 5, 7]).map(sem => (
-                              <option key={sem} value={sem}>
-                                Semester {sem}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
                       </div>
 
                       {/* TCP TE Exam Type */}
@@ -1093,26 +1074,11 @@ export const CourseWizard: React.FC = () => {
                         </div>
                       )}
 
-                      {/* Advanced / Elective Flag */}
-                      <div className="flex items-center space-x-2 pt-1">
-                        <input
-                          type="checkbox"
-                          id="isAdvanced"
-                          checked={course.isAdvanced || false}
-                          onChange={e => updateField('isAdvanced', e.target.checked)}
-                          className="rounded text-sky-600 focus:ring-sky-500 w-4 h-4 cursor-pointer"
-                        />
-                        <label htmlFor="isAdvanced" className="text-xs text-slate-700 font-medium cursor-pointer">
-                          Classify as Advanced / Elective Course
-                        </label>
-                      </div>
-
                       {/* Inline error feedback */}
                       <InlineFieldError field="credits" />
                       <InlineFieldError field="L" />
                       <InlineFieldError field="T" />
                       <InlineFieldError field="P" />
-                      <InlineFieldError field="semester" />
                     </div>
                   </div>
                 )}
