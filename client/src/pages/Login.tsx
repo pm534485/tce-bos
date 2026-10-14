@@ -1,16 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import {
-  AlertCircle,
-  CheckCircle,
-  ArrowRight,
-  Mail,
-  User as UserIcon,
-} from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
-// Authorized Email Regex: *.tce.edu (Official TCE accounts) OR gmail.com
-export const ALLOWED_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@(?:(?:[a-zA-Z0-9-]+\.)*tce\.edu|gmail\.com)$/i;
+// Authorized Google Email Validation Regex: Strictly *.tce.edu accounts only
+export const ALLOWED_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@(?:(?:[a-zA-Z0-9-]+\.)*tce\.edu)$/i;
 
 export function isAllowedEmail(email: string): boolean {
   if (!email || typeof email !== 'string') return false;
@@ -51,8 +45,6 @@ export const Login: React.FC = () => {
   const { user, googleLogin } = useAuth();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -85,10 +77,10 @@ export const Login: React.FC = () => {
           );
           const credEmail = payload.email || '';
 
-          // STRICT REGEX VALIDATION: *.tce.edu or @gmail.com permitted
+          // STRICT REGEX VALIDATION: Only *.tce.edu accounts permitted
           if (!isAllowedEmail(credEmail)) {
             setError(
-              `Access restricted: "${credEmail}" is not an authorized account. Only official accounts ending with .tce.edu or Google accounts ending with @gmail.com are permitted.`
+              `Access restricted: "${credEmail}" is not an authorized TCE account. Only official accounts ending with @tce.edu are permitted.`
             );
             setLoading(false);
             return;
@@ -120,6 +112,7 @@ export const Login: React.FC = () => {
             client_id: GOOGLE_CLIENT_ID,
             callback: handleCredentialResponse,
             auto_select: false,
+            hd: 'tce.edu', // Restrict Google OAuth prompt to @tce.edu accounts
           });
 
           googleButtonRef.current.innerHTML = '';
@@ -130,7 +123,7 @@ export const Login: React.FC = () => {
             text: 'signin_with',
             shape: 'pill',
             logo_alignment: 'left',
-            width: 320,
+            width: 300,
           });
 
           setGisRendered(true);
@@ -144,7 +137,7 @@ export const Login: React.FC = () => {
 
     if (!setupGoogle()) {
       intervalId = setInterval(() => {
-        if (setupGoogle()) {
+        if (!gisRendered && setupGoogle()) {
           clearInterval(intervalId);
         }
       }, 300);
@@ -153,39 +146,7 @@ export const Login: React.FC = () => {
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, []);
-
-  // Handle direct TCE Org Mail / Gmail Login
-  const handleTceEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanEmail = email.trim();
-
-    if (!cleanEmail) {
-      setError('Please enter your official TCE email address or Google account.');
-      return;
-    }
-
-    if (!isAllowedEmail(cleanEmail)) {
-      setError(
-        `Access restricted: "${cleanEmail}" is not an authorized email. Only official accounts ending with .tce.edu or Google accounts (@gmail.com) are permitted.`
-      );
-      return;
-    }
-
-    setError(null);
-    setLoading(true);
-    try {
-      await googleLogin({
-        email: cleanEmail.toLowerCase(),
-        name: name.trim() || undefined,
-      });
-      navigate('/');
-    } catch (err: any) {
-      setError(err.message || 'Authentication failed. Please verify your institutional email.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [gisRendered]);
 
   const handleGooglePrompt = () => {
     setError(null);
@@ -193,7 +154,7 @@ export const Login: React.FC = () => {
     if (google?.accounts?.id) {
       google.accounts.id.prompt();
     } else {
-      setError('Google Workspace SSO is loading. You can sign in directly using your TCE institutional email above.');
+      setError('Google Workspace SSO is loading. Please wait a moment and try again.');
     }
   };
 
@@ -231,7 +192,7 @@ export const Login: React.FC = () => {
         </div>
       </div>
 
-      {/* RIGHT SIDE: Institutional TCE Sign In Card */}
+      {/* RIGHT SIDE: Institutional TCE Google Sign In Card */}
       <div className="w-full md:w-1/2 lg:w-5/12 flex items-center justify-center p-6 sm:p-10 lg:p-14 bg-[#F8FAFC]">
         <div className="bg-white rounded-3xl p-8 sm:p-10 shadow-xl border border-slate-100 max-w-md w-full">
           {/* Top Pill Badge */}
@@ -242,7 +203,7 @@ export const Login: React.FC = () => {
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             Welcome back
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 mt-2 mb-6 leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-500 mt-2 mb-8 leading-relaxed">
             Authenticate with your official Google account to access your syllabus workspace.
           </p>
 
@@ -257,8 +218,8 @@ export const Login: React.FC = () => {
             </div>
           )}
 
-          {/* Google Official GIS / SSO Button (Top section like tfpep.tceapps.in) */}
-          <div className="space-y-3">
+          {/* Google Official GIS / SSO Button (Prominent Box matching tfpep.tceapps.in) */}
+          <div className="border border-slate-200/90 rounded-2xl p-6 sm:p-8 flex flex-col items-center justify-center bg-slate-50/60 hover:bg-slate-50 transition-colors">
             <div ref={googleButtonRef} className="flex justify-center w-full min-h-[44px]" />
 
             {!gisRendered && (
@@ -266,106 +227,22 @@ export const Login: React.FC = () => {
                 type="button"
                 onClick={handleGooglePrompt}
                 disabled={loading}
-                className="w-full py-3 px-5 rounded-full bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs sm:text-sm shadow-sm border border-slate-200 hover:border-slate-300 flex items-center justify-center space-x-3 transition-all active:scale-[0.98] cursor-pointer"
+                className="w-full py-3.5 px-6 rounded-full bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm shadow-sm border border-slate-200 hover:border-slate-300 flex items-center justify-center space-x-3 transition-all active:scale-[0.98] cursor-pointer"
               >
                 <GoogleIcon className="w-5 h-5 flex-shrink-0" />
                 <span>Sign in with Google</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FAF7F2] text-[#7B1113] border border-[#C59B27]/40">
-                  @tce.edu
-                </span>
               </button>
             )}
-          </div>
 
-          {/* Divider for Direct TCE Email Sign In */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-3 text-slate-400 font-semibold tracking-wider">
-                or sign in with tce email
-              </span>
+            <div className="mt-4 flex items-center space-x-1.5 text-[11px] text-slate-400 font-medium">
+              <span>Restricted to</span>
+              <span className="font-bold text-[#7B1113]">@tce.edu</span>
+              <span>accounts only</span>
             </div>
           </div>
-
-          {/* Institutional TCE Email Form */}
-          <form onSubmit={handleTceEmailSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="tce-email" className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Official TCE Email or Gmail
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <Mail className="w-4 h-4" />
-                </div>
-                <input
-                  id="tce-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setError(null);
-                  }}
-                  placeholder="faculty@tce.edu or name@gmail.com"
-                  required
-                  className={`w-full pl-10 pr-28 py-2.5 bg-slate-50 border rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white transition-all ${
-                    email && !isAllowedEmail(email)
-                      ? 'border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500'
-                      : email && isAllowedEmail(email)
-                      ? 'border-emerald-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500'
-                      : 'border-slate-200 focus:border-[#7B1113] focus:ring-1 focus:ring-[#7B1113]'
-                  }`}
-                />
-                <span className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-[10px] font-semibold text-slate-400">
-                  @tce.edu / gmail
-                </span>
-              </div>
-
-              {email && isAllowedEmail(email) && (
-                <div className="mt-1.5 flex items-center space-x-1.5 text-[11px] text-emerald-600 font-medium animate-in fade-in duration-150">
-                  <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span>Authorized TCE institutional or Google domain</span>
-                </div>
-              )}
-              {email && !isAllowedEmail(email) && (
-                <div className="mt-1.5 flex items-center space-x-1.5 text-[11px] text-red-500 font-medium animate-in fade-in duration-150">
-                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span>Must be an official .tce.edu or @gmail.com account</span>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="faculty-name" className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Faculty / User Name <span className="text-slate-400 font-normal">(optional)</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <UserIcon className="w-4 h-4" />
-                </div>
-                <input
-                  id="faculty-name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Dr. K. Ramesh"
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#7B1113] focus:ring-1 focus:ring-[#7B1113] transition-all"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading || !email || !isAllowedEmail(email)}
-              className="w-full py-3 px-5 rounded-full bg-[#7B1113] hover:bg-[#600D0F] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm shadow-md hover:shadow-lg flex items-center justify-center space-x-2 transition-all active:scale-[0.98] cursor-pointer mt-1"
-            >
-              <span>{loading ? 'Signing in...' : 'Sign in to Workspace'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
         </div>
       </div>
     </div>
   );
 };
+

@@ -102,8 +102,8 @@ router.post('/login', async (req, res): Promise<void> => {
   }
 });
 
-// Authorized Google Email Validation Regex: *.tce.edu (Official TCE accounts) OR gmail.com
-export const ALLOWED_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@(?:(?:[a-zA-Z0-9-]+\.)*tce\.edu|gmail\.com)$/i;
+// Authorized Google Email Validation Regex: Strictly *.tce.edu (Official TCE accounts only)
+export const ALLOWED_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@(?:(?:[a-zA-Z0-9-]+\.)*tce\.edu)$/i;
 
 export function isAllowedEmail(email: string): boolean {
   if (!email || typeof email !== 'string') return false;
@@ -114,7 +114,7 @@ export function isAllowedEmail(email: string): boolean {
 export const isTceEmail = isAllowedEmail;
 export const TCE_EMAIL_REGEX = ALLOWED_EMAIL_REGEX;
 
-// POST /api/auth/google - Login with Google (TCE Institutional accounts and Gmail accounts)
+// POST /api/auth/google - Login with Google (Strictly TCE Institutional accounts)
 router.post('/google', async (req, res): Promise<void> => {
   try {
     let { credential, email, name, avatar, googleId } = req.body;
@@ -136,14 +136,14 @@ router.post('/google', async (req, res): Promise<void> => {
     }
 
     if (!email) {
-      res.status(400).json({ error: 'Google or TCE email is required.' });
+      res.status(400).json({ error: 'Official TCE Google account email is required.' });
       return;
     }
 
-    // DOMAIN REGEX VALIDATION: *.tce.edu OR gmail.com allowed
+    // DOMAIN REGEX VALIDATION: Strictly *.tce.edu accounts permitted
     if (!isAllowedEmail(email)) {
       res.status(403).json({
-        error: `Access restricted: "${email}" is not an authorized account. Please use your official institutional account ending with .tce.edu or your Google @gmail.com account.`,
+        error: `Access restricted: "${email}" is not an authorized TCE institutional account. Only official accounts ending with @tce.edu are permitted to sign in via Google.`,
       });
       return;
     }
