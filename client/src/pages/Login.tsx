@@ -2,25 +2,24 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  Shield,
   AlertCircle,
-  Sparkles,
-  X,
   CheckCircle,
   ArrowRight,
-  BookOpen,
-  UserCheck,
   Mail,
-  Lock,
+  User as UserIcon,
 } from 'lucide-react';
 
-// TCE Institutional Domain Regex: ONLY *.tce.edu accounts allowed
-export const TCE_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@(?:[a-zA-Z0-9-]+\.)*tce\.edu$/i;
+// Authorized Email Regex: *.tce.edu (Official TCE accounts) OR gmail.com
+export const ALLOWED_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@(?:(?:[a-zA-Z0-9-]+\.)*tce\.edu|gmail\.com)$/i;
 
-export function isTceEmail(email: string): boolean {
+export function isAllowedEmail(email: string): boolean {
   if (!email || typeof email !== 'string') return false;
-  return TCE_EMAIL_REGEX.test(email.trim());
+  return ALLOWED_EMAIL_REGEX.test(email.trim());
 }
+
+// Backward compatible aliases
+export const isTceEmail = isAllowedEmail;
+export const TCE_EMAIL_REGEX = ALLOWED_EMAIL_REGEX;
 
 // Google Official Multi-Color Icon
 const GoogleIcon: React.FC<{ className?: string }> = ({ className = 'w-5 h-5' }) => (
@@ -46,20 +45,16 @@ const GoogleIcon: React.FC<{ className?: string }> = ({ className = 'w-5 h-5' })
 
 const GOOGLE_CLIENT_ID =
   (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID ||
-  '829781674375-o162b2lvc1kfv8ivolpae6giqdh31lt3.apps.googleusercontent.com';
+  '615647398835-fo26hv337bphlvkoq6g91m0hu0b0ub1p.apps.googleusercontent.com';
 
 export const Login: React.FC = () => {
-  const { user, login, googleLogin, quickLogin } = useAuth();
+  const { user, googleLogin } = useAuth();
   const navigate = useNavigate();
 
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showAccountChooser, setShowAccountChooser] = useState(false);
-  const [showDemoPersonas, setShowDemoPersonas] = useState(false);
-
-  // Custom TCE Google account input state
-  const [customEmail, setCustomEmail] = useState('');
-  const [customName, setCustomName] = useState('');
 
   const googleButtonRef = useRef<HTMLDivElement>(null);
   const [gisRendered, setGisRendered] = useState(false);
@@ -88,12 +83,12 @@ export const Login: React.FC = () => {
               escape(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
             )
           );
-          const email = payload.email || '';
+          const credEmail = payload.email || '';
 
-          // STRICT REGEX VALIDATION: only *.tce.edu permitted
-          if (!isTceEmail(email)) {
+          // STRICT REGEX VALIDATION: *.tce.edu or @gmail.com permitted
+          if (!isAllowedEmail(credEmail)) {
             setError(
-              `Access restricted: "${email}" is not an authorized TCE institutional Google account. Only official accounts ending with .tce.edu are permitted.`
+              `Access restricted: "${credEmail}" is not an authorized account. Only official accounts ending with .tce.edu or Google accounts ending with @gmail.com are permitted.`
             );
             setLoading(false);
             return;
@@ -138,8 +133,6 @@ export const Login: React.FC = () => {
             width: 320,
           });
 
-          // Trigger One-Tap prompt exactly as seen in friend's portal
-          google.accounts.id.prompt();
           setGisRendered(true);
           return true;
         } catch (e) {
@@ -162,43 +155,52 @@ export const Login: React.FC = () => {
     };
   }, []);
 
-  // Direct login with a selected TCE Google account
-  const handleSelectAccount = async (email: string, name?: string) => {
-    if (!isTceEmail(email)) {
-      setError(`Access restricted: "${email}" is not an authorized .tce.edu account.`);
+  // Handle direct TCE Org Mail / Gmail Login
+  const handleTceEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanEmail = email.trim();
+
+    if (!cleanEmail) {
+      setError('Please enter your official TCE email address or Google account.');
+      return;
+    }
+
+    if (!isAllowedEmail(cleanEmail)) {
+      setError(
+        `Access restricted: "${cleanEmail}" is not an authorized email. Only official accounts ending with .tce.edu or Google accounts (@gmail.com) are permitted.`
+      );
       return;
     }
 
     setError(null);
     setLoading(true);
     try {
-      await googleLogin({ email, name });
-      setShowAccountChooser(false);
+      await googleLogin({
+        email: cleanEmail.toLowerCase(),
+        name: name.trim() || undefined,
+      });
       navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Failed to authenticate with Google account.');
+      setError(err.message || 'Authentication failed. Please verify your institutional email.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleQuick = async (role: 'FACULTY' | 'HOD' | 'ADMIN') => {
+  const handleGooglePrompt = () => {
     setError(null);
-    setLoading(true);
-    try {
-      await quickLogin(role);
-      navigate('/');
-    } catch (err: any) {
-      setError(err.message || 'Demo login failed.');
-    } finally {
-      setLoading(false);
+    const google = (window as any).google;
+    if (google?.accounts?.id) {
+      google.accounts.id.prompt();
+    } else {
+      setError('Google Workspace SSO is loading. You can sign in directly using your TCE institutional email above.');
     }
   };
 
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#F8FAFC] font-sans">
       {/* LEFT SIDE: Deep TCE Maroon Brand Panel */}
-      <div className="w-full md:w-1/2 lg:w-7/12 bg-gradient-to-br from-[#38050A] via-[#480910] to-[#2B0307] p-8 sm:p-12 lg:p-16 flex flex-col justify-between relative overflow-hidden text-white min-h-[460px] md:min-h-screen">
+      <div className="w-full md:w-1/2 lg:w-7/12 bg-gradient-to-br from-[#38050A] via-[#480910] to-[#2B0307] p-8 sm:p-12 lg:p-16 flex flex-col justify-between relative overflow-hidden text-white min-h-[420px] md:min-h-screen">
         {/* Subtle decorative glows */}
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-[#C59B27]/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-[#0F2942]/40 rounded-full blur-3xl pointer-events-none" />
@@ -229,26 +231,12 @@ export const Login: React.FC = () => {
           </div>
         </div>
 
-        {/* Middle: Prominent Portal Title & OBE Engine Tagline */}
+        {/* Middle: Prominent Portal Title */}
         <div className="relative z-10 my-auto py-10 md:py-16 max-w-xl">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.12]">
-            Faculty<br />
-            Curriculum & Syllabi<br />
+            Syllabi<br />
             Management Portal
           </h1>
-          <p className="mt-5 text-sm sm:text-base text-white/85 font-normal leading-relaxed max-w-lg">
-            Outcome Based Education (OBE) & Syllabus Formulation Engine aligned with Autonomous Regulation 2026.
-          </p>
-
-          <div className="mt-6 flex flex-wrap items-center gap-2.5">
-            <span className="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full bg-white/10 text-white/90 border border-white/15 backdrop-blur-sm">
-              <Sparkles className="w-3.5 h-3.5 text-[#E2BF53] mr-1.5" />
-              Regulation 2026 Autonomous Portal
-            </span>
-            <span className="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full bg-[#C59B27]/25 text-[#F2D785] border border-[#C59B27]/40 backdrop-blur-sm">
-              Board of Studies (BoS)
-            </span>
-          </div>
         </div>
 
         {/* Bottom: Affiliation & Copyright Footer */}
@@ -258,7 +246,7 @@ export const Login: React.FC = () => {
         </div>
       </div>
 
-      {/* RIGHT SIDE: Clean Sign In Card Matching Friend's Website */}
+      {/* RIGHT SIDE: Institutional TCE Sign In Card */}
       <div className="w-full md:w-1/2 lg:w-5/12 flex items-center justify-center p-6 sm:p-10 lg:p-14 bg-[#F8FAFC]">
         <div className="bg-white rounded-3xl p-8 sm:p-10 shadow-xl border border-slate-100 max-w-md w-full">
           {/* Top Pill Badge */}
@@ -269,11 +257,11 @@ export const Login: React.FC = () => {
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             Welcome back
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 mt-2 mb-8 leading-relaxed">
-            Authenticate with your official Google account to access your syllabus workspace.
+          <p className="text-xs sm:text-sm text-slate-500 mt-2 mb-6 leading-relaxed">
+            Enter your official TCE institutional email to access your syllabus workspace.
           </p>
 
-          {/* Error Message Box (e.g. Non-TCE Email Domain Blocked) */}
+          {/* Error Message Box */}
           {error && (
             <div className="p-4 mb-6 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-800 flex items-start space-x-2.5 animate-in fade-in duration-200">
               <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
@@ -284,223 +272,117 @@ export const Login: React.FC = () => {
             </div>
           )}
 
-          {/* Google Sign In Area */}
-          <div className="space-y-4">
-            {/* Primary Google Sign-In Pill Button */}
+          {/* Institutional / Google Account Login Form */}
+          <form onSubmit={handleTceEmailSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="tce-email" className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Official TCE Email or Gmail Account
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <input
+                  id="tce-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setError(null);
+                  }}
+                  placeholder="e.g. faculty@tce.edu or name@gmail.com"
+                  autoFocus
+                  required
+                  className={`w-full pl-10 pr-28 py-2.5 bg-slate-50 border rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white transition-all ${
+                    email && !isAllowedEmail(email)
+                      ? 'border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500'
+                      : email && isAllowedEmail(email)
+                      ? 'border-emerald-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500'
+                      : 'border-slate-200 focus:border-[#7B1113] focus:ring-1 focus:ring-[#7B1113]'
+                  }`}
+                />
+                <span className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-[10px] font-semibold text-slate-400">
+                  @tce.edu / gmail
+                </span>
+              </div>
+
+              {/* Real-time domain validation indicator */}
+              {email && isAllowedEmail(email) && (
+                <div className="mt-1.5 flex items-center space-x-1.5 text-[11px] text-emerald-600 font-medium animate-in fade-in duration-150">
+                  <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>Authorized TCE institutional or Google domain</span>
+                </div>
+              )}
+              {email && !isAllowedEmail(email) && (
+                <div className="mt-1.5 flex items-center space-x-1.5 text-[11px] text-red-500 font-medium animate-in fade-in duration-150">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>Must be an official .tce.edu or @gmail.com account</span>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="faculty-name" className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Faculty / User Name <span className="text-slate-400 font-normal">(optional)</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <UserIcon className="w-4 h-4" />
+                </div>
+                <input
+                  id="faculty-name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Dr. K. Ramesh"
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#7B1113] focus:ring-1 focus:ring-[#7B1113] transition-all"
+                />
+              </div>
+            </div>
+
             <button
-              type="button"
-              onClick={() => {
-                setError(null);
-                setShowAccountChooser(true);
-              }}
-              disabled={loading}
-              className="w-full py-3 px-5 rounded-full bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs sm:text-sm shadow-md border border-slate-200 hover:border-slate-300 flex items-center justify-center space-x-3 transition-all active:scale-[0.98] cursor-pointer group"
+              type="submit"
+              disabled={loading || !email || !isAllowedEmail(email)}
+              className="w-full py-3 px-5 rounded-full bg-[#7B1113] hover:bg-[#600D0F] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm shadow-md hover:shadow-lg flex items-center justify-center space-x-2 transition-all active:scale-[0.98] cursor-pointer mt-2"
             >
-              <GoogleIcon className="w-5 h-5 flex-shrink-0 group-hover:scale-105 transition-transform" />
-              <span>Sign in with Google</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FAF7F2] text-[#7B1113] border border-[#C59B27]/40">
-                @tce.edu
-              </span>
+              <span>{loading ? 'Signing in...' : 'Sign in to Workspace'}</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
+          </form>
 
-            {/* Hidden container for GIS button fallback */}
-            <div ref={googleButtonRef} className="hidden" />
-
-            {/* Institutional Security Policy Note */}
-            <div className="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#C59B27]/25 text-[11px] text-slate-600 flex items-start space-x-2">
-              <Shield className="w-4 h-4 text-[#7B1113] flex-shrink-0 mt-0.5" />
-              <span className="leading-relaxed">
-                Security Policy: Only emails with domain{' '}
-                <strong className="text-[#7B1113] font-bold">*.tce.edu</strong> are permitted access. Syllabi and documents are persistently retained in MongoDB.
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-3 text-slate-400 font-semibold tracking-wider">
+                or continue with
               </span>
             </div>
           </div>
 
-          {/* Subtle Offline Demo / Quick Test Drawer Toggle */}
-          <div className="mt-8 pt-5 border-t border-slate-100 text-center">
-            <button
-              type="button"
-              onClick={() => setShowDemoPersonas(!showDemoPersonas)}
-              className="text-[11px] text-slate-400 hover:text-slate-600 font-medium transition-colors cursor-pointer"
-            >
-              {showDemoPersonas ? 'Hide offline demo accounts' : 'Developer / Offline demo login'}
-            </button>
+          {/* Google Official GIS / SSO Button */}
+          <div className="space-y-4">
+            <div ref={googleButtonRef} className="flex justify-center w-full min-h-[44px]" />
 
-            {showDemoPersonas && (
-              <div className="mt-3 grid grid-cols-3 gap-2 animate-in fade-in duration-150">
-                <button
-                  type="button"
-                  onClick={() => handleQuick('FACULTY')}
-                  disabled={loading}
-                  className="p-2.5 rounded-xl border border-slate-200 hover:border-[#7B1113] hover:bg-[#FAF7F2] text-center transition-all group cursor-pointer"
-                >
-                  <BookOpen className="w-4 h-4 text-[#7B1113] mx-auto mb-1 group-hover:scale-105" />
-                  <span className="text-[11px] font-bold text-slate-800 block">Faculty</span>
-                  <span className="text-[9px] text-slate-400 block truncate">Dr. Sharmila</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleQuick('HOD')}
-                  disabled={loading}
-                  className="p-2.5 rounded-xl border border-slate-200 hover:border-[#0F2942] hover:bg-[#F0F4F8] text-center transition-all group cursor-pointer"
-                >
-                  <UserCheck className="w-4 h-4 text-[#0F2942] mx-auto mb-1 group-hover:scale-105" />
-                  <span className="text-[11px] font-bold text-slate-800 block">HoD</span>
-                  <span className="text-[9px] text-slate-400 block truncate">Dr. Suresh</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleQuick('ADMIN')}
-                  disabled={loading}
-                  className="p-2.5 rounded-xl border border-slate-200 hover:border-[#C59B27] hover:bg-[#FDF9EE] text-center transition-all group cursor-pointer"
-                >
-                  <Shield className="w-4 h-4 text-[#9C7A1D] mx-auto mb-1 group-hover:scale-105" />
-                  <span className="text-[11px] font-bold text-slate-800 block">Admin</span>
-                  <span className="text-[9px] text-slate-400 block truncate">Dean Acad</span>
-                </button>
-              </div>
+            {!gisRendered && (
+              <button
+                type="button"
+                onClick={handleGooglePrompt}
+                disabled={loading}
+                className="w-full py-2.5 px-5 rounded-full bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs sm:text-sm shadow-sm border border-slate-200 hover:border-slate-300 flex items-center justify-center space-x-3 transition-all active:scale-[0.98] cursor-pointer"
+              >
+                <GoogleIcon className="w-5 h-5 flex-shrink-0" />
+                <span>Sign in with Google</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FAF7F2] text-[#7B1113] border border-[#C59B27]/40">
+                  @tce.edu / gmail
+                </span>
+              </button>
             )}
           </div>
         </div>
       </div>
-
-      {/* GOOGLE ACCOUNT CHOOSER DIALOG (Matching Google Accounts Modal from Screenshot) */}
-      {showAccountChooser && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-[#202124] text-white rounded-2xl shadow-2xl border border-slate-700 max-w-sm w-full overflow-hidden relative">
-            {/* Modal Header */}
-            <div className="p-6 border-b border-slate-700/80">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <GoogleIcon className="w-5 h-5" />
-                  <span className="text-xs font-medium text-slate-300">Sign in with Google</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowAccountChooser(false)}
-                  className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-700 transition-colors cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <h3 className="text-xl font-medium text-white tracking-tight">Choose an account</h3>
-              <p className="text-xs text-slate-400 mt-1">
-                to continue to <span className="text-sky-400 font-medium">syllabus-forge</span>
-              </p>
-            </div>
-
-            {/* Accounts List */}
-            <div className="p-3 divide-y divide-slate-700/60">
-              {/* Account: Monica Pazhanivel (From TCE Student/Faculty Account) */}
-              <button
-                type="button"
-                onClick={() => handleSelectAccount('pmonica@student.tce.edu', 'Monica Pazhanivel')}
-                disabled={loading}
-                className="w-full p-3.5 rounded-xl hover:bg-slate-800 flex items-center space-x-3.5 text-left transition-colors cursor-pointer group"
-              >
-                <div className="w-9 h-9 rounded-full bg-purple-600 text-white font-bold flex items-center justify-center text-sm flex-shrink-0">
-                  M
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-white group-hover:text-sky-300">
-                    Monica Pazhanivel
-                  </div>
-                  <div className="text-xs text-slate-400 truncate">pmonica@student.tce.edu</div>
-                </div>
-                <span className="text-[10px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full font-medium">
-                  .tce.edu
-                </span>
-              </button>
-
-              {/* Account 1: Dr. P. Sharmila */}
-              <button
-                type="button"
-                onClick={() => handleSelectAccount('psaca@tce.edu', 'Dr. P. Sharmila')}
-                disabled={loading}
-                className="w-full p-3.5 rounded-xl hover:bg-slate-800 flex items-center space-x-3.5 text-left transition-colors cursor-pointer group"
-              >
-                <div className="w-9 h-9 rounded-full bg-emerald-700 text-white font-bold flex items-center justify-center text-sm flex-shrink-0">
-                  P
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-white group-hover:text-sky-300">
-                    Dr. P. Sharmila
-                  </div>
-                  <div className="text-xs text-slate-400 truncate">psaca@tce.edu</div>
-                </div>
-              </button>
-
-              {/* Account 2 */}
-              <button
-                type="button"
-                onClick={() => handleSelectAccount('r_rajanprakash@tce.edu', 'Dr. R. Rajan Prakash')}
-                disabled={loading}
-                className="w-full p-3.5 rounded-xl hover:bg-slate-800 flex items-center space-x-3.5 text-left transition-colors cursor-pointer group"
-              >
-                <div className="w-9 h-9 rounded-full bg-blue-700 text-white font-bold flex items-center justify-center text-sm flex-shrink-0">
-                  R
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-white group-hover:text-sky-300">
-                    Dr. R. Rajan Prakash
-                  </div>
-                  <div className="text-xs text-slate-400 truncate">r_rajanprakash@tce.edu</div>
-                </div>
-              </button>
-
-              {/* Enter custom account */}
-              <div className="p-3">
-                <div className="text-xs font-semibold text-slate-300 mb-2">
-                  Use another institutional account:
-                </div>
-                <div className="space-y-2">
-                  <input
-                    type="email"
-                    value={customEmail}
-                    onChange={e => {
-                      setCustomEmail(e.target.value);
-                      setError(null);
-                    }}
-                    placeholder="faculty@tce.edu"
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-400"
-                  />
-                  {customEmail && !isTceEmail(customEmail) && (
-                    <div className="text-[11px] text-red-400 flex items-center space-x-1">
-                      <AlertCircle className="w-3 h-3 flex-shrink-0" />
-                      <span>Must end with .tce.edu</span>
-                    </div>
-                  )}
-                  {customEmail && isTceEmail(customEmail) && (
-                    <div className="text-[11px] text-emerald-400 flex items-center space-x-1">
-                      <CheckCircle className="w-3 h-3 flex-shrink-0" />
-                      <span>Valid TCE institutional domain</span>
-                    </div>
-                  )}
-                  <input
-                    type="text"
-                    value={customName}
-                    onChange={e => setCustomName(e.target.value)}
-                    placeholder="Full Name (optional)"
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleSelectAccount(customEmail, customName)}
-                    disabled={!customEmail || !isTceEmail(customEmail) || loading}
-                    className="w-full py-2 px-3 rounded-lg bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white font-semibold text-xs flex items-center justify-center space-x-2 transition-colors cursor-pointer"
-                  >
-                    <span>Sign in with this account</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

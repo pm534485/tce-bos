@@ -53,8 +53,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const quickLogin = async (role: UserRole) => {
     const creds: Record<UserRole, { email: string; pass: string }> = {
-      ADMIN: { email: 'admin@syllabusforge.edu', pass: 'AdminPassword2026!' },
-      HOD: { email: 'hod.ca@syllabusforge.edu', pass: 'HodPassword2026!' },
+      ADMIN: { email: 'admin@tce.edu', pass: 'AdminPassword2026!' },
+      HOD: { email: 'hod.ca@tce.edu', pass: 'HodPassword2026!' },
       FACULTY: { email: 'psaca@tce.edu', pass: 'FacultyPassword2026!' },
     };
     const c = creds[role];

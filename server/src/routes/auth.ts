@@ -102,15 +102,19 @@ router.post('/login', async (req, res): Promise<void> => {
   }
 });
 
-// TCE Institutional Google Email Validation Regex
-export const TCE_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@(?:[a-zA-Z0-9-]+\.)*tce\.edu$/i;
+// Authorized Google Email Validation Regex: *.tce.edu (Official TCE accounts) OR gmail.com
+export const ALLOWED_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@(?:(?:[a-zA-Z0-9-]+\.)*tce\.edu|gmail\.com)$/i;
 
-export function isTceEmail(email: string): boolean {
+export function isAllowedEmail(email: string): boolean {
   if (!email || typeof email !== 'string') return false;
-  return TCE_EMAIL_REGEX.test(email.trim());
+  return ALLOWED_EMAIL_REGEX.test(email.trim());
 }
 
-// POST /api/auth/google - Login with Google (TCE Institutional accounts only)
+// Backward compatible aliases
+export const isTceEmail = isAllowedEmail;
+export const TCE_EMAIL_REGEX = ALLOWED_EMAIL_REGEX;
+
+// POST /api/auth/google - Login with Google (TCE Institutional accounts and Gmail accounts)
 router.post('/google', async (req, res): Promise<void> => {
   try {
     let { credential, email, name, avatar, googleId } = req.body;
@@ -132,14 +136,14 @@ router.post('/google', async (req, res): Promise<void> => {
     }
 
     if (!email) {
-      res.status(400).json({ error: 'Google institutional email is required.' });
+      res.status(400).json({ error: 'Google or TCE email is required.' });
       return;
     }
 
-    // STRICT DOMAIN REGEX VALIDATION: ONLY *.tce.edu allowed
-    if (!isTceEmail(email)) {
+    // DOMAIN REGEX VALIDATION: *.tce.edu OR gmail.com allowed
+    if (!isAllowedEmail(email)) {
       res.status(403).json({
-        error: `Access restricted: "${email}" is not an authorized Thiagarajar College of Engineering Google account. Only official institutional accounts ending with .tce.edu (e.g. faculty@tce.edu) are permitted.`,
+        error: `Access restricted: "${email}" is not an authorized account. Please use your official institutional account ending with .tce.edu or your Google @gmail.com account.`,
       });
       return;
     }
@@ -182,12 +186,22 @@ router.post('/google', async (req, res): Promise<void> => {
         department = 'Civil Engineering';
       }
 
+      let role: 'FACULTY' | 'HOD' | 'ADMIN' = 'FACULTY';
+      let designation = 'Assistant Professor';
+      if (normalizedEmail.startsWith('admin') || normalizedEmail.startsWith('dean')) {
+        role = 'ADMIN';
+        designation = 'Dean Academic';
+      } else if (normalizedEmail.startsWith('hod')) {
+        role = 'HOD';
+        designation = 'Professor & Head';
+      }
+
       user = new User({
         name: cleanName,
         email: normalizedEmail,
-        role: 'FACULTY',
+        role,
         department,
-        designation: 'Assistant Professor',
+        designation,
         programmeAccess: ['CA', 'EE', 'EC', 'CS', 'IT', 'ME', 'CE'],
         authProvider: 'google',
         googleId,
