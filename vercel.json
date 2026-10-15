@@ -2,6 +2,19 @@
   "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "client/dist",
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "tce-bos-nine.vercel.app"
+        }
+      ],
+      "destination": "https://tce-bos.vercel.app/$1",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",

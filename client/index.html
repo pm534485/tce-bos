@@ -2,6 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (function() {
+        var h = window.location.hostname;
+        if (h.endsWith('.vercel.app') && h !== 'tce-bos.vercel.app') {
+          window.location.replace('https://tce-bos.vercel.app' + window.location.pathname + window.location.search + window.location.hash);
+        }
+      })();
+    </script>
     <link rel="icon" type="image/png" href="/tce-logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Syllabi Management Portal</title>
