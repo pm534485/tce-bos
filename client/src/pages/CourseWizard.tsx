@@ -108,25 +108,37 @@ export const CourseWizard: React.FC = () => {
   // Local draft state for module subtopics input to allow typing smoothly
   const [subtopicsDraft, setSubtopicsDraft] = useState<Record<number, string>>({});
 
-  // Course Form State
+  // Admin configured active regulation state
+  const [adminRegulation, setAdminRegulation] = useState<{ year: number; code: string }>({ year: 2026, code: '26' });
+
+  // Safe router/history back handler with dashboard fallback
+  const handleBack = () => {
+    if (window.history.length > 1 && window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  };
+
+  // Course Form State - Starts empty with no pre-selected values for new courses
   const [course, setCourse] = useState<Course>({
     courseType: courseTypeParam,
     regulationYear: 2026,
     regulationCode: '26',
-    programmeCode: user?.programmeAccess[0] || 'CA',
-    categoryLetter: 'C',
-    uniqueLetter: 'A',
-    version: 0,
-    courseCode: `26${user?.programmeAccess[0] || 'CA'}CA0`,
+    programmeCode: '',
+    categoryLetter: '',
+    uniqueLetter: '',
+    version: '' as any,
+    courseCode: '',
     courseName: '',
-    categoryAbbr: 'PCC',
+    categoryAbbr: '' as any,
     semester: 1,
     semesterType: 'ODD',
-    L: courseTypeParam === 'PRACTICAL' ? 0 : 3,
-    T: courseTypeParam === 'PRACTICAL' ? 0 : 1,
-    P: courseTypeParam === 'PRACTICAL' ? 3 : 0,
-    credits: courseTypeParam === 'PRACTICAL' ? 1.5 : 4,
-    teExamType: courseTypeParam === 'TCP' ? 'TCP-T' : undefined,
+    L: '' as any,
+    T: '' as any,
+    P: '' as any,
+    credits: '' as any,
+    teExamType: courseTypeParam === 'TCP' ? ('' as any) : undefined,
     preamble: '',
     isAdvanced: false,
     prerequisites: '',
@@ -153,53 +165,37 @@ export const CourseWizard: React.FC = () => {
     comments: [],
   });
 
-  // Load existing course or catalog codes
+  // Load existing course or catalog codes, and active regulation
   useEffect(() => {
     async function loadData() {
       try {
-        const allCourses = await api.getCourses({ scope: 'all' });
+        const [allCourses, regRes] = await Promise.all([
+          api.getCourses({ scope: 'all' }),
+          api.getActiveRegulation().catch(() => ({ regulationYear: 2026, regulationCode: '26' }))
+        ]);
         const codes = allCourses.map(c => c.courseCode);
         setExistingCodes(codes);
+
+        if (regRes && regRes.regulationCode) {
+          setAdminRegulation({ year: regRes.regulationYear, code: regRes.regulationCode });
+        }
 
         if (id) {
           const fetched = await api.getCourse(id);
           setCourse(fetched);
           setLastSaved(new Date());
         } else {
-          // If default 'A' is already taken in this programme/category, pick the next available letter
-          const defaultCode = computeCourseCode({
-            regulationCode: '26',
-            programmeCode: user?.programmeAccess[0] || 'CA',
-            categoryLetter: 'C',
-            uniqueLetter: 'A',
-            version: 0,
-          });
-          if (codes.includes(defaultCode)) {
-            const availableLetter = VALID_UNIQUE_LETTERS.find(letter => {
-              const code = computeCourseCode({
-                regulationCode: '26',
-                programmeCode: user?.programmeAccess[0] || 'CA',
-                categoryLetter: 'C',
-                uniqueLetter: letter,
-                version: 0,
-              });
-              return !codes.includes(code);
-            }) || 'B';
-
-            setCourse(prev => {
-              const nextCode = computeCourseCode({
-                regulationCode: prev.regulationCode,
-                programmeCode: prev.programmeCode,
-                categoryLetter: prev.categoryLetter,
-                uniqueLetter: availableLetter,
-                version: prev.version,
-              });
-              return { ...prev, uniqueLetter: availableLetter, courseCode: nextCode };
-            });
+          // Auto-apply active regulation from admin
+          if (regRes && regRes.regulationCode) {
+            setCourse(prev => ({
+              ...prev,
+              regulationYear: regRes.regulationYear,
+              regulationCode: regRes.regulationCode,
+            }));
           }
         }
       } catch (err) {
-        console.error('Failed to load course:', err);
+        console.error('Failed to load course or regulation:', err);
       }
     }
     loadData();
@@ -210,6 +206,43 @@ export const CourseWizard: React.FC = () => {
     ? existingCodes.filter(c => c !== course.courseCode)
     : existingCodes;
   const validationReport = validateCourse(course, otherCodes);
+
+  // Compute live subject code with underscores for unfilled parts
+  const regPart = course.regulationCode || adminRegulation.code || '26';
+  const progPart = course.programmeCode ? course.programmeCode : '__';
+  const catPart = course.categoryLetter ? course.categoryLetter : '_';
+  const uniquePart = course.uniqueLetter ? course.uniqueLetter : '_';
+  const verPart = (course.version !== undefined && course.version !== null && course.version !== ('' as any)) ? String(course.version) : '_';
+  const displaySubjectCode = `${regPart}${progPart}${catPart}${uniquePart}${verPart}`;
+
+  // Step 0 validation: Next button enabled ONLY when all remaining visible fields are filled/selected
+  const isStep0Complete = Boolean(
+    (course.regulationCode || adminRegulation.code) &&
+    (course.regulationYear || adminRegulation.year) &&
+    course.programmeCode &&
+    course.programmeCode.trim() &&
+    course.categoryLetter &&
+    course.categoryLetter.trim() &&
+    course.uniqueLetter &&
+    course.uniqueLetter.trim() &&
+    course.version !== undefined &&
+    course.version !== null &&
+    course.version !== ('' as any) &&
+    course.courseName &&
+    course.courseName.trim() &&
+    course.categoryAbbr &&
+    String(course.categoryAbbr).trim() &&
+    (course.courseType === 'PRACTICAL' || (course.L !== ('' as any) && course.L !== undefined && course.L !== null)) &&
+    (course.courseType === 'PRACTICAL' || (course.T !== ('' as any) && course.T !== undefined && course.T !== null)) &&
+    course.P !== ('' as any) &&
+    course.P !== undefined &&
+    course.P !== null &&
+    course.credits !== undefined &&
+    course.credits !== null &&
+    course.credits !== ('' as any) &&
+    Number(course.credits) > 0 &&
+    (course.courseType !== 'TCP' || (course.teExamType && String(course.teExamType).trim()))
+  );
 
   // Debounced auto-save
   const saveTimeoutRef = useRef<any>(null);
@@ -540,14 +573,15 @@ export const CourseWizard: React.FC = () => {
             <Menu className="w-4 h-4" />
           </button>
           <button
-            onClick={() => navigate('/')}
+            onClick={handleBack}
             className="p-1 rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+            title="Go back"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="flex items-center space-x-2 min-w-0">
             <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200 flex-shrink-0">
-              {course.courseCode}
+              {displaySubjectCode}
             </span>
             <span className="font-bold text-slate-900 text-sm truncate max-w-[180px] sm:max-w-xs">
               {course.courseName || 'Untitled Course'}
@@ -688,6 +722,10 @@ export const CourseWizard: React.FC = () => {
                   <button
                     key={st.id}
                     onClick={() => {
+                      if (idx > 0 && currentStep === 0 && !isStep0Complete) {
+                        alert('Please fill all required course code and details to continue.');
+                        return;
+                      }
                       setCurrentStep(idx);
                       setIsSidebarOpen(false);
                     }}
@@ -731,11 +769,7 @@ export const CourseWizard: React.FC = () => {
                         title="Click to configure Course Code in Step 1"
                       >
                         <span className="font-mono text-xl sm:text-2xl font-black text-slate-950 tracking-wider group-hover:text-[#7B1113] transition-colors">
-                          {course.courseName?.trim() || id ? (
-                            course.courseCode || '______'
-                          ) : (
-                            <span className="text-slate-300 font-mono tracking-widest select-none">______</span>
-                          )}
+                          {displaySubjectCode}
                         </span>
                       </div>
 
@@ -781,36 +815,36 @@ export const CourseWizard: React.FC = () => {
 
                         {/* Value Row */}
                         <div className="p-2.5 text-xs sm:text-sm font-bold text-slate-900 border-r border-slate-900 flex items-center justify-center">
-                          {course.courseName?.trim() || id ? (
-                            course.categoryAbbr || '—'
+                          {course.categoryAbbr ? (
+                            course.categoryAbbr
                           ) : (
                             <span className="text-slate-300 font-mono select-none">____</span>
                           )}
                         </div>
                         <div className="p-2.5 text-xs sm:text-sm font-bold text-slate-900 border-r border-slate-900 flex items-center justify-center">
-                          {course.courseName?.trim() || id ? (
-                            course.L ?? 0
+                          {course.L !== undefined && course.L !== null && course.L !== ('' as any) ? (
+                            course.L
                           ) : (
                             <span className="text-slate-300 font-mono select-none">_</span>
                           )}
                         </div>
                         <div className="p-2.5 text-xs sm:text-sm font-bold text-slate-900 border-r border-slate-900 flex items-center justify-center">
-                          {course.courseName?.trim() || id ? (
-                            course.T ?? 0
+                          {course.T !== undefined && course.T !== null && course.T !== ('' as any) ? (
+                            course.T
                           ) : (
                             <span className="text-slate-300 font-mono select-none">_</span>
                           )}
                         </div>
                         <div className="p-2.5 text-xs sm:text-sm font-bold text-slate-900 border-r border-slate-900 flex items-center justify-center">
-                          {course.courseName?.trim() || id ? (
-                            course.P ?? 0
+                          {course.P !== undefined && course.P !== null && course.P !== ('' as any) ? (
+                            course.P
                           ) : (
                             <span className="text-slate-300 font-mono select-none">_</span>
                           )}
                         </div>
                         <div className="p-2.5 text-xs sm:text-sm font-black text-slate-950 flex items-center justify-center">
-                          {course.courseName?.trim() || id ? (
-                            course.credits ?? 0
+                          {course.credits !== undefined && course.credits !== null && course.credits !== ('' as any) ? (
+                            course.credits
                           ) : (
                             <span className="text-slate-300 font-mono select-none">_</span>
                           )}
@@ -829,36 +863,32 @@ export const CourseWizard: React.FC = () => {
 
                     {/* Course Code 5-Component Direct Selector */}
                     <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-center text-xs">
-                        {/* 1. RR: Regulation */}
-                        <div className="p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between">
+                      <div className="grid grid-cols-12 gap-2.5 text-center text-xs">
+                        {/* 1. RR: Regulation (Admin Configured, Read-Only, Narrower) */}
+                        <div className="col-span-4 sm:col-span-2 p-2.5 bg-slate-100/90 rounded-xl border-2 border-slate-200 flex flex-col justify-between">
                           <span className="block text-[11px] text-slate-400 font-bold uppercase tracking-wider">RR</span>
                           <div className="my-1">
-                            <select
-                              value={course.regulationCode}
-                              onChange={e => updateField('regulationCode', e.target.value)}
-                              className="w-full text-center font-black text-base sm:text-lg text-slate-900 bg-transparent border-0 focus:ring-2 focus:ring-[#7B1113] rounded cursor-pointer p-0"
-                              title="Regulation Code (26)"
-                            >
-                              <option value="26">26</option>
-                            </select>
+                            <span className="font-black text-base sm:text-lg text-slate-900 block text-center">
+                              {course.regulationCode || adminRegulation.code}
+                            </span>
                           </div>
-                          <span className="text-[10px] text-slate-500 block font-medium">Reg. 26</span>
+                          <span className="text-[10px] text-slate-500 block font-medium">Reg. {course.regulationYear || adminRegulation.year}</span>
                         </div>
 
-                        {/* 2. AA: Programme Code */}
-                        <div className="p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between group">
+                        {/* 2. AA: Programme Code (Wider / Longer) */}
+                        <div className="col-span-8 sm:col-span-3 p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between group">
                           <div className="flex items-center justify-between">
                             <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">AA</span>
                             <span className="text-[9px] text-[#0F2942] font-bold bg-[#0F2942]/10 px-1 rounded">Prog</span>
                           </div>
                           <div className="my-1">
                             <select
-                              value={course.programmeCode}
+                              value={course.programmeCode || ''}
                               onChange={e => updateField('programmeCode', e.target.value)}
-                              className="w-full text-center font-black text-base sm:text-lg text-[#0F2942] bg-transparent border-0 focus:ring-2 focus:ring-[#0F2942] rounded cursor-pointer p-0"
+                              className="w-full text-center font-black text-sm sm:text-base text-[#0F2942] bg-transparent border-0 focus:ring-2 focus:ring-[#0F2942] rounded cursor-pointer p-0"
                               title="Click to select Programme"
                             >
+                              <option value="" disabled>Select programme</option>
                               {PROGRAMME_CODES.map(p => (
                                 <option key={p.code} value={p.code}>
                                   {p.code} — {p.name}
@@ -868,25 +898,26 @@ export const CourseWizard: React.FC = () => {
                           </div>
                           <span
                             className="text-[10px] text-slate-600 block font-medium truncate"
-                            title={PROGRAMME_CODES.find(p => p.code === course.programmeCode)?.name || 'Programme'}
+                            title={PROGRAMME_CODES.find(p => p.code === course.programmeCode)?.name || 'Select programme'}
                           >
-                            {PROGRAMME_CODES.find(p => p.code === course.programmeCode)?.name || 'Programme'}
+                            {PROGRAMME_CODES.find(p => p.code === course.programmeCode)?.name || 'Select programme'}
                           </span>
                         </div>
 
-                        {/* 3. C: Category Code */}
-                        <div className="p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between group">
+                        {/* 3. C: Category Code (Wider / Longer) */}
+                        <div className="col-span-6 sm:col-span-3 p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between group">
                           <div className="flex items-center justify-between">
                             <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">C</span>
                             <span className="text-[9px] text-[#7B1113] font-bold bg-[#7B1113]/10 px-1 rounded">Cat</span>
                           </div>
                           <div className="my-1">
                             <select
-                              value={course.categoryLetter}
+                              value={course.categoryLetter || ''}
                               onChange={e => updateField('categoryLetter', e.target.value)}
-                              className="w-full text-center font-black text-base sm:text-lg text-[#7B1113] bg-transparent border-0 focus:ring-2 focus:ring-[#7B1113] rounded cursor-pointer p-0"
+                              className="w-full text-center font-black text-sm sm:text-base text-[#7B1113] bg-transparent border-0 focus:ring-2 focus:ring-[#7B1113] rounded cursor-pointer p-0"
                               title="Click to select Category"
                             >
+                              <option value="" disabled>Select category</option>
                               {CATEGORY_CODES.map(c => (
                                 <option key={c.code} value={c.code}>
                                   {c.code} — {c.name} ({c.defaultAbbr})
@@ -896,25 +927,28 @@ export const CourseWizard: React.FC = () => {
                           </div>
                           <span
                             className="text-[10px] text-slate-600 block font-medium truncate"
-                            title={CATEGORY_CODES.find(c => c.code === course.categoryLetter)?.name || 'Category'}
+                            title={CATEGORY_CODES.find(c => c.code === course.categoryLetter)?.name || 'Select category'}
                           >
-                            {course.categoryAbbr || 'PCC'} ({CATEGORY_CODES.find(c => c.code === course.categoryLetter)?.name?.split(' ')[0] || 'Core'})
+                            {course.categoryLetter
+                              ? `${course.categoryAbbr || 'Cat'} (${CATEGORY_CODES.find(c => c.code === course.categoryLetter)?.name?.split(' ')[0] || 'Core'})`
+                              : 'Select category'}
                           </span>
                         </div>
 
-                        {/* 4. U: Unique Letter */}
-                        <div className="p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between group">
+                        {/* 4. U: Unique Letter (Narrower) */}
+                        <div className="col-span-3 sm:col-span-2 p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between group">
                           <div className="flex items-center justify-between">
                             <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">U</span>
                             <span className="text-[9px] text-sky-700 font-bold bg-sky-100 px-1 rounded">A-Z</span>
                           </div>
                           <div className="my-1">
                             <select
-                              value={course.uniqueLetter}
+                              value={course.uniqueLetter || ''}
                               onChange={e => updateField('uniqueLetter', e.target.value.toUpperCase())}
                               className="w-full text-center font-black text-base sm:text-lg text-[#0F2942] bg-transparent border-0 focus:ring-2 focus:ring-[#0F2942] rounded cursor-pointer p-0"
                               title="Click to select Unique Letter"
                             >
+                              <option value="" disabled>Letter</option>
                               {VALID_UNIQUE_LETTERS.map(letter => (
                                 <option key={letter} value={letter}>
                                   {letter}
@@ -922,22 +956,23 @@ export const CourseWizard: React.FC = () => {
                               ))}
                             </select>
                           </div>
-                          <span className="text-[10px] text-slate-500 block font-medium">Unique (excl. I, O)</span>
+                          <span className="text-[10px] text-slate-500 block font-medium">Letter</span>
                         </div>
 
-                        {/* 5. V: Version */}
-                        <div className="p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between group">
+                        {/* 5. V: Version (Narrower) */}
+                        <div className="col-span-3 sm:col-span-2 p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between group">
                           <div className="flex items-center justify-between">
                             <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">V</span>
                             <span className="text-[9px] text-slate-600 font-bold bg-slate-100 px-1 rounded">Ver</span>
                           </div>
                           <div className="my-1">
                             <select
-                              value={course.version}
-                              onChange={e => updateField('version', Number(e.target.value))}
+                              value={course.version !== undefined && course.version !== null && course.version !== ('' as any) ? course.version : ''}
+                              onChange={e => updateField('version', e.target.value === '' ? ('' as any) : Number(e.target.value))}
                               className="w-full text-center font-black text-base sm:text-lg text-slate-900 bg-transparent border-0 focus:ring-2 focus:ring-slate-600 rounded cursor-pointer p-0"
                               title="Click to select Version"
                             >
+                              <option value="" disabled>Ver</option>
                               {[0, 1, 2, 3, 4, 5].map(v => (
                                 <option key={v} value={v}>
                                   {v}
@@ -945,7 +980,9 @@ export const CourseWizard: React.FC = () => {
                               ))}
                             </select>
                           </div>
-                          <span className="text-[10px] text-slate-500 block font-medium">Version {course.version}</span>
+                          <span className="text-[10px] text-slate-500 block font-medium">
+                            {course.version !== undefined && course.version !== null && course.version !== ('' as any) ? `Version ${course.version}` : 'Version'}
+                          </span>
                         </div>
                       </div>
 
@@ -970,9 +1007,9 @@ export const CourseWizard: React.FC = () => {
                         </div>
                         <input
                           type="text"
-                          value={course.courseName}
+                          value={course.courseName || ''}
                           onChange={e => updateField('courseName', e.target.value)}
-                          placeholder="Enter course name"
+                          placeholder="Enter course title"
                           className={`w-full px-3.5 py-2.5 border rounded-lg text-sm font-medium transition-all ${
                             hasFieldError('courseName')
                               ? 'border-red-400 bg-red-50/20 text-slate-900 focus:ring-2 focus:ring-red-200 focus:border-red-500'
@@ -987,10 +1024,11 @@ export const CourseWizard: React.FC = () => {
                           Category Abbreviation <span className="text-rose-500">*</span>
                         </label>
                         <select
-                          value={course.categoryAbbr}
+                          value={course.categoryAbbr || ''}
                           onChange={e => updateField('categoryAbbr', e.target.value as any)}
                           className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-sky-500 font-medium"
                         >
+                          <option value="" disabled>Select abbreviation</option>
                           {CATEGORY_ABBREVIATIONS.map(abbr => (
                             <option key={abbr} value={abbr}>
                               {abbr}
@@ -1011,9 +1049,10 @@ export const CourseWizard: React.FC = () => {
                           <input
                             type="number"
                             min={0}
-                            value={course.L}
+                            value={course.L === ('' as any) ? '' : (course.L ?? '')}
                             disabled={course.courseType === 'PRACTICAL'}
-                            onChange={e => updateField('L', parseInt(e.target.value) || 0)}
+                            onChange={e => updateField('L', e.target.value === '' ? ('' as any) : parseInt(e.target.value) || 0)}
+                            placeholder="0"
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500 disabled:bg-slate-100 disabled:text-slate-400"
                           />
                         </div>
@@ -1025,9 +1064,10 @@ export const CourseWizard: React.FC = () => {
                           <input
                             type="number"
                             min={0}
-                            value={course.T}
+                            value={course.T === ('' as any) ? '' : (course.T ?? '')}
                             disabled={course.courseType === 'PRACTICAL'}
-                            onChange={e => updateField('T', parseInt(e.target.value) || 0)}
+                            onChange={e => updateField('T', e.target.value === '' ? ('' as any) : parseInt(e.target.value) || 0)}
+                            placeholder="0"
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500 disabled:bg-slate-100 disabled:text-slate-400"
                           />
                         </div>
@@ -1039,8 +1079,9 @@ export const CourseWizard: React.FC = () => {
                           <input
                             type="number"
                             min={0}
-                            value={course.P}
-                            onChange={e => updateField('P', parseInt(e.target.value) || 0)}
+                            value={course.P === ('' as any) ? '' : (course.P ?? '')}
+                            onChange={e => updateField('P', e.target.value === '' ? ('' as any) : parseInt(e.target.value) || 0)}
+                            placeholder="0"
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500"
                           />
                         </div>
@@ -1049,7 +1090,9 @@ export const CourseWizard: React.FC = () => {
                           <label className="block text-[11px] font-bold text-sky-900 mb-0.5">
                             Credits
                           </label>
-                          <span className="text-lg font-extrabold text-sky-700">{course.credits}</span>
+                          <span className="text-lg font-extrabold text-sky-700">
+                            {course.credits !== undefined && course.credits !== null && course.credits !== ('' as any) ? course.credits : '—'}
+                          </span>
                         </div>
                       </div>
 
@@ -1060,10 +1103,11 @@ export const CourseWizard: React.FC = () => {
                             Terminal Examination Type (TE Type) <span className="text-rose-500">*</span>
                           </label>
                           <select
-                            value={course.teExamType || 'TCP-T'}
+                            value={course.teExamType || ''}
                             onChange={e => updateField('teExamType', e.target.value as any)}
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-sky-500"
                           >
+                            <option value="" disabled>Select TE Exam Type</option>
                             <option value="TCP-T">TCP-T (Theory Examination 50%)</option>
                             <option value="TCP-P">TCP-P (Practical Examination 50%)</option>
                           </select>
@@ -3099,7 +3143,13 @@ export const CourseWizard: React.FC = () => {
                 {currentStep < steps.length - 1 ? (
                   <button
                     onClick={() => setCurrentStep(prev => Math.min(steps.length - 1, prev + 1))}
-                    className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-xs font-semibold text-white shadow-sm flex items-center space-x-1 active:scale-95 transition-all"
+                    disabled={currentStep === 0 && !isStep0Complete}
+                    className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1 active:scale-95 transition-all ${
+                      currentStep === 0 && !isStep0Complete
+                        ? 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-60'
+                        : 'bg-sky-600 hover:bg-sky-700 text-white shadow-sm'
+                    }`}
+                    title={currentStep === 0 && !isStep0Complete ? 'Please complete all required course code and details to continue' : 'Next Step'}
                   >
                     <span>Next</span>
                     <ArrowRight className="w-3.5 h-3.5" />

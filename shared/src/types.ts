@@ -176,7 +176,7 @@ export interface Course {
   courseCode: string; // '26EECA0'
   courseName: string; // Stored in Title Case
   categoryAbbr: CategoryAbbreviation;
-  semester: number;
+  semester?: number;
   semesterType?: 'ODD' | 'EVEN';
   L: number;
   T: number;

@@ -52,8 +52,16 @@ export const Login: React.FC = () => {
   const [gisRendered, setGisRendered] = useState(false);
 
   useEffect(() => {
+    // Disable GIS silent auto-selection so user always picks account and authenticates
+    const google = (window as any).google;
+    if (google?.accounts?.id?.disableAutoSelect) {
+      google.accounts.id.disableAutoSelect();
+    }
+  }, []);
+
+  useEffect(() => {
     if (user) {
-      navigate('/', { replace: true });
+      navigate('/courses/new', { replace: true });
     }
   }, [user, navigate]);
 
@@ -91,11 +99,9 @@ export const Login: React.FC = () => {
           credAvatar = payload.picture || '';
           credSub = payload.sub || '';
 
-          // STRICT DOMAIN VALIDATION: Only *.tce.edu accounts permitted (e.g., faculty and students)
+          // STRICT DOMAIN VALIDATION: Only *.tce.edu accounts permitted
           if (credEmail && !isAllowedEmail(credEmail)) {
-            setError(
-              `Access restricted: "${credEmail}" is not an authorized TCE account. Only official accounts ending with @tce.edu or @student.tce.edu are permitted.`
-            );
+            setError('Please sign in with your tce.edu college email.');
             setLoading(false);
             return;
           }
@@ -112,9 +118,9 @@ export const Login: React.FC = () => {
         avatar: credAvatar,
         googleId: credSub,
       });
-      navigate('/');
+      navigate('/courses/new');
     } catch (err: any) {
-      setError(err.message || 'Google authentication failed.');
+      setError(err.message || 'Please sign in with your tce.edu college email.');
     } finally {
       setLoading(false);
     }
@@ -132,7 +138,12 @@ export const Login: React.FC = () => {
             client_id: GOOGLE_CLIENT_ID,
             callback: handleCredentialResponse,
             auto_select: false,
+            hd: 'tce.edu',
           });
+
+          if (google.accounts.id.disableAutoSelect) {
+            google.accounts.id.disableAutoSelect();
+          }
 
           googleButtonRef.current.innerHTML = '';
           google.accounts.id.renderButton(googleButtonRef.current, {
@@ -142,7 +153,7 @@ export const Login: React.FC = () => {
             text: 'signin_with',
             shape: 'pill',
             logo_alignment: 'left',
-            width: 300,
+            width: 320,
           });
 
           setGisRendered(true);
@@ -167,9 +178,59 @@ export const Login: React.FC = () => {
     };
   }, [gisRendered]);
 
-  const handleGooglePrompt = () => {
+  // Primary Google sign-in click handler using OAuth2 Token Client with prompt=select_account
+  const handleGoogleSignIn = () => {
     setError(null);
     const google = (window as any).google;
+
+    if (google?.accounts?.oauth2?.initTokenClient) {
+      try {
+        const tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_CLIENT_ID,
+          scope: 'openid email profile',
+          prompt: 'select_account',
+          hd: 'tce.edu',
+          callback: async (tokenResponse: any) => {
+            if (tokenResponse.error) {
+              setError(tokenResponse.error_description || 'Google sign-in was cancelled or failed.');
+              return;
+            }
+            if (tokenResponse.access_token) {
+              setLoading(true);
+              try {
+                const userinfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                });
+                const userinfo = await userinfoRes.json();
+                if (userinfo.email && !isAllowedEmail(userinfo.email)) {
+                  setError('Please sign in with your tce.edu college email.');
+                  setLoading(false);
+                  return;
+                }
+
+                await googleLogin({
+                  accessToken: tokenResponse.access_token,
+                  email: userinfo.email,
+                  name: userinfo.name,
+                  avatar: userinfo.picture,
+                  googleId: userinfo.sub,
+                });
+                navigate('/courses/new');
+              } catch (err: any) {
+                setError(err.message || 'Please sign in with your tce.edu college email.');
+              } finally {
+                setLoading(false);
+              }
+            }
+          },
+        });
+        tokenClient.requestAccessToken({ prompt: 'select_account' });
+        return;
+      } catch (e) {
+        console.warn('OAuth2 token client request error, trying GIS prompt:', e);
+      }
+    }
+
     if (google?.accounts?.id) {
       google.accounts.id.prompt();
     } else {
@@ -185,7 +246,7 @@ export const Login: React.FC = () => {
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-[#C59B27]/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-[#0F2942]/40 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Top: Official College Logo Banner Card matching tfpep.tceapps.in */}
+        {/* Top: Official College Logo Banner Card */}
         <div className="relative z-10">
           <div className="bg-white rounded-2xl p-3 sm:p-4 shadow-xl max-w-[340px] sm:max-w-[400px] inline-block border border-white/40">
             <img
@@ -196,29 +257,20 @@ export const Login: React.FC = () => {
           </div>
         </div>
 
-        {/* Middle: Prominent Portal Title */}
+        {/* Middle: Page Title - Syllabi Management Portal */}
         <div className="relative z-10 my-auto py-10 md:py-16 max-w-xl">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.12]">
-            TCE - Syllabi<br />
-            Management Portal
+            Syllabi Management Portal
           </h1>
         </div>
 
-        {/* Bottom: Affiliation & Copyright Footer */}
-        <div className="relative z-10 pt-6 border-t border-white/10 text-xs text-white/60 font-sans flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <span>© Thiagarajar College of Engineering • Autonomous Institution Affiliated to Anna University</span>
-          <span className="text-white/40 hidden lg:inline">Madurai - 625 015</span>
-        </div>
+        {/* Bottom decorative spacer to balance left panel without removed footer */}
+        <div className="relative z-10 py-2" />
       </div>
 
       {/* RIGHT SIDE: Institutional TCE Google Sign In Card */}
       <div className="w-full md:w-1/2 lg:w-5/12 flex items-center justify-center p-6 sm:p-10 lg:p-14 bg-[#F8FAFC]">
         <div className="bg-white rounded-3xl p-8 sm:p-10 shadow-xl border border-slate-100 max-w-md w-full">
-          {/* Top Pill Badge */}
-          <div className="inline-flex items-center px-3.5 py-1 rounded-full bg-[#FAF7F2] border border-[#C59B27]/40 text-[#7B1113] text-xs font-bold uppercase tracking-wider mb-4">
-            FACULTY SIGN IN
-          </div>
-
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             Welcome back
           </h2>
@@ -237,27 +289,21 @@ export const Login: React.FC = () => {
             </div>
           )}
 
-          {/* Google Official GIS / SSO Button (Prominent Box matching tfpep.tceapps.in) */}
+          {/* Sign in with Google Button */}
           <div className="border border-slate-200/90 rounded-2xl p-6 sm:p-8 flex flex-col items-center justify-center bg-slate-50/60 hover:bg-slate-50 transition-colors">
-            <div ref={googleButtonRef} className="flex justify-center w-full min-h-[44px]" />
-
-            {!gisRendered && (
+            {gisRendered ? (
+              <div ref={googleButtonRef} className="flex justify-center w-full min-h-[44px]" />
+            ) : (
               <button
                 type="button"
-                onClick={handleGooglePrompt}
+                onClick={handleGoogleSignIn}
                 disabled={loading}
                 className="w-full py-3.5 px-6 rounded-full bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm shadow-sm border border-slate-200 hover:border-slate-300 flex items-center justify-center space-x-3 transition-all active:scale-[0.98] cursor-pointer"
               >
                 <GoogleIcon className="w-5 h-5 flex-shrink-0" />
-                <span>Sign in with Google</span>
+                <span>{loading ? 'Signing in...' : 'Sign in with Google'}</span>
               </button>
             )}
-
-            <div className="mt-4 flex items-center space-x-1.5 text-[11px] text-slate-400 font-medium">
-              <span>Restricted to</span>
-              <span className="font-bold text-[#7B1113]">@tce.edu</span>
-              <span>accounts only</span>
-            </div>
           </div>
         </div>
       </div>

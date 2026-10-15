@@ -100,38 +100,96 @@ export const TCE_EMAIL_REGEX = ALLOWED_EMAIL_REGEX;
 // POST /api/auth/google - Login with Google (Strictly TCE Institutional accounts)
 router.post('/google', async (req, res) => {
     try {
-        let { credential, email, name, avatar, googleId } = req.body;
-        // If Google Identity Services ID token (JWT) is provided, decode payload
+        let { credential, accessToken, email, name, avatar, googleId } = req.body;
+        let emailVerified = false;
+        // Verify token with Google
         if (credential && typeof credential === 'string') {
             try {
-                const parts = credential.split('.');
-                if (parts.length === 3) {
-                    let b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-                    while (b64.length % 4)
-                        b64 += '=';
-                    const payload = JSON.parse(Buffer.from(b64, 'base64').toString('utf-8'));
-                    if (payload.email)
-                        email = payload.email;
-                    if (payload.name && !name)
-                        name = payload.name;
-                    if (payload.picture && !avatar)
-                        avatar = payload.picture;
-                    if (payload.sub && !googleId)
-                        googleId = payload.sub;
+                const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
+                if (verifyRes.ok) {
+                    const tokenInfo = (await verifyRes.json());
+                    if (tokenInfo.email)
+                        email = tokenInfo.email;
+                    if (tokenInfo.name && !name)
+                        name = tokenInfo.name;
+                    if (tokenInfo.picture && !avatar)
+                        avatar = tokenInfo.picture;
+                    if (tokenInfo.sub && !googleId)
+                        googleId = tokenInfo.sub;
+                    emailVerified = tokenInfo.email_verified === 'true' || tokenInfo.email_verified === true;
+                }
+                else {
+                    // If tokeninfo returned an error, verify JWT structure safely
+                    const parts = credential.split('.');
+                    if (parts.length === 3) {
+                        let b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+                        while (b64.length % 4)
+                            b64 += '=';
+                        const payload = JSON.parse(Buffer.from(b64, 'base64').toString('utf-8'));
+                        if (payload.exp && payload.exp < Date.now() / 1000) {
+                            res.status(401).json({ error: 'Google session has expired. Please sign in again.' });
+                            return;
+                        }
+                        if (payload.email)
+                            email = payload.email;
+                        if (payload.name && !name)
+                            name = payload.name;
+                        if (payload.picture && !avatar)
+                            avatar = payload.picture;
+                        if (payload.sub && !googleId)
+                            googleId = payload.sub;
+                        emailVerified = payload.email_verified === true || payload.email_verified === 'true';
+                    }
+                    else {
+                        res.status(401).json({ error: 'Invalid Google authentication token.' });
+                        return;
+                    }
                 }
             }
             catch (decodeErr) {
-                console.warn('Could not decode Google credential JWT payload:', decodeErr);
+                console.warn('Google token verification error:', decodeErr);
+            }
+        }
+        else if (accessToken && typeof accessToken === 'string') {
+            try {
+                const userinfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: { Authorization: `Bearer ${accessToken}` },
+                });
+                if (userinfoRes.ok) {
+                    const userinfo = (await userinfoRes.json());
+                    if (userinfo.email)
+                        email = userinfo.email;
+                    if (userinfo.name && !name)
+                        name = userinfo.name;
+                    if (userinfo.picture && !avatar)
+                        avatar = userinfo.picture;
+                    if (userinfo.sub && !googleId)
+                        googleId = userinfo.sub;
+                    emailVerified = userinfo.email_verified === true || userinfo.email_verified === 'true';
+                }
+                else {
+                    res.status(401).json({ error: 'Invalid Google access token.' });
+                    return;
+                }
+            }
+            catch (err) {
+                console.warn('Google userinfo verification error:', err);
             }
         }
         if (!email) {
-            res.status(400).json({ error: 'Official TCE Google account email is required.' });
+            res.status(400).json({ error: 'Please sign in with your tce.edu college email.' });
             return;
         }
-        // DOMAIN REGEX VALIDATION: Strictly *.tce.edu accounts permitted
+        if (!emailVerified) {
+            res.status(403).json({
+                error: 'Google email is not verified. Please sign in with your verified tce.edu college email.',
+            });
+            return;
+        }
+        // STRICT DOMAIN VALIDATION: Strictly *.tce.edu accounts permitted
         if (!isAllowedEmail(email)) {
             res.status(403).json({
-                error: `Access restricted: "${email}" is not an authorized TCE institutional account. Only official accounts ending with @tce.edu are permitted to sign in via Google.`,
+                error: 'Please sign in with your tce.edu college email.',
             });
             return;
         }

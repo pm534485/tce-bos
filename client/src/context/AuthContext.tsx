@@ -7,7 +7,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  googleLogin: (data: { email?: string; name?: string; credential?: string; avatar?: string; googleId?: string }) => Promise<void>;
+  googleLogin: (data: { email?: string; name?: string; credential?: string; accessToken?: string; avatar?: string; googleId?: string }) => Promise<void>;
   quickLogin: (role: UserRole) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
@@ -44,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(res.user);
   };
 
-  const googleLogin = async (data: { email?: string; name?: string; credential?: string; avatar?: string; googleId?: string }) => {
+  const googleLogin = async (data: { email?: string; name?: string; credential?: string; accessToken?: string; avatar?: string; googleId?: string }) => {
     const res = await api.googleLogin(data);
     localStorage.setItem('syllabusforge_token', res.token);
     setToken(res.token);

@@ -28,6 +28,55 @@ const MODEL_MAP: Record<string, any> = {
   config: ConfigSettingsModel,
 };
 
+// GET /api/master/regulation - Get active institutional regulation
+router.get('/regulation', async (req, res): Promise<void> => {
+  try {
+    const yearDoc = await ConfigSettingsModel.findOne({ key: 'regulationYear' });
+    const codeDoc = await ConfigSettingsModel.findOne({ key: 'regulationCode' });
+
+    const regulationYear = yearDoc?.value ? Number(yearDoc.value) : 2026;
+    const regulationCode = codeDoc?.value ? String(codeDoc.value).trim() : '26';
+
+    res.json({ regulationYear, regulationCode });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/master/regulation - Update active institutional regulation (Admin only)
+router.post('/regulation', authenticate, requireRole(['ADMIN']), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { regulationYear, regulationCode } = req.body;
+    if (!regulationYear || !regulationCode) {
+      res.status(400).json({ error: 'Both regulationYear and regulationCode are required.' });
+      return;
+    }
+
+    const yearNum = Number(regulationYear);
+    const codeStr = String(regulationCode).trim();
+
+    await ConfigSettingsModel.findOneAndUpdate(
+      { key: 'regulationYear' },
+      { key: 'regulationYear', value: yearNum, description: 'Active Regulation Year' },
+      { upsert: true, new: true }
+    );
+
+    await ConfigSettingsModel.findOneAndUpdate(
+      { key: 'regulationCode' },
+      { key: 'regulationCode', value: codeStr, description: 'Active Regulation Code' },
+      { upsert: true, new: true }
+    );
+
+    res.json({
+      message: 'Active regulation updated successfully.',
+      regulationYear: yearNum,
+      regulationCode: codeStr,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/master/:collection
 router.get('/:collection', async (req, res): Promise<void> => {
   try {

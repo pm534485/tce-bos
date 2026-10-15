@@ -40,9 +40,45 @@ export const AdminDashboard: React.FC = () => {
   // Users state
   const [usersList, setUsersList] = useState<any[]>([]);
 
+  // Active Regulation State
+  const [adminRegYear, setAdminRegYear] = useState<number>(2026);
+  const [adminRegCode, setAdminRegCode] = useState<string>('26');
+  const [savingReg, setSavingReg] = useState<boolean>(false);
+  const [regSuccess, setRegSuccess] = useState<string | null>(null);
+
   useEffect(() => {
     loadProgrammes();
+    loadRegulation();
   }, []);
+
+  async function loadRegulation() {
+    try {
+      const reg = await api.getActiveRegulation();
+      if (reg) {
+        setAdminRegYear(reg.regulationYear || 2026);
+        setAdminRegCode(reg.regulationCode || '26');
+      }
+    } catch (e) {
+      console.error('Failed to load active regulation:', e);
+    }
+  }
+
+  const handleSaveRegulation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setSavingReg(true);
+      setRegSuccess(null);
+      const res = await api.updateActiveRegulation({
+        regulationYear: Number(adminRegYear),
+        regulationCode: String(adminRegCode).trim(),
+      });
+      setRegSuccess(`Active regulation updated to Regulation ${res.regulationYear} (Code: ${res.regulationCode}). All syllabus pages will now automatically use this regulation.`);
+    } catch (err: any) {
+      alert(`Failed to update regulation: ${err.message}`);
+    } finally {
+      setSavingReg(false);
+    }
+  };
 
   useEffect(() => {
     if (selectedProgCode) {
@@ -185,6 +221,15 @@ export const AdminDashboard: React.FC = () => {
         >
           <Users className="w-4 h-4 text-[#E2BF53]" />
           <span>User Management</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('settings')}
+          className={`px-4 py-2 rounded-xl flex items-center space-x-2 transition-all ${
+            activeTab === 'settings' ? 'bg-[#7B1113] text-white shadow-sm font-bold' : 'hover:bg-slate-100 hover:text-slate-900'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-[#E2BF53]" />
+          <span>Regulation Settings</span>
         </button>
       </div>
 
@@ -516,6 +561,90 @@ export const AdminDashboard: React.FC = () => {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* TAB 5: Regulation Settings */}
+      {activeTab === 'settings' && (
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="border-b border-slate-100 pb-5">
+            <h2 className="text-lg font-bold text-slate-900">Institutional Regulation Settings</h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Configure the active regulation year and regulation code. When updated here, the value is saved in MongoDB and automatically reflected across the Subject Code / Regulation creation workflow without requiring hardcoded values.
+            </p>
+          </div>
+
+          {regSuccess && (
+            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-start space-x-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+              <span>{regSuccess}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSaveRegulation} className="space-y-6 max-w-xl">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Regulation Year <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  required
+                  min={2000}
+                  max={2100}
+                  value={adminRegYear}
+                  onChange={e => setAdminRegYear(parseInt(e.target.value) || 2026)}
+                  className="w-full p-2.5 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#7B1113]"
+                  placeholder="e.g. 2026"
+                />
+                <span className="text-[10px] text-slate-400 mt-1 block">Full academic regulation year (e.g. 2026)</span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Regulation Code (RR) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  maxLength={2}
+                  value={adminRegCode}
+                  onChange={e => setAdminRegCode(e.target.value.trim())}
+                  className="w-full p-2.5 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 text-center font-mono focus:ring-2 focus:ring-[#7B1113]"
+                  placeholder="e.g. 26"
+                />
+                <span className="text-[10px] text-slate-400 mt-1 block">2-digit course code prefix (e.g. 26)</span>
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-1.5 text-xs text-slate-700">
+              <span className="font-bold block text-slate-900">Live Course Code Pattern Preview:</span>
+              <p className="font-mono text-sm font-bold text-[#7B1113]">
+                {adminRegCode || '26'}_____ &nbsp;
+                <span className="text-xs font-normal text-slate-500 font-sans">
+                  (Regulation: {adminRegCode || '26'}, Programme: __, Category: _, Letter: _, Version: _)
+                </span>
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={savingReg || !adminRegYear || !adminRegCode}
+              className="px-6 py-2.5 rounded-xl bg-[#7B1113] hover:bg-[#600D0F] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs shadow-md shadow-[#7B1113]/20 flex items-center space-x-2 transition-all active:scale-95"
+            >
+              {savingReg ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>Saving to MongoDB...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Save & Publish Regulation</span>
+                </>
+              )}
+            </button>
+          </form>
         </div>
       )}
     </div>

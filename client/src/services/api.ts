@@ -41,7 +41,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-  googleLogin: (data: { email?: string; name?: string; credential?: string; avatar?: string; googleId?: string }) =>
+  googleLogin: (data: { email?: string; name?: string; credential?: string; accessToken?: string; avatar?: string; googleId?: string }) =>
     request<{ token: string; user: User }>('/auth/google', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -142,6 +142,13 @@ export const api = {
   deleteMaster: (collection: string, id: string) =>
     request(`/master/${collection}/${id}`, {
       method: 'DELETE',
+    }),
+  getActiveRegulation: () =>
+    request<{ regulationYear: number; regulationCode: string }>('/master/regulation'),
+  updateActiveRegulation: (data: { regulationYear: number; regulationCode: string }) =>
+    request<{ message: string; regulationYear: number; regulationCode: string }>('/master/regulation', {
+      method: 'POST',
+      body: JSON.stringify(data),
     }),
 
   // Programmes
