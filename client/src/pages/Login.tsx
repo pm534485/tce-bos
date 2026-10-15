@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { AlertCircle } from 'lucide-react';
 
-// Authorized Google Email Validation Regex: Strictly *.tce.edu accounts only
-export const ALLOWED_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@(?:(?:[a-zA-Z0-9-]+\.)*tce\.edu)$/i;
+// Authorized Google Email Validation Regex: Strictly @tce.edu accounts only (Rejecting @student.tce.edu and others)
+export const ALLOWED_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@tce\.edu$/i;
 
 export function isAllowedEmail(email: string): boolean {
   if (!email || typeof email !== 'string') return false;
@@ -289,21 +289,18 @@ export const Login: React.FC = () => {
             </div>
           )}
 
-          {/* Sign in with Google Button */}
+          {/* Sign in with Google Button (GIS OAuth2 Popup Flow with prompt='select_account') */}
           <div className="border border-slate-200/90 rounded-2xl p-6 sm:p-8 flex flex-col items-center justify-center bg-slate-50/60 hover:bg-slate-50 transition-colors">
-            {gisRendered ? (
-              <div ref={googleButtonRef} className="flex justify-center w-full min-h-[44px]" />
-            ) : (
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={loading}
-                className="w-full py-3.5 px-6 rounded-full bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm shadow-sm border border-slate-200 hover:border-slate-300 flex items-center justify-center space-x-3 transition-all active:scale-[0.98] cursor-pointer"
-              >
-                <GoogleIcon className="w-5 h-5 flex-shrink-0" />
-                <span>{loading ? 'Signing in...' : 'Sign in with Google'}</span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+              className="w-full py-3.5 px-6 rounded-full bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm shadow-sm border border-slate-200 hover:border-slate-300 flex items-center justify-center space-x-3 transition-all active:scale-[0.98] cursor-pointer"
+            >
+              <GoogleIcon className="w-5 h-5 flex-shrink-0" />
+              <span>{loading ? 'Signing in...' : 'Sign in with Google'}</span>
+            </button>
+            <div ref={googleButtonRef} className="hidden" />
           </div>
         </div>
       </div>

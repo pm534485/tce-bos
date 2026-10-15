@@ -24,7 +24,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onNewCourse }) => {
-  const { user, logout, quickLogin } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [showTypeModal, setShowTypeModal] = useState(false);
@@ -147,29 +147,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onNewCourse }) => {
                         Role: {user.role}
                       </span>
                     </div>
-                    
-                    <div className="px-4 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                      Switch Role
-                    </div>
-                    <button
-                      onClick={() => { quickLogin('FACULTY'); setShowProfileMenu(false); }}
-                      className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between ${user?.role === 'FACULTY' ? 'bg-[#800020]/5 text-[#800020] font-medium' : 'text-slate-700 hover:bg-slate-50'}`}
-                    >
-                      Faculty {user?.role === 'FACULTY' && <span className="w-1.5 h-1.5 rounded-full bg-[#800020]"></span>}
-                    </button>
-                    <button
-                      onClick={() => { quickLogin('HOD'); setShowProfileMenu(false); }}
-                      className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between ${user?.role === 'HOD' ? 'bg-[#800020]/5 text-[#800020] font-medium' : 'text-slate-700 hover:bg-slate-50'}`}
-                    >
-                      HoD {user?.role === 'HOD' && <span className="w-1.5 h-1.5 rounded-full bg-[#800020]"></span>}
-                    </button>
-                    <button
-                      onClick={() => { quickLogin('ADMIN'); setShowProfileMenu(false); }}
-                      className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between ${user?.role === 'ADMIN' ? 'bg-[#800020]/5 text-[#800020] font-medium' : 'text-slate-700 hover:bg-slate-50'}`}
-                    >
-                      Admin {user?.role === 'ADMIN' && <span className="w-1.5 h-1.5 rounded-full bg-[#800020]"></span>}
-                    </button>
-
                     <div className="border-t border-slate-100 mt-2 pt-2">
                       <button
                         onClick={() => { logout(); setShowProfileMenu(false); }}

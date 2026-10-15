@@ -102,8 +102,8 @@ router.post('/login', async (req, res): Promise<void> => {
   }
 });
 
-// Authorized Google Email Validation Regex: Strictly *.tce.edu (Official TCE accounts only)
-export const ALLOWED_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@(?:(?:[a-zA-Z0-9-]+\.)*tce\.edu)$/i;
+// Authorized Google Email Validation Regex: Strictly @tce.edu (Official TCE accounts only, rejecting subdomains)
+export const ALLOWED_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@tce\.edu$/i;
 
 export function isAllowedEmail(email: string): boolean {
   if (!email || typeof email !== 'string') return false;
@@ -120,12 +120,22 @@ router.post('/google', async (req, res): Promise<void> => {
     let { credential, accessToken, email, name, avatar, googleId } = req.body;
     let emailVerified = false;
 
+    const expectedClientId = process.env.GOOGLE_CLIENT_ID || '615647398835-fo26hv337bphlvkoq6g91m0hu0b0ub1p.apps.googleusercontent.com';
+
     // Verify token with Google
     if (credential && typeof credential === 'string') {
       try {
         const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
         if (verifyRes.ok) {
           const tokenInfo = (await verifyRes.json()) as any;
+          if (tokenInfo.aud && expectedClientId && tokenInfo.aud !== expectedClientId) {
+            res.status(401).json({ error: 'Please sign in with your tce.edu college email.' });
+            return;
+          }
+          if (tokenInfo.exp && Number(tokenInfo.exp) < Date.now() / 1000) {
+            res.status(401).json({ error: 'Google session has expired. Please sign in again.' });
+            return;
+          }
           if (tokenInfo.email) email = tokenInfo.email;
           if (tokenInfo.name && !name) name = tokenInfo.name;
           if (tokenInfo.picture && !avatar) avatar = tokenInfo.picture;
@@ -140,6 +150,10 @@ router.post('/google', async (req, res): Promise<void> => {
             const payload = JSON.parse(Buffer.from(b64, 'base64').toString('utf-8'));
             if (payload.exp && payload.exp < Date.now() / 1000) {
               res.status(401).json({ error: 'Google session has expired. Please sign in again.' });
+              return;
+            }
+            if (payload.aud && expectedClientId && payload.aud !== expectedClientId) {
+              res.status(401).json({ error: 'Please sign in with your tce.edu college email.' });
               return;
             }
             if (payload.email) email = payload.email;

@@ -8,7 +8,6 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   googleLogin: (data: { email?: string; name?: string; credential?: string; accessToken?: string; avatar?: string; googleId?: string }) => Promise<void>;
-  quickLogin: (role: UserRole) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -51,16 +50,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(res.user);
   };
 
-  const quickLogin = async (role: UserRole) => {
-    const creds: Record<UserRole, { email: string; pass: string }> = {
-      ADMIN: { email: 'admin@tce.edu', pass: 'AdminPassword2026!' },
-      HOD: { email: 'hod.ca@tce.edu', pass: 'HodPassword2026!' },
-      FACULTY: { email: 'psaca@tce.edu', pass: 'FacultyPassword2026!' },
-    };
-    const c = creds[role];
-    await login(c.email, c.pass);
-  };
-
   const logout = () => {
     localStorage.removeItem('syllabusforge_token');
     setToken(null);
@@ -75,7 +64,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         login,
         googleLogin,
-        quickLogin,
         logout,
         isAuthenticated: !!user,
       }}
