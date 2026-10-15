@@ -87,8 +87,8 @@ router.post('/login', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-// Authorized Google Email Validation Regex: Strictly @tce.edu (Official TCE accounts only, rejecting subdomains)
-export const ALLOWED_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@tce\.edu$/i;
+// Authorized Google Email Validation Regex: Strictly *.tce.edu accounts (permits @tce.edu and @student.tce.edu)
+export const ALLOWED_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@(?:(?:[a-zA-Z0-9-]+\.)*tce\.edu)$/i;
 export function isAllowedEmail(email) {
     if (!email || typeof email !== 'string')
         return false;

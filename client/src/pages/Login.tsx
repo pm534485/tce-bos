@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { AlertCircle } from 'lucide-react';
 
-// Authorized Google Email Validation Regex: Strictly @tce.edu accounts only (Rejecting @student.tce.edu and others)
-export const ALLOWED_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@tce\.edu$/i;
+// Authorized Google Email Validation Regex: Strictly *.tce.edu accounts (permits @tce.edu and @student.tce.edu)
+export const ALLOWED_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@(?:(?:[a-zA-Z0-9-]+\.)*tce\.edu)$/i;
 
 export function isAllowedEmail(email: string): boolean {
   if (!email || typeof email !== 'string') return false;
@@ -138,7 +138,6 @@ export const Login: React.FC = () => {
             client_id: GOOGLE_CLIENT_ID,
             callback: handleCredentialResponse,
             auto_select: false,
-            hd: 'tce.edu',
           });
 
           if (google.accounts.id.disableAutoSelect) {
@@ -189,7 +188,6 @@ export const Login: React.FC = () => {
           client_id: GOOGLE_CLIENT_ID,
           scope: 'openid email profile',
           prompt: 'select_account',
-          hd: 'tce.edu',
           callback: async (tokenResponse: any) => {
             if (tokenResponse.error) {
               setError(tokenResponse.error_description || 'Google sign-in was cancelled or failed.');
