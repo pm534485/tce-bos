@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { AlertCircle, Mail, Lock, ArrowRight, ShieldCheck, UserCheck, Sparkles } from 'lucide-react';
+import { AlertCircle, Mail, Lock, ArrowRight } from 'lucide-react';
 
 // Authorized Google Email Validation Regex: Strictly *.tce.edu accounts (permits @tce.edu and @student.tce.edu)
 export const ALLOWED_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@(?:(?:[a-zA-Z0-9-]+\.)*tce\.edu)$/i;
@@ -268,22 +268,6 @@ export const Login: React.FC = () => {
     }
   };
 
-  // 1-Click Fast Access for Verified Institutional Accounts
-  const handleFastAccess = async (email: string, pass: string) => {
-    setError(null);
-    setLoading(true);
-    setEmailInput(email);
-    setPasswordInput(pass);
-    try {
-      await login(email, pass);
-      navigate('/');
-    } catch (err: any) {
-      setError(err.message || 'Unable to sign in. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#F8FAFC] font-sans">
       {/* LEFT SIDE: Deep TCE Maroon Brand Panel */}
@@ -305,22 +289,13 @@ export const Login: React.FC = () => {
 
         {/* Middle: Page Title - Syllabus Automation Portal */}
         <div className="relative z-10 my-auto py-10 md:py-16 max-w-xl">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#C59B27]/20 border border-[#C59B27]/40 text-[#E2BF53] text-xs font-semibold uppercase tracking-wider mb-4">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Regulation 2026 Ready</span>
-          </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.12]">
             Syllabus Automation Portal
           </h1>
-          <p className="mt-4 text-white/80 text-sm sm:text-base leading-relaxed">
-            Thiagarajar College of Engineering • Autonomous Board of Studies syllabus design and curriculum automation system.
-          </p>
         </div>
 
         {/* Bottom decorative spacer */}
-        <div className="relative z-10 py-2 text-xs text-white/50">
-          <span>Official TCE Institutional Portal • Estd. 1957</span>
-        </div>
+        <div className="relative z-10 py-2" />
       </div>
 
       {/* RIGHT SIDE: Institutional Authentication Card */}
@@ -440,70 +415,6 @@ export const Login: React.FC = () => {
               </button>
             </form>
           )}
-
-          {/* Quick Access for Verified Staff & Evaluators */}
-          <div className="mt-8 pt-5 border-t border-slate-100">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#C59B27]" />
-                <span>Instant Staff / Demo Access</span>
-              </span>
-              <span className="text-[10px] text-slate-400">1-click entry</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => handleFastAccess('psaca@tce.edu', 'FacultyPassword2026!')}
-                disabled={loading}
-                className="text-left p-2.5 rounded-xl bg-slate-50 hover:bg-[#800020]/5 border border-slate-200/80 hover:border-[#800020]/30 transition-all group cursor-pointer"
-              >
-                <div className="flex items-center space-x-1.5">
-                  <UserCheck className="w-3.5 h-3.5 text-[#800020] flex-shrink-0" />
-                  <span className="text-xs font-bold text-slate-800 group-hover:text-[#800020] truncate">
-                    Dr. P. Sharmila
-                  </span>
-                </div>
-                <span className="text-[10px] text-slate-500 block ml-5">
-                  Faculty (CA)
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleFastAccess('hod.ca@syllabusforge.edu', 'HodPassword2026!')}
-                disabled={loading}
-                className="text-left p-2.5 rounded-xl bg-slate-50 hover:bg-[#800020]/5 border border-slate-200/80 hover:border-[#800020]/30 transition-all group cursor-pointer"
-              >
-                <div className="flex items-center space-x-1.5">
-                  <UserCheck className="w-3.5 h-3.5 text-[#800020] flex-shrink-0" />
-                  <span className="text-xs font-bold text-slate-800 group-hover:text-[#800020] truncate">
-                    Dr. K. Suresh
-                  </span>
-                </div>
-                <span className="text-[10px] text-slate-500 block ml-5">
-                  HoD (Review Queue)
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleFastAccess('admin@syllabusforge.edu', 'AdminPassword2026!')}
-                disabled={loading}
-                className="text-left p-2.5 rounded-xl bg-slate-50 hover:bg-[#800020]/5 border border-slate-200/80 hover:border-[#800020]/30 transition-all group cursor-pointer"
-              >
-                <div className="flex items-center space-x-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#C59B27] flex-shrink-0" />
-                  <span className="text-xs font-bold text-slate-800 group-hover:text-[#800020] truncate">
-                    Academic Admin
-                  </span>
-                </div>
-                <span className="text-[10px] text-slate-500 block ml-5">
-                  Dean Academic
-                </span>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
