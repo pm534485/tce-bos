@@ -57,6 +57,16 @@ describe('B2: Course Code Validation (RR AA C U V)', () => {
         });
         expect(res.filter(r => r.severity === 'error')).toHaveLength(0);
     });
+    it('should accept EL (ECE VLSI) as a valid programme code', () => {
+        const res = validateCourseCode({
+            regulationCode: '26',
+            programmeCode: 'EL',
+            categoryLetter: 'C',
+            uniqueLetter: 'A',
+            version: 0,
+        });
+        expect(res.filter(r => r.severity === 'error')).toHaveLength(0);
+    });
     it('should reject invalid regulation code (not 2 digits)', () => {
         const res = validateCourseCode({
             regulationCode: '2026',

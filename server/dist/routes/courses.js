@@ -35,6 +35,61 @@ router.get('/', authenticate, async (req, res) => {
                 andConditions.push({ $or: conditions });
             }
         }
+        else if (req.user?.role === 'ADMIN') {
+            // Admin dashboard: By default, institutional admin can view all courses across departments.
+            // If admin explicitly requests their personal drafts, scope='mine' is used.
+            if (scope === 'mine') {
+                const userConditions = [];
+                if (userEmail) {
+                    const escapedEmail = escapeRegex(userEmail);
+                    userConditions.push({ createdBy: { $regex: `^${escapedEmail}$`, $options: 'i' } });
+                    userConditions.push({ 'designers.email': { $regex: `^${escapedEmail}$`, $options: 'i' } });
+                }
+                if (userId) {
+                    userConditions.push({ createdBy: userId });
+                }
+                if (userConditions.length > 0) {
+                    andConditions.push({ $or: userConditions });
+                }
+            }
+        }
+        else if (req.user?.role === 'HOD') {
+            // HoD dashboard: view own authored courses as well as courses in their department
+            if (scope === 'mine') {
+                const userConditions = [];
+                if (userEmail) {
+                    const escapedEmail = escapeRegex(userEmail);
+                    userConditions.push({ createdBy: { $regex: `^${escapedEmail}$`, $options: 'i' } });
+                    userConditions.push({ 'designers.email': { $regex: `^${escapedEmail}$`, $options: 'i' } });
+                }
+                if (userId) {
+                    userConditions.push({ createdBy: userId });
+                }
+                if (userConditions.length > 0) {
+                    andConditions.push({ $or: userConditions });
+                }
+            }
+            else {
+                const hodConditions = [];
+                if (userEmail) {
+                    const escapedEmail = escapeRegex(userEmail);
+                    hodConditions.push({ createdBy: { $regex: `^${escapedEmail}$`, $options: 'i' } });
+                    hodConditions.push({ 'designers.email': { $regex: `^${escapedEmail}$`, $options: 'i' } });
+                }
+                if (userId) {
+                    hodConditions.push({ createdBy: userId });
+                }
+                if (req.user.department) {
+                    hodConditions.push({ department: req.user.department });
+                }
+                if (req.user.programmeAccess && req.user.programmeAccess.length > 0) {
+                    hodConditions.push({ programmeCode: { $in: req.user.programmeAccess } });
+                }
+                if (hodConditions.length > 0) {
+                    andConditions.push({ $or: hodConditions });
+                }
+            }
+        }
         else {
             // By default: ONLY documents saved or submitted by the logged-in user are shown
             const userConditions = [];

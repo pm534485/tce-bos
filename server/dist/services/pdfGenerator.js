@@ -24,9 +24,10 @@ export function getDegreeProgramHeader(course) {
         'PB': 'M.E. (Construction Engg)',
         'PC': 'M.E. (Communication Systems)',
         'PD': 'M.E. (CSE)',
+        'EL': 'B.E. (ECE - VLSI)',
         'EV': 'B.E. (ECE - VLSI)',
         'FT': 'B.Tech. (Fashion Technology)',
-        'EL': 'B.E. (Electrical and Computer Engg)',
+        'ER': 'B.E. (Electrical and Computer Engg)',
     };
     const degree = progMap[progCode] || (progCode ? `B.E. (${progCode})` : 'B.E. (ECE)');
     const regYear = course.regulationYear || 2026;

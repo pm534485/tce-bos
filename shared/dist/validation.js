@@ -173,7 +173,10 @@ export function validateCourseCode(parts, existingProgrammeCodes = []) {
 export function computeCredits(L, T, P, courseType) {
     if (courseType === 'AUDIT')
         return 0;
-    return Number((L + T + P * 0.5).toFixed(1));
+    const lNum = Number(L) || 0;
+    const tNum = Number(T) || 0;
+    const pNum = Number(P) || 0;
+    return Number((lNum + tNum + pNum * 0.5).toFixed(1));
 }
 export function validateLtpCredits(courseType, categoryAbbr, L, T, P, credits) {
     const results = [];

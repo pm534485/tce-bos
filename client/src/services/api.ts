@@ -17,10 +17,18 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     ...options.headers,
   };
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      headers,
+    });
+  } catch (netErr: any) {
+    if (netErr?.message === 'Failed to fetch' || netErr?.name === 'TypeError') {
+      throw new Error('Unable to connect to the Syllabus Automation Portal server. Please check your network or try again.');
+    }
+    throw netErr;
+  }
 
   if (!response.ok) {
     let errorMsg = `Request failed: ${response.statusText}`;

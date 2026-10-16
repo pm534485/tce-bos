@@ -56,6 +56,7 @@ import {
   ChevronRight,
   ChevronLeft,
   Menu,
+  Lock,
 } from 'lucide-react';
 
 export const VALID_UNIQUE_LETTERS = [
@@ -111,12 +112,17 @@ export const CourseWizard: React.FC = () => {
   // Admin configured active regulation state
   const [adminRegulation, setAdminRegulation] = useState<{ year: number; code: string }>({ year: 2026, code: '26' });
 
-  // Safe router/history back handler with dashboard fallback
+  // Safe back handler: steps to previous wizard section when step > 0, otherwise goes to previous browser page
   const handleBack = () => {
-    if (window.history.length > 1 && window.history.state && window.history.state.idx > 0) {
-      navigate(-1);
+    if (currentStep > 0) {
+      setCurrentStep(prev => prev - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      navigate('/');
+      if (window.history.length > 1) {
+        navigate(-1);
+      } else {
+        navigate('/');
+      }
     }
   };
 
@@ -134,9 +140,9 @@ export const CourseWizard: React.FC = () => {
     categoryAbbr: '' as any,
     semester: 1,
     semesterType: 'ODD',
-    L: '' as any,
-    T: '' as any,
-    P: '' as any,
+    L: courseTypeParam === 'PRACTICAL' ? 0 : ('' as any),
+    T: courseTypeParam === 'PRACTICAL' ? 0 : ('' as any),
+    P: courseTypeParam === 'THEORY' ? 0 : ('' as any),
     credits: '' as any,
     teExamType: courseTypeParam === 'TCP' ? ('' as any) : undefined,
     preamble: '',
@@ -182,6 +188,9 @@ export const CourseWizard: React.FC = () => {
 
         if (id) {
           const fetched = await api.getCourse(id);
+          if (fetched.courseType === 'THEORY') {
+            fetched.P = 0;
+          }
           setCourse(fetched);
           setLastSaved(new Date());
         } else {
@@ -191,6 +200,7 @@ export const CourseWizard: React.FC = () => {
               ...prev,
               regulationYear: regRes.regulationYear,
               regulationCode: regRes.regulationCode,
+              P: prev.courseType === 'THEORY' ? 0 : prev.P,
             }));
           }
         }
@@ -207,15 +217,30 @@ export const CourseWizard: React.FC = () => {
     : existingCodes;
   const validationReport = validateCourse(course, otherCodes);
 
-  // Compute live subject code with underscores for unfilled parts
-  const regPart = course.regulationCode || adminRegulation.code || '26';
-  const progPart = course.programmeCode ? course.programmeCode : '__';
-  const catPart = course.categoryLetter ? course.categoryLetter : '_';
-  const uniquePart = course.uniqueLetter ? course.uniqueLetter : '_';
-  const verPart = (course.version !== undefined && course.version !== null && course.version !== ('' as any)) ? String(course.version) : '_';
-  const displaySubjectCode = `${regPart}${progPart}${catPart}${uniquePart}${verPart}`;
+  // Real-time field-level validation helpers
+  const getFieldErrors = (fieldName: string) => {
+    return validationReport.errors.filter(e => e.field === fieldName);
+  };
 
-  // Step 0 validation: Next button enabled ONLY when all remaining visible fields are filled/selected
+  const hasFieldError = (fieldName: string) => {
+    return validationReport.errors.some(e => e.field === fieldName);
+  };
+
+  // Compute live subject code with dash before user enters anything
+  const hasEnteredAnyCode = Boolean(
+    course.programmeCode ||
+    course.categoryLetter ||
+    course.uniqueLetter ||
+    (course.version !== undefined && course.version !== null && course.version !== ('' as any))
+  );
+  const regPart = course.regulationCode || adminRegulation.code || '26';
+  const progPart = course.programmeCode ? course.programmeCode : '—';
+  const catPart = course.categoryLetter ? course.categoryLetter : '—';
+  const uniquePart = course.uniqueLetter ? course.uniqueLetter : '—';
+  const verPart = (course.version !== undefined && course.version !== null && course.version !== ('' as any)) ? String(course.version) : '—';
+  const displaySubjectCode = hasEnteredAnyCode ? `${regPart}${progPart}${catPart}${uniquePart}${verPart}` : '—';
+
+  // Step 0 validation: Next button enabled ONLY when all details in the first page are entered and valid
   const isStep0Complete = Boolean(
     (course.regulationCode || adminRegulation.code) &&
     (course.regulationYear || adminRegulation.year) &&
@@ -229,19 +254,21 @@ export const CourseWizard: React.FC = () => {
     course.version !== null &&
     course.version !== ('' as any) &&
     course.courseName &&
-    course.courseName.trim() &&
+    course.courseName.trim().length >= 3 &&
     course.categoryAbbr &&
     String(course.categoryAbbr).trim() &&
-    (course.courseType === 'PRACTICAL' || (course.L !== ('' as any) && course.L !== undefined && course.L !== null)) &&
-    (course.courseType === 'PRACTICAL' || (course.T !== ('' as any) && course.T !== undefined && course.T !== null)) &&
-    course.P !== ('' as any) &&
-    course.P !== undefined &&
-    course.P !== null &&
+    (course.courseType === 'PRACTICAL' || (typeof course.L === 'number' && course.L >= 0 && course.L !== ('' as any))) &&
+    (course.courseType === 'PRACTICAL' || (typeof course.T === 'number' && course.T >= 0 && course.T !== ('' as any))) &&
+    (course.courseType === 'THEORY' || (typeof course.P === 'number' && course.P >= 0 && course.P !== ('' as any))) &&
     course.credits !== undefined &&
     course.credits !== null &&
     course.credits !== ('' as any) &&
     Number(course.credits) > 0 &&
-    (course.courseType !== 'TCP' || (course.teExamType && String(course.teExamType).trim()))
+    (course.courseType !== 'TCP' || (course.teExamType && String(course.teExamType).trim())) &&
+    !hasFieldError('courseName') &&
+    !hasFieldError('uniqueLetter') &&
+    !hasFieldError('courseCode') &&
+    !hasFieldError('credits')
   );
 
   // Debounced auto-save
@@ -325,6 +352,14 @@ export const CourseWizard: React.FC = () => {
   const updateField = (field: keyof Course, value: any) => {
     setCourse(prev => {
       const updated = { ...prev, [field]: value };
+
+      // For theory courses, practical is strictly 0
+      if (updated.courseType === 'THEORY') {
+        updated.P = 0;
+      } else if (updated.courseType === 'PRACTICAL') {
+        updated.L = 0;
+        updated.T = 0;
+      }
 
       // Recalculate courseCode
       if (['regulationCode', 'programmeCode', 'categoryLetter', 'uniqueLetter', 'version'].includes(field)) {
@@ -522,15 +557,6 @@ export const CourseWizard: React.FC = () => {
     { id: 'review', title: '8. Review & Submit', desc: '17-point compliance audit' },
   ];
 
-  // Real-time field-level validation helpers
-  const getFieldErrors = (fieldName: string) => {
-    return validationReport.errors.filter(e => e.field === fieldName);
-  };
-
-  const hasFieldError = (fieldName: string) => {
-    return validationReport.errors.some(e => e.field === fieldName);
-  };
-
   // Inline highlighted error component directly below the field
   const InlineFieldError: React.FC<{ field: string; fixHint?: boolean }> = ({ field, fixHint = true }) => {
     const errs = getFieldErrors(field);
@@ -575,7 +601,7 @@ export const CourseWizard: React.FC = () => {
           <button
             onClick={handleBack}
             className="p-1 rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
-            title="Go back"
+            title={currentStep > 0 ? 'Previous Section' : 'Back to Courses'}
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -584,7 +610,7 @@ export const CourseWizard: React.FC = () => {
               {displaySubjectCode}
             </span>
             <span className="font-bold text-slate-900 text-sm truncate max-w-[180px] sm:max-w-xs">
-              {course.courseName || 'Untitled Course'}
+              {course.courseName?.trim() ? course.courseName : '—'}
             </span>
             <span
               className={`text-xs px-2 py-0.5 rounded font-semibold flex-shrink-0 ${
@@ -783,8 +809,8 @@ export const CourseWizard: React.FC = () => {
                           {course.courseName?.trim() ? (
                             course.courseName.toUpperCase()
                           ) : (
-                            <span className="text-slate-300 font-mono tracking-widest select-none">
-                              ____________________
+                            <span className="text-slate-400 font-bold select-none">
+                              —
                             </span>
                           )}
                         </span>
@@ -818,35 +844,35 @@ export const CourseWizard: React.FC = () => {
                           {course.categoryAbbr ? (
                             course.categoryAbbr
                           ) : (
-                            <span className="text-slate-300 font-mono select-none">____</span>
+                            <span className="text-slate-400 font-bold select-none">—</span>
                           )}
                         </div>
                         <div className="p-2.5 text-xs sm:text-sm font-bold text-slate-900 border-r border-slate-900 flex items-center justify-center">
                           {course.L !== undefined && course.L !== null && course.L !== ('' as any) ? (
                             course.L
                           ) : (
-                            <span className="text-slate-300 font-mono select-none">_</span>
+                            <span className="text-slate-400 font-bold select-none">—</span>
                           )}
                         </div>
                         <div className="p-2.5 text-xs sm:text-sm font-bold text-slate-900 border-r border-slate-900 flex items-center justify-center">
                           {course.T !== undefined && course.T !== null && course.T !== ('' as any) ? (
                             course.T
                           ) : (
-                            <span className="text-slate-300 font-mono select-none">_</span>
+                            <span className="text-slate-400 font-bold select-none">—</span>
                           )}
                         </div>
                         <div className="p-2.5 text-xs sm:text-sm font-bold text-slate-900 border-r border-slate-900 flex items-center justify-center">
                           {course.P !== undefined && course.P !== null && course.P !== ('' as any) ? (
                             course.P
                           ) : (
-                            <span className="text-slate-300 font-mono select-none">_</span>
+                            <span className="text-slate-400 font-bold select-none">—</span>
                           )}
                         </div>
                         <div className="p-2.5 text-xs sm:text-sm font-black text-slate-950 flex items-center justify-center">
-                          {course.credits !== undefined && course.credits !== null && course.credits !== ('' as any) ? (
+                          {course.credits !== undefined && course.credits !== null && course.credits !== ('' as any) && Number(course.credits) > 0 ? (
                             course.credits
                           ) : (
-                            <span className="text-slate-300 font-mono select-none">_</span>
+                            <span className="text-slate-400 font-bold select-none">—</span>
                           )}
                         </div>
                       </div>
@@ -866,9 +892,15 @@ export const CourseWizard: React.FC = () => {
                       <div className="grid grid-cols-12 gap-2.5 text-center text-xs">
                         {/* 1. RR: Regulation (Admin Configured, Read-Only, Narrower) */}
                         <div className="col-span-4 sm:col-span-2 p-2.5 bg-slate-100/90 rounded-xl border-2 border-slate-200 flex flex-col justify-between">
-                          <span className="block text-[11px] text-slate-400 font-bold uppercase tracking-wider">RR</span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">RR</span>
+                            <span className="text-[9px] text-slate-600 font-bold bg-slate-200/90 px-1 py-0.5 rounded flex items-center space-x-0.5" title="Regulation is set by Administrator and cannot be changed by staff">
+                              <Lock className="w-2.5 h-2.5 inline mr-0.5" />
+                              Fixed
+                            </span>
+                          </div>
                           <div className="my-1">
-                            <span className="font-black text-base sm:text-lg text-slate-900 block text-center">
+                            <span className="font-black text-base sm:text-lg text-slate-900 block text-center" title="Institutional Regulation (Admin Configured)">
                               {course.regulationCode || adminRegulation.code}
                             </span>
                           </div>
@@ -1079,10 +1111,12 @@ export const CourseWizard: React.FC = () => {
                           <input
                             type="number"
                             min={0}
-                            value={course.P === ('' as any) ? '' : (course.P ?? '')}
+                            value={course.courseType === 'THEORY' ? 0 : (course.P === ('' as any) ? '' : (course.P ?? ''))}
+                            disabled={course.courseType === 'THEORY'}
                             onChange={e => updateField('P', e.target.value === '' ? ('' as any) : parseInt(e.target.value) || 0)}
                             placeholder="0"
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                            title={course.courseType === 'THEORY' ? 'Practical is disabled for theory courses' : 'Practical contact hours'}
                           />
                         </div>
 
@@ -3141,19 +3175,30 @@ export const CourseWizard: React.FC = () => {
                 </div>
 
                 {currentStep < steps.length - 1 ? (
-                  <button
-                    onClick={() => setCurrentStep(prev => Math.min(steps.length - 1, prev + 1))}
-                    disabled={currentStep === 0 && !isStep0Complete}
-                    className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1 active:scale-95 transition-all ${
-                      currentStep === 0 && !isStep0Complete
-                        ? 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-60'
-                        : 'bg-sky-600 hover:bg-sky-700 text-white shadow-sm'
-                    }`}
-                    title={currentStep === 0 && !isStep0Complete ? 'Please complete all required course code and details to continue' : 'Next Step'}
-                  >
-                    <span>Next</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center space-x-3">
+                    {currentStep === 0 && !isStep0Complete && (
+                      <span className="text-[11px] font-medium text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg hidden sm:inline-flex items-center space-x-1">
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                        <span>Enter all details in Section 1 to continue</span>
+                      </span>
+                    )}
+                    <button
+                      onClick={() => {
+                        if (currentStep === 0 && !isStep0Complete) return;
+                        setCurrentStep(prev => Math.min(steps.length - 1, prev + 1));
+                      }}
+                      disabled={currentStep === 0 && !isStep0Complete}
+                      className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1 transition-all ${
+                        currentStep === 0 && !isStep0Complete
+                          ? 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-60'
+                          : 'bg-sky-600 hover:bg-sky-700 text-white shadow-sm active:scale-95 cursor-pointer'
+                      }`}
+                      title={currentStep === 0 && !isStep0Complete ? 'Please complete all required course code and details to continue' : 'Next Step'}
+                    >
+                      <span>Next</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 ) : (
                   <button
                     onClick={handleSubmitForReview}

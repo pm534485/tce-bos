@@ -7,6 +7,7 @@ import { CourseWizard } from './pages/CourseWizard';
 import { ReviewWorkspace } from './pages/ReviewWorkspace';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { Login } from './pages/Login';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({
   children,
@@ -40,10 +41,19 @@ export const AppContent: React.FC = () => {
     <div className="min-h-screen bg-background flex flex-col font-sans text-text">
       {user && <Navbar />}
       <main className="flex-1 flex flex-col">
-        <Routes>
+        <ErrorBoundary fallbackTitle="Portal Workspace Encountered an Issue">
+          <Routes>
           <Route path="/login" element={<Login />} />
           <Route
             path="/"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
             element={
               <ProtectedRoute>
                 <Dashboard />
@@ -84,6 +94,7 @@ export const AppContent: React.FC = () => {
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </ErrorBoundary>
       </main>
     </div>
   );

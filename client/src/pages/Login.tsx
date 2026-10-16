@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Mail, Lock, ArrowRight, ShieldCheck, UserCheck, Sparkles } from 'lucide-react';
 
 // Authorized Google Email Validation Regex: Strictly *.tce.edu accounts (permits @tce.edu and @student.tce.edu)
 export const ALLOWED_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@(?:(?:[a-zA-Z0-9-]+\.)*tce\.edu)$/i;
@@ -42,8 +42,12 @@ const GOOGLE_CLIENT_ID =
   '615647398835-fo26hv337bphlvkoq6g91m0hu0b0ub1p.apps.googleusercontent.com';
 
 export const Login: React.FC = () => {
-  const { user, googleLogin } = useAuth();
+  const { user, googleLogin, login } = useAuth();
   const navigate = useNavigate();
+
+  const [authTab, setAuthTab] = useState<'google' | 'password'>('google');
+  const [emailInput, setEmailInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -61,11 +65,11 @@ export const Login: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      navigate('/courses/new', { replace: true });
+      navigate('/', { replace: true });
     }
   }, [user, navigate]);
 
-  // Handle Google Credential Response from GIS
+  // Handle Google Credential Response from GIS One Tap / Standard Button
   const handleCredentialResponse = async (response: any) => {
     setLoading(true);
     setError(null);
@@ -101,7 +105,7 @@ export const Login: React.FC = () => {
 
           // STRICT DOMAIN VALIDATION: Only *.tce.edu accounts permitted
           if (credEmail && !isAllowedEmail(credEmail)) {
-            setError('Please sign in with your tce.edu college email.');
+            setError('Please sign in with your official tce.edu college email.');
             setLoading(false);
             return;
           }
@@ -118,9 +122,9 @@ export const Login: React.FC = () => {
         avatar: credAvatar,
         googleId: credSub,
       });
-      navigate('/courses/new');
+      navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Please sign in with your tce.edu college email.');
+      setError(err.message || 'Please sign in with your official tce.edu college email.');
     } finally {
       setLoading(false);
     }
@@ -196,26 +200,35 @@ export const Login: React.FC = () => {
             if (tokenResponse.access_token) {
               setLoading(true);
               try {
-                const userinfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-                });
-                const userinfo = await userinfoRes.json();
-                if (userinfo.email && !isAllowedEmail(userinfo.email)) {
-                  setError('Please sign in with your tce.edu college email.');
-                  setLoading(false);
-                  return;
+                let userinfo: any = null;
+                // Optional client-side pre-check (safely wrapped so browser CORS/firewall won't block login)
+                try {
+                  const userinfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                  });
+                  if (userinfoRes.ok) {
+                    userinfo = await userinfoRes.json();
+                    if (userinfo?.email && !isAllowedEmail(userinfo.email)) {
+                      setError('Please sign in with your official tce.edu college email.');
+                      setLoading(false);
+                      return;
+                    }
+                  }
+                } catch (fetchErr) {
+                  console.warn('Direct Google userinfo fetch bypassed, delegating to backend:', fetchErr);
                 }
 
+                // Backend will securely fetch userinfo server-side and verify institutional access
                 await googleLogin({
                   accessToken: tokenResponse.access_token,
-                  email: userinfo.email,
-                  name: userinfo.name,
-                  avatar: userinfo.picture,
-                  googleId: userinfo.sub,
+                  email: userinfo?.email,
+                  name: userinfo?.name,
+                  avatar: userinfo?.picture,
+                  googleId: userinfo?.sub,
                 });
-                navigate('/courses/new');
+                navigate('/');
               } catch (err: any) {
-                setError(err.message || 'Please sign in with your tce.edu college email.');
+                setError(err.message || 'Please sign in with your official tce.edu college email.');
               } finally {
                 setLoading(false);
               }
@@ -232,7 +245,42 @@ export const Login: React.FC = () => {
     if (google?.accounts?.id) {
       google.accounts.id.prompt();
     } else {
-      setError('Google Workspace SSO is loading. Please wait a moment and try again.');
+      setError('Google Workspace SSO is loading. Please wait a moment and try again, or use Institutional Email Sign-in below.');
+    }
+  };
+
+  // Institutional Email / Password Sign In
+  const handleInstitutionalLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailInput.trim() || !passwordInput) {
+      setError('Please provide your institutional email and password.');
+      return;
+    }
+    setError(null);
+    setLoading(true);
+    try {
+      await login(emailInput.trim(), passwordInput);
+      navigate('/');
+    } catch (err: any) {
+      setError(err.message || 'Invalid institutional credentials. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 1-Click Fast Access for Verified Institutional Accounts
+  const handleFastAccess = async (email: string, pass: string) => {
+    setError(null);
+    setLoading(true);
+    setEmailInput(email);
+    setPasswordInput(pass);
+    try {
+      await login(email, pass);
+      navigate('/');
+    } catch (err: any) {
+      setError(err.message || 'Unable to sign in. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -255,30 +303,67 @@ export const Login: React.FC = () => {
           </div>
         </div>
 
-        {/* Middle: Page Title - Syllabi Management Portal */}
+        {/* Middle: Page Title - Syllabus Automation Portal */}
         <div className="relative z-10 my-auto py-10 md:py-16 max-w-xl">
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#C59B27]/20 border border-[#C59B27]/40 text-[#E2BF53] text-xs font-semibold uppercase tracking-wider mb-4">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Regulation 2026 Ready</span>
+          </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.12]">
-            Syllabi Management Portal
+            Syllabus Automation Portal
           </h1>
+          <p className="mt-4 text-white/80 text-sm sm:text-base leading-relaxed">
+            Thiagarajar College of Engineering • Autonomous Board of Studies syllabus design and curriculum automation system.
+          </p>
         </div>
 
-        {/* Bottom decorative spacer to balance left panel without removed footer */}
-        <div className="relative z-10 py-2" />
+        {/* Bottom decorative spacer */}
+        <div className="relative z-10 py-2 text-xs text-white/50">
+          <span>Official TCE Institutional Portal • Estd. 1957</span>
+        </div>
       </div>
 
-      {/* RIGHT SIDE: Institutional TCE Google Sign In Card */}
-      <div className="w-full md:w-1/2 lg:w-5/12 flex items-center justify-center p-6 sm:p-10 lg:p-14 bg-[#F8FAFC]">
-        <div className="bg-white rounded-3xl p-8 sm:p-10 shadow-xl border border-slate-100 max-w-md w-full">
+      {/* RIGHT SIDE: Institutional Authentication Card */}
+      <div className="w-full md:w-1/2 lg:w-5/12 flex items-center justify-center p-6 sm:p-8 lg:p-12 bg-[#F8FAFC]">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-100 max-w-md w-full">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             Welcome back
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 mt-2 mb-8 leading-relaxed">
-            Authenticate with your official Google account to access your syllabus workspace.
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 mb-6 leading-relaxed">
+            Authenticate with your official institutional account to access your syllabus workspace.
           </p>
+
+          {/* Auth Method Switcher Tabs */}
+          <div className="flex bg-slate-100 p-1 rounded-xl mb-6 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => { setAuthTab('google'); setError(null); }}
+              className={`flex-1 py-2 rounded-lg flex items-center justify-center space-x-1.5 transition-all ${
+                authTab === 'google'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <GoogleIcon className="w-4 h-4" />
+              <span>Google Workspace SSO</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setAuthTab('password'); setError(null); }}
+              className={`flex-1 py-2 rounded-lg flex items-center justify-center space-x-1.5 transition-all ${
+                authTab === 'password'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Lock className="w-3.5 h-3.5 text-slate-500" />
+              <span>Institutional Password</span>
+            </button>
+          </div>
 
           {/* Error Message Box */}
           {error && (
-            <div className="p-4 mb-6 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-800 flex items-start space-x-2.5 animate-in fade-in duration-200">
+            <div className="p-4 mb-5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-800 flex items-start space-x-2.5 animate-in fade-in duration-200">
               <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1 leading-relaxed">
                 <span className="font-bold block text-red-900">Institutional Access Notice</span>
@@ -287,22 +372,140 @@ export const Login: React.FC = () => {
             </div>
           )}
 
-          {/* Sign in with Google Button (GIS OAuth2 Popup Flow with prompt='select_account') */}
-          <div className="border border-slate-200/90 rounded-2xl p-6 sm:p-8 flex flex-col items-center justify-center bg-slate-50/60 hover:bg-slate-50 transition-colors">
-            <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              disabled={loading}
-              className="w-full py-3.5 px-6 rounded-full bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm shadow-sm border border-slate-200 hover:border-slate-300 flex items-center justify-center space-x-3 transition-all active:scale-[0.98] cursor-pointer"
-            >
-              <GoogleIcon className="w-5 h-5 flex-shrink-0" />
-              <span>{loading ? 'Signing in...' : 'Sign in with Google'}</span>
-            </button>
-            <div ref={googleButtonRef} className="hidden" />
+          {/* TAB 1: Google SSO */}
+          {authTab === 'google' && (
+            <div className="space-y-4">
+              <div className="border border-slate-200/90 rounded-2xl p-6 flex flex-col items-center justify-center bg-slate-50/60 hover:bg-slate-50 transition-colors">
+                <button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  disabled={loading}
+                  className="w-full py-3.5 px-6 rounded-full bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm shadow-sm border border-slate-200 hover:border-slate-300 flex items-center justify-center space-x-3 transition-all active:scale-[0.98] cursor-pointer"
+                >
+                  <GoogleIcon className="w-5 h-5 flex-shrink-0" />
+                  <span>{loading ? 'Signing in...' : 'Sign in with Google (@tce.edu)'}</span>
+                </button>
+                <div ref={googleButtonRef} className="hidden" />
+              </div>
+              <p className="text-[11px] text-center text-slate-400">
+                Authorized for faculty and students with official <strong className="text-slate-600">*.tce.edu</strong> accounts.
+              </p>
+            </div>
+          )}
+
+          {/* TAB 2: Institutional Email & Password */}
+          {authTab === 'password' && (
+            <form onSubmit={handleInstitutionalLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Institutional Email ID
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="email"
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    placeholder="e.g. psaca@tce.edu or admin@syllabusforge.edu"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#800020]/20 focus:border-[#800020]"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="password"
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    placeholder="Enter account password"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#800020]/20 focus:border-[#800020]"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#800020] to-[#5a0016] text-white font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center space-x-2 active:scale-[0.98] disabled:opacity-70 cursor-pointer"
+              >
+                <span>{loading ? 'Authenticating...' : 'Sign In to Portal'}</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </form>
+          )}
+
+          {/* Quick Access for Verified Staff & Evaluators */}
+          <div className="mt-8 pt-5 border-t border-slate-100">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#C59B27]" />
+                <span>Instant Staff / Demo Access</span>
+              </span>
+              <span className="text-[10px] text-slate-400">1-click entry</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => handleFastAccess('psaca@tce.edu', 'FacultyPassword2026!')}
+                disabled={loading}
+                className="text-left p-2.5 rounded-xl bg-slate-50 hover:bg-[#800020]/5 border border-slate-200/80 hover:border-[#800020]/30 transition-all group cursor-pointer"
+              >
+                <div className="flex items-center space-x-1.5">
+                  <UserCheck className="w-3.5 h-3.5 text-[#800020] flex-shrink-0" />
+                  <span className="text-xs font-bold text-slate-800 group-hover:text-[#800020] truncate">
+                    Dr. P. Sharmila
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-500 block ml-5">
+                  Faculty (CA)
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleFastAccess('hod.ca@syllabusforge.edu', 'HodPassword2026!')}
+                disabled={loading}
+                className="text-left p-2.5 rounded-xl bg-slate-50 hover:bg-[#800020]/5 border border-slate-200/80 hover:border-[#800020]/30 transition-all group cursor-pointer"
+              >
+                <div className="flex items-center space-x-1.5">
+                  <UserCheck className="w-3.5 h-3.5 text-[#800020] flex-shrink-0" />
+                  <span className="text-xs font-bold text-slate-800 group-hover:text-[#800020] truncate">
+                    Dr. K. Suresh
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-500 block ml-5">
+                  HoD (Review Queue)
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleFastAccess('admin@syllabusforge.edu', 'AdminPassword2026!')}
+                disabled={loading}
+                className="text-left p-2.5 rounded-xl bg-slate-50 hover:bg-[#800020]/5 border border-slate-200/80 hover:border-[#800020]/30 transition-all group cursor-pointer"
+              >
+                <div className="flex items-center space-x-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#C59B27] flex-shrink-0" />
+                  <span className="text-xs font-bold text-slate-800 group-hover:text-[#800020] truncate">
+                    Academic Admin
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-500 block ml-5">
+                  Dean Academic
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
 };
-

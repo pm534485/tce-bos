@@ -38,17 +38,22 @@ export const Dashboard: React.FC = () => {
     return localStorage.getItem('tce_hide_banner') !== 'true';
   });
 
+  const [adminScope, setAdminScope] = useState<'all' | 'mine'>('all');
+
   useEffect(() => {
     loadCourses();
-  }, [user]);
+  }, [user, adminScope]);
 
   async function loadCourses() {
     try {
       setLoading(true);
-      const data = await api.getCourses();
-      setCourses(data);
+      const params: Record<string, string | number> | undefined =
+        user?.role === 'ADMIN' && adminScope === 'mine' ? { scope: 'mine' } : undefined;
+      const data = await api.getCourses(params);
+      setCourses(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load courses:', err);
+      setCourses([]);
     } finally {
       loadCoursesFinished();
     }
@@ -80,7 +85,9 @@ export const Dashboard: React.FC = () => {
   };
 
   // Filtered courses
-  const filteredCourses = courses.filter(c => {
+  const courseList = Array.isArray(courses) ? courses : [];
+  const filteredCourses = courseList.filter(c => {
+    if (!c) return false;
     const matchesSearch =
       (c.courseName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (c.courseCode || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -90,8 +97,8 @@ export const Dashboard: React.FC = () => {
   });
 
   // Summary counts
-  const draftsCount = courses.filter(c => c.status === 'DRAFT').length;
-  const submittedCount = courses.filter(c => c.status === 'SUBMITTED').length;
+  const draftsCount = courseList.filter(c => c && c.status === 'DRAFT').length;
+  const submittedCount = courseList.filter(c => c && c.status === 'SUBMITTED').length;
 
   return (
     <div className="w-full px-4 sm:px-6 lg:px-8 pt-3 pb-8 space-y-4">
@@ -104,7 +111,7 @@ export const Dashboard: React.FC = () => {
               <span>Regulation 2026</span>
             </span>
             <h1 className="text-sm font-bold tracking-tight font-tce text-white">
-              TCE - Syllabi Management Portal
+              TCE - Syllabus Automation Portal
             </h1>
             <span className="hidden md:inline text-xs text-white/70">
               • Thiagarajar College of Engineering
@@ -200,6 +207,19 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-2 w-full sm:w-auto">
+          {/* Admin Scope Filter */}
+          {user?.role === 'ADMIN' && (
+            <select
+              value={adminScope}
+              onChange={e => setAdminScope(e.target.value as any)}
+              className="px-3 py-2 border border-amber-300 bg-amber-50 rounded-lg text-xs font-semibold text-amber-900 focus:ring-2 focus:ring-[#7B1113]"
+              title="Admin Scope Filter"
+            >
+              <option value="all">Institutional View (All Syllabi)</option>
+              <option value="mine">My Authored Syllabi Only</option>
+            </select>
+          )}
+
           {/* Status Filter */}
           <select
             value={selectedStatus}
