@@ -22,7 +22,7 @@ if (!process.env.VERCEL) {
 }
 const app = express();
 const PORT = process.env.PORT || 5000;
-const ATLAS_FALLBACK_URI = 'mongodb+srv://admin:password_123@anomaly-cluster.zvatocr.mongodb.net/?appName=anomaly-cluster';
+const ATLAS_FALLBACK_URI = 'mongodb+srv://admin:password_123@anomaly-cluster.zvatocr.mongodb.net/syllabusforge?authSource=admin&appName=anomaly-cluster';
 const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || (process.env.VERCEL ? ATLAS_FALLBACK_URI : 'mongodb://localhost:27017/syllabusforge');
 function getConnectOptions(uri) {
     const withoutProto = uri.split('://')[1] || '';
@@ -30,8 +30,8 @@ function getConnectOptions(uri) {
     const slashIdx = pathPart.indexOf('/');
     const db = slashIdx !== -1 ? pathPart.substring(slashIdx + 1) : '';
     const baseOptions = {
-        serverSelectionTimeoutMS: 10000,
-        connectTimeoutMS: 10000,
+        serverSelectionTimeoutMS: 8000,
+        connectTimeoutMS: 8000,
     };
     return db ? baseOptions : { ...baseOptions, dbName: 'syllabusforge' };
 }
@@ -39,8 +39,20 @@ function getConnectOptions(uri) {
 export async function connectDB() {
     if (mongoose.connection.readyState === 1)
         return;
-    const uri = process.env.MONGO_URI || process.env.MONGODB_URI || ATLAS_FALLBACK_URI;
-    await mongoose.connect(uri, getConnectOptions(uri));
+    const envUri = process.env.MONGO_URI || process.env.MONGODB_URI;
+    if (envUri) {
+        try {
+            await mongoose.connect(envUri, getConnectOptions(envUri));
+            console.log('Connected to MongoDB via env URI');
+            return;
+        }
+        catch (err) {
+            console.warn(`Environment MongoDB connection failed (${err.message}). Trying Atlas cluster fallback...`);
+        }
+    }
+    // Fallback to verified Atlas cluster
+    await mongoose.connect(ATLAS_FALLBACK_URI, getConnectOptions(ATLAS_FALLBACK_URI));
+    console.log('Connected to MongoDB via ATLAS_FALLBACK_URI');
 }
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -60,13 +72,24 @@ app.use(async (req, res, next) => {
     next();
 });
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+    let dbStatus = 'disconnected';
+    try {
+        if (mongoose.connection.readyState !== 1) {
+            await connectDB();
+        }
+        dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'connecting';
+    }
+    catch (e) {
+        dbStatus = 'error: ' + e.message;
+    }
     res.json({
         status: 'ok',
         timestamp: new Date().toISOString(),
         service: 'SyllabusForge API',
         version: '1.0.0',
         regulation: 2026,
+        database: dbStatus,
     });
 });
 // Mount Routes
