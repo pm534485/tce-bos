@@ -158,6 +158,11 @@ describe('B4: Preamble Validation', () => {
         const shortRes = validatePreamble(shortText);
         expect(shortRes.filter(r => r.severity === 'error')).toHaveLength(0);
     });
+    it('should reject preamble exceeding 90 words', () => {
+        const longPreamble = new Array(95).fill('word').join(' ');
+        const res = validatePreamble(longPreamble);
+        expect(res.some(e => e.id === 'B4_MAX_WORDS')).toBe(true);
+    });
     it('should reject multiple paragraphs in preamble', () => {
         const multiPara = `${compliantPreamble}\n\nSecond paragraph should not be present here.`;
         const res = validatePreamble(multiPara);
@@ -219,6 +224,11 @@ describe('B5: Course Outcomes Validation', () => {
         const res = validateCourseOutcomes(cosLowTps, 'THEORY');
         expect(res.some(e => e.id === 'B5_TPS_70_PERCENT')).toBe(true);
     });
+    it('should accept multiple SDGs and multiple PIs in a Course Outcome', () => {
+        const cosMulti = validTheoryCos.map((c, i) => i === 0 ? { ...c, pi: '2.1.1, 12.1.1', sdgNo: '4, 9', sdgLevel: 3 } : c);
+        const res = validateCourseOutcomes(cosMulti, 'THEORY');
+        expect(res.filter(r => r.severity === 'error')).toHaveLength(0);
+    });
     it('should reject when CO weightage does not sum to 100', () => {
         const cosBadWeightSum = validTheoryCos.map((c, i) => i === 0 ? { ...c, weightage: 10 } : c);
         const res = validateCourseOutcomes(cosBadWeightSum, 'THEORY');
@@ -253,6 +263,29 @@ describe('B5: Course Outcomes Validation', () => {
         const tcpCosNoPo6_11 = validTheoryCos.map(c => ({ ...c, pi: '1.1.1' }));
         const res = validateCourseOutcomes(tcpCosNoPo6_11, 'TCP');
         expect(res.some(e => e.id === 'B5_TCP_PO6_11')).toBe(true);
+    });
+    it('should validate credit-based CO counts for practical and theory courses', () => {
+        const labCos3 = [
+            { coNo: 'CO1', statement: 'Demonstrate fundamental laboratory safety protocols.', tpsLevel: 3, pi: 'custom-pi-1', domain: 'Affective', objectiveNo: 1, sdgNo: 'NC', sdgLevel: 0 },
+            { coNo: 'CO2', statement: 'Apply experimental measurement techniques.', tpsLevel: 3, pi: 'custom-pi-2', domain: 'Cognitive', objectiveNo: 3, sdgNo: 'NC', sdgLevel: 0 },
+            { coNo: 'CO3', statement: 'Operate precision measurement instruments accurately.', tpsLevel: 3, pi: 'custom-pi-3', domain: 'Psychomotor', objectiveNo: 6, sdgNo: 'NC', sdgLevel: 0 },
+        ];
+        // 1-credit practical with 3 COs -> passes with 0 errors
+        const res1Credit = validateCourseOutcomes(labCos3, 'PRACTICAL', false, 1);
+        expect(res1Credit.filter(r => r.severity === 'error')).toHaveLength(0);
+        // 2-credit practical with 3 COs -> requires minimum 4
+        const res2CreditFail = validateCourseOutcomes(labCos3, 'PRACTICAL', false, 2);
+        expect(res2CreditFail.some(e => e.id === 'B5_COUNT_RANGE')).toBe(true);
+        // 2-credit practical with 4 COs -> passes with 0 errors
+        const labCos4 = [
+            ...labCos3,
+            { coNo: 'CO4', statement: 'Compute error analysis of experimental data.', tpsLevel: 3, pi: 'custom-pi-4', domain: 'Cognitive', objectiveNo: 4, sdgNo: 'NC', sdgLevel: 0 },
+        ];
+        const res2CreditPass = validateCourseOutcomes(labCos4, 'PRACTICAL', false, 2);
+        expect(res2CreditPass.filter(r => r.severity === 'error')).toHaveLength(0);
+        // 3-credit theory with 6 COs -> passes
+        const res3CreditTheory = validateCourseOutcomes(validTheoryCos, 'THEORY', false, 3);
+        expect(res3CreditTheory.filter(r => r.severity === 'error')).toHaveLength(0);
     });
 });
 describe('B6: Assessment Pattern Validation', () => {

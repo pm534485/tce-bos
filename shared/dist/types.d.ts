@@ -27,7 +27,7 @@ export interface CourseOutcome {
     objectiveName?: string;
     domain?: 'Cognitive' | 'Psychomotor' | 'Affective';
     generalCoRef?: string;
-    sdgNo: number | 'NC';
+    sdgNo: number | 'NC' | string;
     sdgLevel: number;
     questionLevelSplit?: {
         ownLevelPercent: number;

@@ -96,7 +96,7 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
       <td class="center">TPS${co.tpsLevel}</td>
       <td class="center">${co.pi}</td>
       <td class="center">${co.weightage !== undefined ? co.weightage : ''}</td>
-      <td class="center">${co.sdgNo ? `SDG ${co.sdgNo}` : 'NC'}</td>
+      <td class="center">${co.sdgNo && co.sdgNo !== 'NC' ? (String(co.sdgNo).includes(',') ? `SDGs ${co.sdgNo}` : `SDG ${co.sdgNo}`) : 'NC'}</td>
       <td class="center">${co.sdgLevel !== undefined ? co.sdgLevel : ''}</td>
     </tr>
   `).join('');

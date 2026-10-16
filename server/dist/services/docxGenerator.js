@@ -238,7 +238,7 @@ export async function generateDocxDocument(course) {
                 createCell(`TPS${co.tpsLevel}`, { widthPercent: 10, align: AlignmentType.CENTER }),
                 createCell(co.pi, { widthPercent: 14, align: AlignmentType.CENTER }),
                 createCell(co.weightage !== undefined ? String(co.weightage) : '', { widthPercent: 10, align: AlignmentType.CENTER }),
-                createCell(co.sdgNo ? `SDG ${co.sdgNo}` : 'NC', { widthPercent: 8, align: AlignmentType.CENTER }),
+                createCell(co.sdgNo && co.sdgNo !== 'NC' ? (String(co.sdgNo).includes(',') ? `SDGs ${co.sdgNo}` : `SDG ${co.sdgNo}`) : 'NC', { widthPercent: 8, align: AlignmentType.CENTER }),
                 createCell(co.sdgLevel !== undefined ? String(co.sdgLevel) : '', { widthPercent: 6, align: AlignmentType.CENTER }),
             ],
         }));

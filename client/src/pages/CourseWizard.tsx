@@ -55,6 +55,11 @@ import {
   Copy,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
+  ChevronUp,
+  X,
+  Search,
+  CheckSquare,
   Menu,
   Lock,
 } from 'lucide-react';
@@ -80,6 +85,446 @@ export const splitSubtopics = (raw: string | string[]): string[] => {
   return out;
 };
 
+// Performance Indicator (PI) Selector Component (Direct Entry + Checkbox Selector)
+interface PiCheckboxSelectorProps {
+  value: string;
+  onChange: (newPi: string, matchedTpsLevel?: number) => void;
+  coNo: string;
+}
+
+const PiCheckboxSelector: React.FC<PiCheckboxSelectorProps> = ({ value, onChange, coNo }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [customPiInput, setCustomPiInput] = useState('');
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  const selectedPis = (value || '')
+    .split(/[,;\s]+/)
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  const togglePi = (piCode: string) => {
+    let nextList: string[];
+    if (selectedPis.includes(piCode)) {
+      nextList = selectedPis.filter(p => p !== piCode);
+    } else {
+      nextList = [...selectedPis, piCode];
+    }
+    const joined = nextList.join(', ');
+    const matched = PERFORMANCE_INDICATORS.find(p => p.piNumber === piCode);
+    onChange(joined, matched?.tpsLevel);
+  };
+
+  const handleAddCustom = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const trimmed = customPiInput.trim();
+    if (!trimmed) return;
+    const newItems = trimmed.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean);
+    const combined = Array.from(new Set([...selectedPis, ...newItems]));
+    onChange(combined.join(', '));
+    setCustomPiInput('');
+  };
+
+  const filteredPis = PERFORMANCE_INDICATORS.filter(pi => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      pi.piNumber.toLowerCase().includes(q) ||
+      pi.descriptor.toLowerCase().includes(q) ||
+      `tps ${pi.tpsLevel}`.includes(q)
+    );
+  });
+
+  return (
+    <div className="relative" ref={popoverRef}>
+      <div className="flex items-center justify-between mb-1">
+        <label className="text-[11px] font-bold text-slate-600">
+          Performance Indicators (PIs)
+        </label>
+        {selectedPis.length > 0 && (
+          <span className="text-[10px] text-sky-700 bg-sky-50 px-1.5 py-0.2 rounded font-semibold border border-sky-200">
+            {selectedPis.length} indicator(s)
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-center space-x-1.5">
+        <input
+          type="text"
+          value={value || ''}
+          onChange={e => {
+            const val = e.target.value;
+            const matched = PERFORMANCE_INDICATORS.find(p => p.piNumber === val.trim());
+            onChange(val, matched?.tpsLevel);
+          }}
+          placeholder="Type or check PIs (e.g. 1.2.1, 2.1.3)"
+          className="flex-1 p-2 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-sky-500 font-mono"
+          title={`Type custom Performance Indicators or open Checklist for ${coNo}`}
+        />
+        <button
+          type="button"
+          onClick={() => setIsOpen(prev => !prev)}
+          className={`px-2.5 py-2 border rounded-lg text-xs font-semibold flex items-center space-x-1 transition-all flex-shrink-0 cursor-pointer ${
+            isOpen
+              ? 'bg-sky-100 border-sky-400 text-sky-800'
+              : 'bg-slate-50 border-slate-300 text-slate-700 hover:bg-slate-100 hover:border-slate-400'
+          }`}
+          title="Open checklist to select from standard performance indicators"
+        >
+          <CheckSquare className="w-3.5 h-3.5 text-sky-600" />
+          <span className="hidden sm:inline">Checklist</span>
+          {isOpen ? <ChevronUp className="w-3 h-3 ml-0.5" /> : <ChevronDown className="w-3 h-3 ml-0.5" />}
+        </button>
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-50 left-0 right-0 sm:right-auto sm:w-92 mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl p-2.5 animate-in fade-in duration-150">
+          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+            <span className="text-xs font-bold text-slate-900 flex items-center space-x-1">
+              <CheckSquare className="w-3.5 h-3.5 text-sky-600 mr-1" />
+              <span>Select or Add PIs ({coNo})</span>
+            </span>
+            <span className="text-[10px] text-slate-500 font-semibold bg-slate-100 px-1.5 py-0.5 rounded">
+              {selectedPis.length} active
+            </span>
+          </div>
+
+          {/* Quick Custom PI Entry Input */}
+          <div className="flex items-center space-x-1.5 mb-2 pb-2 border-b border-slate-100">
+            <input
+              type="text"
+              value={customPiInput}
+              onChange={e => setCustomPiInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddCustom();
+                }
+              }}
+              placeholder="Enter custom PI code..."
+              className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-sky-500 bg-slate-50/50 font-mono"
+            />
+            <button
+              type="button"
+              onClick={() => handleAddCustom()}
+              disabled={!customPiInput.trim()}
+              className="px-2.5 py-1 bg-sky-600 hover:bg-sky-700 disabled:bg-slate-200 disabled:text-slate-400 text-white text-[11px] font-bold rounded-lg transition-colors flex items-center space-x-0.5"
+            >
+              <Plus className="w-3 h-3" />
+              <span>Add</span>
+            </button>
+          </div>
+
+          {/* Selected Tags Chips */}
+          {selectedPis.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-2 pb-2 border-b border-slate-100 max-h-20 overflow-y-auto">
+              {selectedPis.map(piCode => (
+                <span
+                  key={piCode}
+                  className="inline-flex items-center px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 text-[11px] font-bold font-mono shadow-2xs"
+                >
+                  {piCode}
+                  <button
+                    type="button"
+                    onClick={() => togglePi(piCode)}
+                    className="ml-1 text-sky-600 hover:text-sky-950 font-bold"
+                    title={`Remove ${piCode}`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Search Box */}
+          <div className="relative mb-2">
+            <Search className="w-3 h-3 text-slate-400 absolute left-2.5 top-2" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search standard PIs..."
+              className="w-full pl-7 pr-2.5 py-1 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-sky-500 bg-slate-50/50"
+            />
+          </div>
+
+          {/* Checkboxes List */}
+          <div className="max-h-52 overflow-y-auto space-y-1 pr-1 text-xs divide-y divide-slate-100">
+            {filteredPis.length === 0 ? (
+              <div className="p-3 text-center text-slate-400 text-xs">No matching standard PIs</div>
+            ) : (
+              filteredPis.map(pi => {
+                const isChecked = selectedPis.includes(pi.piNumber);
+                return (
+                  <label
+                    key={pi.piNumber}
+                    className={`flex items-start space-x-2 p-1.5 rounded-lg cursor-pointer transition-colors ${
+                      isChecked ? 'bg-sky-50/90 text-sky-950 font-medium' : 'hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => togglePi(pi.piNumber)}
+                      className="mt-0.5 rounded text-sky-600 focus:ring-sky-500 h-3.5 w-3.5 cursor-pointer"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono font-bold text-sky-900 text-xs">{pi.piNumber}</span>
+                        <span className="text-[10px] px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded font-semibold">
+                          TPS {pi.tpsLevel}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 leading-tight mt-0.5 line-clamp-2">
+                        {pi.descriptor}
+                      </p>
+                    </div>
+                  </label>
+                );
+              })
+            )}
+          </div>
+
+          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => onChange('')}
+              className="text-[11px] text-slate-500 hover:text-rose-600 font-semibold"
+            >
+              Clear All
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-bold rounded-lg transition-colors"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Sustainable Development Goals (SDGs) Checkbox Multi-Selector Component
+interface SdgCheckboxSelectorProps {
+  sdgNo: number | string | 'NC';
+  onChange: (newSdgNo: string | number | 'NC', defaultLevel?: number) => void;
+  coNo: string;
+}
+
+const SdgCheckboxSelector: React.FC<SdgCheckboxSelectorProps> = ({ sdgNo, onChange, coNo }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  const isNc = !sdgNo || sdgNo === 'NC';
+  const selectedSdgs: number[] = isNc
+    ? []
+    : String(sdgNo)
+        .split(/[,;\s]+/)
+        .map(s => Number(s.replace(/[^0-9]/g, '')))
+        .filter(n => !isNaN(n) && n >= 1 && n <= 17);
+
+  const toggleSdg = (num: number) => {
+    let nextList: number[];
+    if (selectedSdgs.includes(num)) {
+      nextList = selectedSdgs.filter(s => s !== num);
+    } else {
+      nextList = [...selectedSdgs, num].sort((a, b) => a - b);
+    }
+
+    if (nextList.length === 0) {
+      onChange('NC', 0);
+    } else {
+      onChange(nextList.join(', '), 1);
+    }
+  };
+
+  const selectNc = () => {
+    onChange('NC', 0);
+  };
+
+  const filteredSdgs = SDG_LIST.filter(sdg => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      `sdg ${sdg.no}`.includes(q) ||
+      sdg.name.toLowerCase().includes(q) ||
+      sdg.description.toLowerCase().includes(q)
+    );
+  });
+
+  return (
+    <div className="relative" ref={popoverRef}>
+      <div className="flex items-center justify-between mb-1">
+        <label className="text-[11px] font-bold text-slate-600">
+          SDG(s) Addressed
+        </label>
+        {selectedSdgs.length > 0 ? (
+          <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded font-semibold border border-emerald-200">
+            {selectedSdgs.length} active
+          </span>
+        ) : (
+          <span className="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded font-medium">
+            NC (Not Covered)
+          </span>
+        )}
+      </div>
+
+      <div
+        onClick={() => setIsOpen(prev => !prev)}
+        className="w-full min-h-[38px] p-1.5 border border-slate-300 rounded-lg text-xs bg-white hover:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-500 cursor-pointer flex flex-wrap items-center gap-1 transition-all"
+        title={`Click to select SDGs with checkboxes for ${coNo}`}
+      >
+        {isNc || selectedSdgs.length === 0 ? (
+          <span className="text-slate-500 text-xs px-1 font-semibold flex items-center">
+            <CheckSquare className="w-3 h-3 mr-1 text-slate-400" />
+            NC (Not Covered)
+          </span>
+        ) : (
+          selectedSdgs.map(num => (
+            <span
+              key={num}
+              className="inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[11px] font-bold shadow-2xs"
+            >
+              SDG {num}
+              <button
+                type="button"
+                onClick={e => {
+                  e.stopPropagation();
+                  toggleSdg(num);
+                }}
+                className="ml-1 text-emerald-700 hover:text-emerald-950 font-bold"
+                title={`Remove SDG ${num}`}
+              >
+                ×
+              </button>
+            </span>
+          ))
+        )}
+        <span className="ml-auto text-slate-400 text-[11px] px-1">
+          {isOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        </span>
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-50 left-0 right-0 sm:right-auto sm:w-84 mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl p-2.5 animate-in fade-in duration-150">
+          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+            <span className="text-xs font-bold text-slate-900 flex items-center space-x-1">
+              <CheckSquare className="w-3.5 h-3.5 text-emerald-600 mr-1" />
+              <span>Select SDGs Addressed</span>
+            </span>
+            <span className="text-[10px] text-slate-500 font-semibold bg-slate-100 px-1.5 py-0.5 rounded">
+              {selectedSdgs.length > 0 ? `${selectedSdgs.length} selected` : 'None (NC)'}
+            </span>
+          </div>
+
+          {/* NC Option */}
+          <div className="mb-2 pb-2 border-b border-slate-100">
+            <label
+              className={`flex items-center space-x-2 p-1.5 rounded-lg cursor-pointer transition-colors ${
+                isNc || selectedSdgs.length === 0 ? 'bg-amber-50 border border-amber-200 font-bold text-amber-900' : 'hover:bg-slate-50 text-slate-700'
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={isNc || selectedSdgs.length === 0}
+                onChange={selectNc}
+                className="rounded text-amber-600 focus:ring-amber-500 h-3.5 w-3.5 cursor-pointer"
+              />
+              <span className="text-xs font-bold">NC (Not Covered)</span>
+            </label>
+          </div>
+
+          <div className="relative mb-2">
+            <Search className="w-3 h-3 text-slate-400 absolute left-2.5 top-2" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search SDGs..."
+              className="w-full pl-7 pr-2.5 py-1 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-emerald-500 bg-slate-50/50"
+            />
+          </div>
+
+          <div className="max-h-56 overflow-y-auto space-y-1 pr-1 text-xs divide-y divide-slate-100">
+            {filteredSdgs.map(sdg => {
+              const isChecked = selectedSdgs.includes(sdg.no);
+              return (
+                <label
+                  key={sdg.no}
+                  className={`flex items-start space-x-2 p-1.5 rounded-lg cursor-pointer transition-colors ${
+                    isChecked ? 'bg-emerald-50/90 text-emerald-950 font-medium' : 'hover:bg-slate-50 text-slate-700'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => toggleSdg(sdg.no)}
+                    className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500 h-3.5 w-3.5 cursor-pointer"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <span className="font-bold text-slate-900 text-xs">
+                      SDG {sdg.no}: {sdg.name}
+                    </span>
+                    <p className="text-[10px] text-slate-500 leading-tight mt-0.5 line-clamp-1">
+                      {sdg.description}
+                    </p>
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+
+          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={selectNc}
+              className="text-[11px] text-slate-500 hover:text-amber-700 font-semibold"
+            >
+              Reset to NC
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg transition-colors"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const CourseWizard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
@@ -93,6 +538,16 @@ export const CourseWizard: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isAutoSaveEnabled, setIsAutoSaveEnabled] = useState<boolean>(() => {
+    const saved = localStorage.getItem('syllabusforge_autosave');
+    return saved !== null ? saved === 'true' : true;
+  });
+
+  const toggleAutoSave = (enabled: boolean) => {
+    setIsAutoSaveEnabled(enabled);
+    localStorage.setItem('syllabusforge_autosave', String(enabled));
+  };
+
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [existingCodes, setExistingCodes] = useState<string[]>([]);
@@ -271,27 +726,147 @@ export const CourseWizard: React.FC = () => {
     !hasFieldError('credits')
   );
 
-  // Debounced auto-save
+  // Step 1 validation: Preamble & Prerequisites
+  // Preamble must have at least 1 word and strictly maximum 90 words; no minimum limit
+  const isStep1Complete = Boolean(
+    (course.preamble || '').trim().length > 0 &&
+    countWords(course.preamble || '') <= 90 &&
+    (course.preamble || '').split(/\n\s*\n/).length === 1 &&
+    !validationReport.errors.some(e => e.field.startsWith('preamble') || e.field.startsWith('prerequisites'))
+  );
+
+  // Step 2 validation: Course Outcomes
+  // Requirements:
+  // - Practical 1 credit: minimum 3 COs
+  // - Practical 2 credits: minimum 4 COs
+  // - Theory (3 credits): minimum 6 COs
+  const cosList = course.courseOutcomes || [];
+  const numCredits = Number(course.credits) || 0;
+
+  let minCosRequired = 6;
+  if (course.courseType === 'PRACTICAL') {
+    minCosRequired = numCredits <= 1 ? 3 : 4;
+  } else {
+    minCosRequired = numCredits > 0 && numCredits < 3 ? (numCredits === 1 ? 3 : 4) : 6;
+  }
+
+  // Check valid COs that have non-empty statements
+  const validCos = cosList.filter(co => Boolean((co.statement || '').trim()));
+  const isStep2Complete = validCos.length >= minCosRequired;
+
+  // Step 3 validation: Assessment Pattern
+  const isStep3Complete = Boolean(
+    course.courseType === 'PRACTICAL'
+      ? !validationReport.errors.some(e => e.field.startsWith('assessmentMatrix'))
+      : (course.assessmentMatrix || []).length > 0 &&
+        !validationReport.errors.some(e => e.field.startsWith('assessmentMatrix'))
+  );
+
+  // Step 4 validation: Syllabus & Content (or Lab Experiments)
+  const isStep4Complete = Boolean(
+    course.courseType === 'PRACTICAL'
+      ? (course.experiments || []).length > 0 &&
+        (course.experiments || []).every(exp => (exp.name || '').trim().length > 0) &&
+        !validationReport.errors.some(e => e.field.startsWith('experiments') || e.field.startsWith('coursePlan'))
+      : (course.modules || []).length > 0 &&
+        (course.modules || []).every(m => (m.mainTopic || '').trim().length > 0 && (m.subtopics || []).length > 0) &&
+        !validationReport.errors.some(e => e.field.startsWith('modules'))
+  );
+
+  // Step 5 validation: Learning Resources
+  const isStep5Complete = Boolean(
+    course.courseType === 'PRACTICAL'
+      ? !validationReport.errors.some(e => e.field.startsWith('textBooks') || e.field.startsWith('referenceBooks') || e.field.startsWith('sdgActivities'))
+      : (course.textBooks || []).length > 0 &&
+        (course.textBooks || []).every(tb => (tb.title || '').trim().length > 0 && (tb.authors || '').trim().length > 0) &&
+        !validationReport.errors.some(e => e.field.startsWith('textBooks') || e.field.startsWith('referenceBooks') || e.field.startsWith('sdgActivities'))
+  );
+
+  // Step 6 validation: Course Designers
+  const isStep6Complete = Boolean(
+    (course.designers || []).length > 0 &&
+    (course.designers || []).every(d => (d.name || '').trim().length > 0 && (d.email || '').trim().length > 0) &&
+    !validationReport.errors.some(e => e.field.startsWith('designers'))
+  );
+
+  const isStepComplete = (stepIdx: number): boolean => {
+    switch (stepIdx) {
+      case 0: return isStep0Complete;
+      case 1: return isStep1Complete;
+      case 2: return isStep2Complete;
+      case 3: return isStep3Complete;
+      case 4: return isStep4Complete;
+      case 5: return isStep5Complete;
+      case 6: return isStep6Complete;
+      case 7: return true;
+      default: return true;
+    }
+  };
+
+  const getStepIncompleteMessage = (stepIdx: number): string => {
+    switch (stepIdx) {
+      case 0: return 'Complete all required course code & credits details to continue';
+      case 1: return 'Complete preamble (max 90 words) to continue';
+      case 2: {
+        const numCr = Number(course.credits) || 0;
+        const validCount = (course.courseOutcomes || []).filter(co => Boolean((co.statement || '').trim())).length;
+        if (course.courseType === 'PRACTICAL') {
+          const req = numCr <= 1 ? 3 : 4;
+          return `Practical (${numCr || 1} credit${numCr === 1 ? '' : 's'}) requires at least ${req} Course Outcomes with statements to continue (currently ${validCount}/${req})`;
+        }
+        const req = numCr < 3 && numCr > 0 ? (numCr === 1 ? 3 : 4) : 6;
+        return `Theory (${numCr || 3} credits) requires minimum ${req} Course Outcomes with statements to continue (currently ${validCount}/${req})`;
+      }
+      case 3: return 'Complete assessment marks distribution (each component must total 100%) to continue';
+      case 4: return course.courseType === 'PRACTICAL' ? 'Complete laboratory experiments to continue' : 'Complete all syllabus modules & topics to continue';
+      case 5: return 'Add required textbook(s) & learning resources to continue';
+      case 6: return 'Add course designer details (name and email) to continue';
+      default: return 'Please complete required details to continue';
+    }
+  };
+
+  // Debounced auto-save (Local + Backend)
   const saveTimeoutRef = useRef<any>(null);
   useEffect(() => {
-    if (!course._id) return; // don't autosave uncreated drafts
+    if (!isAutoSaveEnabled) return;
+
+    // Cache local draft copy in localStorage
+    try {
+      const localKey = course._id ? `draft_course_${course._id}` : `draft_new_${course.courseType}`;
+      localStorage.setItem(localKey, JSON.stringify(course));
+    } catch (e) {
+      // ignore
+    }
 
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(async () => {
-      try {
-        setIsSaving(true);
-        const updated = await api.updateCourse(course._id!, course);
-        setLastSaved(new Date());
-        setIsSaving(false);
-      } catch (e) {
-        setIsSaving(false);
+      if (course._id) {
+        try {
+          setIsSaving(true);
+          const updated = await api.updateCourse(course._id, course);
+          setLastSaved(new Date());
+          setIsSaving(false);
+        } catch (e) {
+          setIsSaving(false);
+        }
+      } else if (isStep0Complete && course.courseName?.trim()) {
+        try {
+          setIsSaving(true);
+          const saved = await api.createCourse(course);
+          setCourse(saved);
+          setLastSaved(new Date());
+          setIsSaving(false);
+          navigate(`/courses/${saved._id}`, { replace: true });
+        } catch (e) {
+          setIsSaving(false);
+        }
       }
     }, 2500);
 
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
-  }, [course]);
+  }, [course, isAutoSaveEnabled, isStep0Complete]);
 
   // Handle Initial Draft Creation
   const handleSaveDraft = async (): Promise<Course | null> => {
@@ -680,6 +1255,32 @@ export const CourseWizard: React.FC = () => {
             </button>
           </div>
 
+          {/* Auto Save Option */}
+          <label className="flex items-center space-x-1.5 cursor-pointer bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-md text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors select-none">
+            <input
+              type="checkbox"
+              checked={isAutoSaveEnabled}
+              onChange={e => toggleAutoSave(e.target.checked)}
+              className="rounded text-[#7B1113] focus:ring-0 focus:ring-offset-0 h-3.5 w-3.5 cursor-pointer"
+            />
+            <span className="font-bold text-slate-800">Auto-save</span>
+            {isAutoSaveEnabled && (
+              <span className="hidden sm:inline-flex items-center space-x-1 text-[10px] font-normal ml-1">
+                {isSaving ? (
+                  <span className="flex items-center text-amber-600 animate-pulse font-medium">
+                    <RefreshCw className="w-2.5 h-2.5 animate-spin mr-0.5" /> Saving...
+                  </span>
+                ) : lastSaved ? (
+                  <span className="text-emerald-700 font-medium" title={`Last saved at ${lastSaved.toLocaleTimeString()}`}>
+                    • Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                ) : (
+                  <span className="text-emerald-600 font-medium">• ON</span>
+                )}
+              </span>
+            )}
+          </label>
+
           <button
             onClick={handleSaveDraft}
             disabled={isSaving}
@@ -748,8 +1349,8 @@ export const CourseWizard: React.FC = () => {
                   <button
                     key={st.id}
                     onClick={() => {
-                      if (idx > 0 && currentStep === 0 && !isStep0Complete) {
-                        alert('Please fill all required course code and details to continue.');
+                      if (idx > currentStep && !isStepComplete(currentStep)) {
+                        alert(`Please complete all required details in Step ${currentStep + 1} (${steps[currentStep].title}) before proceeding.`);
                         return;
                       }
                       setCurrentStep(idx);
@@ -1213,17 +1814,17 @@ export const CourseWizard: React.FC = () => {
                           <label className="text-xs font-bold text-slate-700">
                             Preamble Statement <span className="text-rose-500">*</span>
                           </label>
-                          {countWords(course.preamble || '') < 60 ? (
-                            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-red-50 text-red-700 border border-red-200">
-                              {countWords(course.preamble || '')} / 60 words (minimum 60 required)
+                          {countWords(course.preamble || '') === 0 ? (
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                              0 / 90 words max
                             </span>
-                          ) : countWords(course.preamble || '') <= 150 ? (
+                          ) : countWords(course.preamble || '') <= 90 ? (
                             <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              {countWords(course.preamble || '')} words — Compliant
+                              {countWords(course.preamble || '')} / 90 words — Compliant
                             </span>
                           ) : (
-                            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-                              {countWords(course.preamble || '')} words (&gt; 150 words)
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-red-50 text-red-700 border border-red-200">
+                              {countWords(course.preamble || '')} / 90 words (exceeds 90-word maximum limit)
                             </span>
                           )}
                         </div>
@@ -1231,18 +1832,18 @@ export const CourseWizard: React.FC = () => {
                           rows={6}
                           value={course.preamble}
                           onChange={e => updateField('preamble', e.target.value)}
-                          placeholder="Enter course preamble..."
+                          placeholder="Enter course preamble (strictly maximum 90 words, single coherent paragraph)..."
                           className={`w-full p-3.5 border rounded-xl text-sm leading-relaxed transition-all ${
                             hasFieldError('preamble')
                               ? 'border-red-400 bg-red-50/20 focus:ring-2 focus:ring-red-200 focus:border-red-500'
-                              : countWords(course.preamble || '') >= 60 && countWords(course.preamble || '') <= 150
+                              : countWords(course.preamble || '') >= 1 && countWords(course.preamble || '') <= 90
                               ? 'border-emerald-400 bg-emerald-50/10 focus:ring-2 focus:ring-emerald-200 focus:border-emerald-500'
                               : 'border-slate-300 focus:ring-2 focus:ring-sky-500'
                           }`}
                         />
                         <InlineFieldError field="preamble" />
-                        {!hasFieldError('preamble') && countWords(course.preamble || '') >= 60 && (
-                          <InlineFieldSuccess message="Preamble word count and structure verified compliant" />
+                        {!hasFieldError('preamble') && countWords(course.preamble || '') >= 1 && countWords(course.preamble || '') <= 90 && (
+                          <InlineFieldSuccess message="Preamble word count (within 90 words limit) and structure verified compliant" />
                         )}
                       </div>
 
@@ -1321,8 +1922,25 @@ export const CourseWizard: React.FC = () => {
                 {/* Step 3: Course Outcomes */}
                 {currentStep === 2 && (
                   <div className="space-y-6">
-                    <div>
-                      <h2 className="text-xl font-bold text-slate-900">3. Course Outcomes (COs)</h2>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <h2 className="text-xl font-bold text-slate-900">3. Course Outcomes (COs)</h2>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {course.courseType === 'PRACTICAL'
+                            ? `Practical course (${Number(course.credits) || 1} credit${Number(course.credits) === 1 ? '' : 's'}) requires at least ${Number(course.credits) <= 1 ? 3 : 4} Course Outcomes.`
+                            : `Theory course (${Number(course.credits) || 3} credits) requires minimum ${Number(course.credits) < 3 && Number(course.credits) > 0 ? (Number(course.credits) === 1 ? 3 : 4) : 6} Course Outcomes.`}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${
+                          isStep2Complete
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : 'bg-amber-50 text-amber-800 border-amber-200'
+                        }`}>
+                          {(course.courseOutcomes || []).length} COs entered
+                          {isStep2Complete ? ' • Requirement Met' : ' • In Progress'}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Practical General CO Pool Picker */}
@@ -1431,34 +2049,19 @@ export const CourseWizard: React.FC = () => {
                             </div>
 
                             <div className="md:col-span-2">
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                                PI (x.y.z)
-                              </label>
-                              <input
-                                type="text"
-                                list={`pi-suggestions-${idx}`}
+                              <PiCheckboxSelector
                                 value={co.pi || ''}
-                                onChange={e => {
-                                  const piVal = e.target.value;
+                                coNo={co.coNo}
+                                onChange={(newPi, matchedTpsLevel) => {
                                   const updated = [...(course.courseOutcomes || [])];
-                                  const matchedPi = PERFORMANCE_INDICATORS.find(p => p.piNumber === piVal.trim());
                                   updated[idx] = {
                                     ...updated[idx],
-                                    pi: piVal,
-                                    ...(matchedPi ? { tpsLevel: matchedPi.tpsLevel } : {}),
+                                    pi: newPi,
+                                    ...(matchedTpsLevel ? { tpsLevel: matchedTpsLevel } : {}),
                                   };
                                   updateField('courseOutcomes', updated);
                                 }}
-                                placeholder="Enter PI code(s)"
-                                className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-sky-500"
                               />
-                              <datalist id={`pi-suggestions-${idx}`}>
-                                {PERFORMANCE_INDICATORS.map(p => (
-                                  <option key={p.piNumber} value={p.piNumber}>
-                                    {p.piNumber} (TPS {p.tpsLevel})
-                                  </option>
-                                ))}
-                              </datalist>
                             </div>
                           </div>
 
@@ -1515,26 +2118,20 @@ export const CourseWizard: React.FC = () => {
                             )}
 
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                                SDG Addressed
-                              </label>
-                              <select
-                                value={co.sdgNo || 'NC'}
-                                onChange={e => {
-                                  const val = e.target.value === 'NC' ? 'NC' : parseInt(e.target.value);
+                              <SdgCheckboxSelector
+                                sdgNo={co.sdgNo || 'NC'}
+                                coNo={co.coNo}
+                                onChange={(newSdgNo, defaultLevel) => {
                                   const updated = [...(course.courseOutcomes || [])];
-                                  updated[idx] = { ...updated[idx], sdgNo: val, sdgLevel: val === 'NC' ? 0 : updated[idx].sdgLevel || 1 };
+                                  const isNc = !newSdgNo || newSdgNo === 'NC';
+                                  updated[idx] = {
+                                    ...updated[idx],
+                                    sdgNo: newSdgNo,
+                                    sdgLevel: isNc ? 0 : (updated[idx].sdgLevel && updated[idx].sdgLevel > 0 ? updated[idx].sdgLevel : (defaultLevel || 1)),
+                                  };
                                   updateField('courseOutcomes', updated);
                                 }}
-                                className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white"
-                              >
-                                <option value="NC">NC (Not Covered)</option>
-                                {SDG_LIST.map(s => (
-                                  <option key={s.no} value={s.no}>
-                                    SDG {s.no}: {s.name}
-                                  </option>
-                                ))}
-                              </select>
+                              />
                             </div>
 
                             <div>
@@ -1545,7 +2142,7 @@ export const CourseWizard: React.FC = () => {
                                 type="number"
                                 min={0}
                                 max={5}
-                                disabled={co.sdgNo === 'NC'}
+                                disabled={!co.sdgNo || co.sdgNo === 'NC'}
                                 value={co.sdgLevel || 0}
                                 onChange={e => {
                                   const val = parseInt(e.target.value) || 0;
@@ -1553,7 +2150,7 @@ export const CourseWizard: React.FC = () => {
                                   updated[idx] = { ...updated[idx], sdgLevel: val };
                                   updateField('courseOutcomes', updated);
                                 }}
-                                className="w-full p-2 border border-slate-300 rounded-lg text-xs text-center"
+                                className="w-full p-2 border border-slate-300 rounded-lg text-xs text-center font-bold disabled:bg-slate-100 disabled:text-slate-400"
                               />
                             </div>
                           </div>
@@ -1572,6 +2169,13 @@ export const CourseWizard: React.FC = () => {
                             weightage: 0,
                             sdgNo: 'NC',
                             sdgLevel: 0,
+                            ...(course.courseType === 'PRACTICAL'
+                              ? {
+                                  objectiveNo: 1,
+                                  objectiveName: LAB_OBJECTIVES[0]?.name,
+                                  domain: LAB_OBJECTIVES[0]?.domain,
+                                }
+                              : {}),
                           };
                           updateField('courseOutcomes', [...(course.courseOutcomes || []), newCo]);
                         }}
@@ -1679,8 +2283,8 @@ export const CourseWizard: React.FC = () => {
                                         <td className="p-2.5 font-bold text-slate-800 bg-slate-50/60 text-center">
                                           <div>
                                             <span className="font-extrabold text-sky-900">{co.coNo}</span>
-                                            <span className="block text-[10px] text-slate-400 font-normal">
-                                              TPS {co.tpsLevel} • {co.weightage}% wt
+                                            <span className="block text-[10px] text-slate-500 font-medium">
+                                              TPS {co.tpsLevel}
                                             </span>
                                           </div>
                                         </td>
@@ -1872,7 +2476,14 @@ export const CourseWizard: React.FC = () => {
 
                               return (
                                 <tr key={co.coNo} className="border-b border-slate-100 hover:bg-slate-50/50">
-                                  <td className="p-2.5 font-bold text-slate-800">{co.coNo}</td>
+                                  <td className="p-2.5 font-bold text-slate-800 bg-slate-50/60 text-center">
+                                    <div>
+                                      <span className="font-extrabold text-sky-900">{co.coNo}</span>
+                                      <span className="block text-[10px] text-slate-500 font-medium">
+                                        TPS {co.tpsLevel}
+                                      </span>
+                                    </div>
+                                  </td>
                                   {['theoryCat1', 'theoryCat2', 'practicalCa', 'practicalModel', 'tcpTerminal'].map(colKey => (
                                     <td key={colKey} className="p-2 text-center">
                                       <input
@@ -3176,24 +3787,25 @@ export const CourseWizard: React.FC = () => {
 
                 {currentStep < steps.length - 1 ? (
                   <div className="flex items-center space-x-3">
-                    {currentStep === 0 && !isStep0Complete && (
+                    {!isStepComplete(currentStep) && (
                       <span className="text-[11px] font-medium text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg hidden sm:inline-flex items-center space-x-1">
                         <AlertCircle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
-                        <span>Enter all details in Section 1 to continue</span>
+                        <span>{getStepIncompleteMessage(currentStep)}</span>
                       </span>
                     )}
                     <button
                       onClick={() => {
-                        if (currentStep === 0 && !isStep0Complete) return;
+                        if (!isStepComplete(currentStep)) return;
                         setCurrentStep(prev => Math.min(steps.length - 1, prev + 1));
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
-                      disabled={currentStep === 0 && !isStep0Complete}
+                      disabled={!isStepComplete(currentStep)}
                       className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1 transition-all ${
-                        currentStep === 0 && !isStep0Complete
+                        !isStepComplete(currentStep)
                           ? 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-60'
                           : 'bg-sky-600 hover:bg-sky-700 text-white shadow-sm active:scale-95 cursor-pointer'
                       }`}
-                      title={currentStep === 0 && !isStep0Complete ? 'Please complete all required course code and details to continue' : 'Next Step'}
+                      title={!isStepComplete(currentStep) ? getStepIncompleteMessage(currentStep) : 'Next Step'}
                     >
                       <span>Next</span>
                       <ArrowRight className="w-3.5 h-3.5" />

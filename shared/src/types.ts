@@ -35,7 +35,7 @@ export interface CourseOutcome {
   objectiveName?: string;
   domain?: 'Cognitive' | 'Psychomotor' | 'Affective';
   generalCoRef?: string; // e.g., 'CO-C1'
-  sdgNo: number | 'NC'; // 1-17 or 'NC'
+  sdgNo: number | 'NC' | string; // 1-17, 'NC', or multiple comma-separated e.g. '4, 9'
   sdgLevel: number; // 0-5
   // Optional question level split (Section 4.2)
   questionLevelSplit?: {

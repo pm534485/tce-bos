@@ -362,6 +362,18 @@ export function validatePreamble(preamble: string, coStatements: string[] = []):
     });
   }
 
+  // Maximum limit is strictly 90 words; no minimum limit
+  const wordCount = countWords(text);
+  if (wordCount > 90) {
+    results.push({
+      id: 'B4_MAX_WORDS',
+      field: 'preamble',
+      severity: 'error',
+      message: `Preamble exceeds the maximum limit of 90 words (currently ${wordCount} words).`,
+      fixHint: 'Condense preamble to 90 words or fewer.',
+    });
+  }
+
   // Cliché phrase checks
   const cliches = [
     { pattern: /This course covers important topics/i, phrase: 'This course covers important topics' },
@@ -402,7 +414,8 @@ export function validatePreamble(preamble: string, coStatements: string[] = []):
 export function validateCourseOutcomes(
   cos: CourseOutcome[],
   courseType: CourseType,
-  allowTps1 = false
+  allowTps1 = false,
+  credits?: number | string
 ): ValidationRuleResult[] {
   const results: ValidationRuleResult[] = [];
 
@@ -412,19 +425,50 @@ export function validateCourseOutcomes(
       field: 'courseOutcomes',
       severity: 'error',
       message: 'Course outcomes are required.',
-      fixHint: 'Add 6 to 8 Course Outcomes (COs).',
+      fixHint: 'Add the required number of Course Outcomes (COs).',
     });
     return results;
   }
 
-  // Count check: 6 to 8 COs
-  if (cos.length < 6 || cos.length > 8) {
+  // Credit-based count requirements:
+  // Practical: 1 credit -> min 3 COs; 2 credits -> min 4 COs
+  // Theory/TCP: 3 credits -> min 6 COs (between 6 and 8); 1 credit -> min 3 COs; 2 credits -> min 4 COs
+  const numCredits = Number(credits) || 0;
+  let minCos = 6;
+  let maxCos: number | undefined = 8;
+  let countRequirement = 'between 6 and 8';
+
+  if (courseType === 'PRACTICAL') {
+    maxCos = undefined; // Practical courses do not have a hard upper limit of 8
+    if (numCredits <= 1) {
+      minCos = 3;
+      countRequirement = 'at least 3';
+    } else {
+      minCos = 4;
+      countRequirement = 'at least 4';
+    }
+  } else {
+    // THEORY or TCP
+    if (numCredits > 0 && numCredits < 3) {
+      minCos = numCredits === 1 ? 3 : 4;
+      maxCos = 8;
+      countRequirement = `at least ${minCos}`;
+    } else {
+      minCos = 6;
+      maxCos = 8;
+      countRequirement = 'at least 6 (between 6 and 8)';
+    }
+  }
+
+  if (cos.length < minCos || (maxCos !== undefined && cos.length > maxCos)) {
     results.push({
       id: 'B5_COUNT_RANGE',
       field: 'courseOutcomes',
       severity: 'error',
-      message: `A course must have between 6 and 8 Course Outcomes (currently ${cos.length}).`,
-      fixHint: 'Adjust the number of COs so there are between 6 and 8.',
+      message: courseType === 'PRACTICAL'
+        ? `A ${numCredits ? `${numCredits}-credit ` : ''}practical course must have ${countRequirement} Course Outcomes (currently ${cos.length}).`
+        : `A ${numCredits ? `${numCredits}-credit ` : ''}theory course must have ${countRequirement} Course Outcomes (currently ${cos.length}).`,
+      fixHint: `Adjust the number of COs so there are ${countRequirement}.`,
     });
   }
 
@@ -479,9 +523,9 @@ export function validateCourseOutcomes(
         results.push({
           id: `B5_CO_VERB_MISMATCH_${coId}`,
           field: `courseOutcomes.${idx}.statement`,
-          severity: 'error',
-          message: `${coId}: First verb "${firstWord}" is not an approved action verb for TPS Level ${co.tpsLevel}.`,
-          fixHint: `Approved verbs for TPS ${co.tpsLevel} are: ${validVerbs.join(', ')}.`,
+          severity: 'warning',
+          message: `${coId}: First verb "${firstWord}" is not in standard action verbs list for TPS Level ${co.tpsLevel}.`,
+          fixHint: `Standard verbs for TPS ${co.tpsLevel} are: ${validVerbs.join(', ')}.`,
         });
       }
     }
@@ -507,19 +551,19 @@ export function validateCourseOutcomes(
       results.push({
         id: `B5_CO_PI_FORMAT_${coId}`,
         field: `courseOutcomes.${idx}.pi`,
-        severity: 'error',
-        message: `${coId}: Performance Indicator is required.`,
+        severity: 'warning',
+        message: `${coId}: Performance Indicator is recommended.`,
         fixHint: 'Enter a valid Performance Indicator (e.g. 1.2.1 or multiple values like 1.2.1, 2.1.3).',
       });
     } else {
-      const invalidPis = piValues.filter(p => !/^\d+\.\d+(\.\d+)?$/.test(p));
-      if (invalidPis.length > 0) {
+      const nonStandardPis = piValues.filter(p => !/^[a-zA-Z0-9_.-]+$/.test(p));
+      if (nonStandardPis.length > 0) {
         results.push({
           id: `B5_CO_PI_FORMAT_${coId}`,
           field: `courseOutcomes.${idx}.pi`,
-          severity: 'error',
-          message: `${coId}: Performance Indicator must be in x.y.z format (e.g. 5.2.1). Invalid: ${invalidPis.join(', ')}.`,
-          fixHint: 'Ensure each Performance Indicator is in x.y.z format (e.g. 1.2.1 or 1.2.1, 2.1.3).',
+          severity: 'warning',
+          message: `${coId}: Non-standard Performance Indicator format: ${nonStandardPis.join(', ')}.`,
+          fixHint: 'Standard Performance Indicators follow x.y.z format (e.g. 1.2.1), but custom indicators are accepted.',
         });
       }
 
@@ -531,15 +575,16 @@ export function validateCourseOutcomes(
         results.push({
           id: `B5_CO_PI_TPS_MISMATCH_${coId}`,
           field: `courseOutcomes.${idx}.tpsLevel`,
-          severity: 'error',
-          message: `${coId}: CO TPS Level (${co.tpsLevel}) must match at least one PI TPS Level (${matchedPis.map(p => p!.tpsLevel).join(', ')}).`,
-          fixHint: `Align TPS level with the Performance Indicator(s).`,
+          severity: 'warning',
+          message: `${coId}: CO TPS Level (${co.tpsLevel}) differs from standard PI TPS Level (${matchedPis.map(p => p!.tpsLevel).join(', ')}).`,
+          fixHint: `Align TPS level with the Performance Indicator(s) if applicable.`,
         });
       }
     }
 
-    // SDG Level consistency: if SDG is "NC", level must be 0 or empty
-    if (co.sdgNo === 'NC' || !co.sdgNo) {
+    // SDG Level consistency: if SDG is "NC" or empty, level must be 0
+    const sdgStr = String(co.sdgNo || '').trim();
+    if (!sdgStr || sdgStr === 'NC') {
       if (co.sdgLevel > 0) {
         results.push({
           id: `B5_CO_SDG_NC_LEVEL_${coId}`,
@@ -550,14 +595,18 @@ export function validateCourseOutcomes(
         });
       }
     } else {
-      const sdgNum = Number(co.sdgNo);
-      if (sdgNum < 1 || sdgNum > 17) {
+      const sdgNums = sdgStr
+        .split(/[,;\s]+/)
+        .map(s => Number(s.replace(/[^0-9]/g, '')))
+        .filter(n => !isNaN(n) && n > 0);
+      const invalidSdgs = sdgNums.filter(n => n < 1 || n > 17);
+      if (sdgNums.length === 0 || invalidSdgs.length > 0) {
         results.push({
           id: `B5_CO_SDG_INVALID_${coId}`,
           field: `courseOutcomes.${idx}.sdgNo`,
           severity: 'error',
-          message: `${coId}: SDG must be between 1 and 17 or "NC".`,
-          fixHint: 'Choose an SDG from 1 to 17 or select "NC".',
+          message: `${coId}: Each SDG must be between 1 and 17 or "NC".`,
+          fixHint: 'Choose valid SDG(s) from 1 to 17 or select "NC".',
         });
       }
       if (co.sdgLevel < 1 || co.sdgLevel > 5) {
@@ -664,45 +713,49 @@ export function validateCourseOutcomes(
       if (co.domain === 'Psychomotor') psyCount++;
 
       // Objective check (1 to 13)
-      if (!co.objectiveNo || co.objectiveNo < 1 || co.objectiveNo > 13) {
+      const objNo = co.objectiveNo || 1;
+      if (objNo < 1 || objNo > 13) {
         results.push({
           id: `B5_PRACTICAL_OBJ_${coId}`,
           field: `courseOutcomes.${idx}.objectiveNo`,
-          severity: 'error',
+          severity: 'warning',
           message: `${coId}: Must specify an associated Laboratory Objective (1 to 13).`,
           fixHint: 'Select the primary laboratory objective addressed by this CO.',
         });
       }
     });
 
-    if (cogCount < 2 || cogCount > 4) {
-      results.push({
-        id: 'B5_LAB_COG_RANGE',
-        field: 'courseOutcomes',
-        severity: 'error',
-        message: `Practical courses require 2 to 4 Cognitive domain COs (found ${cogCount}).`,
-        fixHint: 'Adjust Cognitive domain COs to be between 2 and 4.',
-      });
-    }
+    // Domain distribution guidance for practical courses with 6+ COs
+    if (cos.length >= 6) {
+      if (cogCount < 2 || cogCount > 4) {
+        results.push({
+          id: 'B5_LAB_COG_RANGE',
+          field: 'courseOutcomes',
+          severity: 'warning',
+          message: `Recommended: Practical courses with 6+ COs typically include 2 to 4 Cognitive domain COs (found ${cogCount}).`,
+          fixHint: 'Adjust Cognitive domain COs to be between 2 and 4.',
+        });
+      }
 
-    if (affCount < 2 || affCount > 3) {
-      results.push({
-        id: 'B5_LAB_AFF_RANGE',
-        field: 'courseOutcomes',
-        severity: 'error',
-        message: `Practical courses require 2 to 3 Affective domain COs (found ${affCount}).`,
-        fixHint: 'Adjust Affective domain COs to be between 2 and 3.',
-      });
-    }
+      if (affCount < 2 || affCount > 3) {
+        results.push({
+          id: 'B5_LAB_AFF_RANGE',
+          field: 'courseOutcomes',
+          severity: 'warning',
+          message: `Recommended: Practical courses with 6+ COs typically include 2 to 3 Affective domain COs (found ${affCount}).`,
+          fixHint: 'Adjust Affective domain COs to be between 2 and 3.',
+        });
+      }
 
-    if (psyCount < 2 || psyCount > 3) {
-      results.push({
-        id: 'B5_LAB_PSY_RANGE',
-        field: 'courseOutcomes',
-        severity: 'error',
-        message: `Practical courses require 2 to 3 Psychomotor domain COs (found ${psyCount}).`,
-        fixHint: 'Adjust Psychomotor domain COs to be between 2 and 3.',
-      });
+      if (psyCount < 2 || psyCount > 3) {
+        results.push({
+          id: 'B5_LAB_PSY_RANGE',
+          field: 'courseOutcomes',
+          severity: 'warning',
+          message: `Recommended: Practical courses with 6+ COs typically include 2 to 3 Psychomotor domain COs (found ${psyCount}).`,
+          fixHint: 'Adjust Psychomotor domain COs to be between 2 and 3.',
+        });
+      }
     }
   }
 
@@ -1264,10 +1317,11 @@ export function validateSdgAlignment(
   const activeSdgs = new Set<number>();
   cos.forEach(co => {
     if (co.sdgNo && co.sdgNo !== 'NC') {
-      const num = Number(co.sdgNo);
-      if (!isNaN(num) && num >= 1 && num <= 17) {
-        activeSdgs.add(num);
-      }
+      const nums = String(co.sdgNo)
+        .split(/[,;\s]+/)
+        .map(s => Number(s.replace(/[^0-9]/g, '')))
+        .filter(n => !isNaN(n) && n >= 1 && n <= 17);
+      nums.forEach(n => activeSdgs.add(n));
     }
   });
 
@@ -1396,14 +1450,24 @@ export function evaluateTheoryChecklist(course: Course): Array<{ id: number; tit
     },
     {
       id: 3,
-      title: 'Preamble is a single paragraph without CO list.',
-      passed: (course.preamble || '').trim().length > 0 && (course.preamble || '').split(/\n\s*\n/).length === 1,
-      reason: (course.preamble || '').trim().length > 0 ? `Words: ${countWords(course.preamble || '')}.` : 'Preamble missing.',
+      title: 'Preamble is a single paragraph without CO list (max 90 words).',
+      passed: (course.preamble || '').trim().length > 0 &&
+        (course.preamble || '').split(/\n\s*\n/).length === 1 &&
+        countWords(course.preamble || '') <= 90,
+      reason: (course.preamble || '').trim().length > 0
+        ? `Words: ${countWords(course.preamble || '')} / 90 words max.`
+        : 'Preamble missing.',
     },
     {
       id: 4,
-      title: 'Number of COs is between 6 and 8.',
-      passed: (course.courseOutcomes || []).length >= 6 && (course.courseOutcomes || []).length <= 8,
+      title: Number(course.credits) < 3
+        ? `Number of COs meets minimum requirement (${Number(course.credits) <= 1 ? 3 : 4} to 8).`
+        : 'Number of COs is between 6 and 8.',
+      passed: (() => {
+        const count = (course.courseOutcomes || []).length;
+        const minReq = Number(course.credits) <= 1 ? 3 : (Number(course.credits) === 2 ? 4 : 6);
+        return count >= minReq && count <= 8;
+      })(),
       reason: `Count: ${(course.courseOutcomes || []).length} COs.`,
     },
     {
@@ -1491,7 +1555,14 @@ export function evaluateTheoryChecklist(course: Course): Array<{ id: number; tit
       title: 'SDGs listed are genuinely connected to course domain (not forced).',
       passed: (() => {
         const cos = course.courseOutcomes || [];
-        return cos.some(c => c.sdgNo && c.sdgNo !== 'NC');
+        return cos.some(c => {
+          if (!c.sdgNo || c.sdgNo === 'NC') return false;
+          const nums = String(c.sdgNo)
+            .split(/[,;\s]+/)
+            .map(s => Number(s.replace(/[^0-9]/g, '')))
+            .filter(n => !isNaN(n) && n >= 1 && n <= 17);
+          return nums.length > 0;
+        });
       })(),
       reason: 'At least one SDG addressed with domain justification.',
     },
@@ -1500,10 +1571,19 @@ export function evaluateTheoryChecklist(course: Course): Array<{ id: number; tit
       title: 'Every SDG has at least one corresponding academic activity listed.',
       passed: (() => {
         const cos = course.courseOutcomes || [];
-        const sdgs = new Set(cos.map(c => c.sdgNo).filter(n => n && n !== 'NC'));
+        const sdgs = new Set<number>();
+        cos.forEach(c => {
+          if (c.sdgNo && c.sdgNo !== 'NC') {
+            const nums = String(c.sdgNo)
+              .split(/[,;\s]+/)
+              .map(s => Number(s.replace(/[^0-9]/g, '')))
+              .filter(n => !isNaN(n) && n >= 1 && n <= 17);
+            nums.forEach(n => sdgs.add(n));
+          }
+        });
         const acts = new Set((course.sdgActivities || []).map(a => a.sdgNo));
         for (const s of sdgs) {
-          if (!acts.has(s as number)) return false;
+          if (!acts.has(s)) return false;
         }
         return true;
       })(),
@@ -1618,7 +1698,8 @@ export function validateCourse(
   allResults.push(...validateCourseOutcomes(
     course.courseOutcomes,
     course.courseType,
-    allowTps1
+    allowTps1,
+    course.credits
   ));
 
   // B6: Assessment Pattern

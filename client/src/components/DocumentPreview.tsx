@@ -417,7 +417,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
                   <td className="border border-black p-1.5 text-center">TPS{co.tpsLevel}</td>
                   <td className="border border-black p-1.5 text-center">{co.pi}</td>
                   <td className="border border-black p-1.5 text-center">{co.weightage !== undefined ? co.weightage : ''}</td>
-                  <td className="border border-black p-1.5 text-center">{co.sdgNo ? `SDG ${co.sdgNo}` : 'NC'}</td>
+                  <td className="border border-black p-1.5 text-center">{co.sdgNo && co.sdgNo !== 'NC' ? (String(co.sdgNo).includes(',') ? `SDGs ${co.sdgNo}` : `SDG ${co.sdgNo}`) : 'NC'}</td>
                   <td className="border border-black p-1.5 text-center">{co.sdgLevel !== undefined ? co.sdgLevel : ''}</td>
                 </tr>
               ))}

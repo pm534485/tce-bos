@@ -13,7 +13,7 @@ export declare function validateCourseCode(parts: CourseCodeParts, existingProgr
 export declare function computeCredits(L: number, T: number, P: number, courseType?: CourseType): number;
 export declare function validateLtpCredits(courseType: CourseType, categoryAbbr: string, L: number, T: number, P: number, credits: number): ValidationRuleResult[];
 export declare function validatePreamble(preamble: string, coStatements?: string[]): ValidationRuleResult[];
-export declare function validateCourseOutcomes(cos: CourseOutcome[], courseType: CourseType, allowTps1?: boolean): ValidationRuleResult[];
+export declare function validateCourseOutcomes(cos: CourseOutcome[], courseType: CourseType, allowTps1?: boolean, credits?: number | string): ValidationRuleResult[];
 export declare function validateAssessmentPattern(courseType: CourseType, cos: CourseOutcome[], matrix: AssessmentMatrixCell[], tolerance?: number, componentWeights?: {
     cat1: number;
     assignment1: number;
