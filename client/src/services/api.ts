@@ -1,6 +1,11 @@
 import { Course, CourseValidationReport, User } from '@syllabusforge/shared';
 
-const envUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '').trim();
+// If running on Vercel or if the env URL points to an external dormant service (like onrender),
+// always route to the unified Vercel serverless backend at '/api'.
+const isVercelHost = typeof window !== 'undefined' && window.location.hostname.endsWith('vercel.app');
+const rawEnvUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '').trim();
+const envUrl = (isVercelHost || rawEnvUrl.includes('onrender.com')) ? '' : rawEnvUrl;
+
 const API_BASE = envUrl
   ? (envUrl.endsWith('/api') ? envUrl : `${envUrl.replace(/\/$/, '')}/api`)
   : '/api';
