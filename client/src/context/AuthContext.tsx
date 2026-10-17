@@ -21,10 +21,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     async function loadUser() {
-      if (token) {
+      const storedToken = localStorage.getItem('syllabusforge_token');
+      if (storedToken) {
         try {
           const res = await api.getMe();
           setUser(res.user);
+          setToken(storedToken);
         } catch (_) {
           localStorage.removeItem('syllabusforge_token');
           setToken(null);
@@ -34,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     }
     loadUser();
-  }, [token]);
+  }, []);
 
   const login = async (email: string, password: string) => {
     const res = await api.login({ email, password });

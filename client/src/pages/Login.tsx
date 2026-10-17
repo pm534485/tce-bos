@@ -65,7 +65,7 @@ export const Login: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      navigate('/', { replace: true });
+      navigate('/courses/new', { replace: true });
     }
   }, [user, navigate]);
 
@@ -122,7 +122,7 @@ export const Login: React.FC = () => {
         avatar: credAvatar,
         googleId: credSub,
       });
-      navigate('/');
+      navigate('/courses/new');
     } catch (err: any) {
       setError(err.message || 'Please sign in with your official tce.edu college email.');
     } finally {
@@ -205,6 +205,7 @@ export const Login: React.FC = () => {
                 try {
                   const userinfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
                     headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                    signal: AbortSignal.timeout(3500),
                   });
                   if (userinfoRes.ok) {
                     userinfo = await userinfoRes.json();
@@ -226,7 +227,7 @@ export const Login: React.FC = () => {
                   avatar: userinfo?.picture,
                   googleId: userinfo?.sub,
                 });
-                navigate('/');
+                navigate('/courses/new');
               } catch (err: any) {
                 setError(err.message || 'Please sign in with your official tce.edu college email.');
               } finally {

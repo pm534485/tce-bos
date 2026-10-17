@@ -19,13 +19,18 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
   let response: Response;
   try {
+    const signal = options.signal || AbortSignal.timeout(15000);
     response = await fetch(`${API_BASE}${endpoint}`, {
       ...options,
       headers,
+      signal,
     });
   } catch (netErr: any) {
+    if (netErr?.name === 'TimeoutError') {
+      throw new Error('Connection timed out. Please check your network connection or try again.');
+    }
     if (netErr?.message === 'Failed to fetch' || netErr?.name === 'TypeError') {
-      throw new Error('Unable to connect to the Syllabus Automation Portal server. Please check your network or try again.');
+      throw new Error('Unable to connect to the Syllabi Management Portal server. Please check your network or try again.');
     }
     throw netErr;
   }

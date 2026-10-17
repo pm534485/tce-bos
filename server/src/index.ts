@@ -27,37 +27,56 @@ const PORT = process.env.PORT || 5000;
 const ATLAS_FALLBACK_URI = 'mongodb+srv://admin:password_123@anomaly-cluster.zvatocr.mongodb.net/syllabusforge?authSource=admin&appName=anomaly-cluster';
 const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || (process.env.VERCEL ? ATLAS_FALLBACK_URI : 'mongodb://localhost:27017/syllabusforge');
 
+let cachedPromise: Promise<typeof mongoose> | null = null;
+
 function getConnectOptions(uri: string): mongoose.ConnectOptions {
   const withoutProto = uri.split('://')[1] || '';
   const pathPart = withoutProto.split('?')[0];
   const slashIdx = pathPart.indexOf('/');
   const db = slashIdx !== -1 ? pathPart.substring(slashIdx + 1) : '';
   const baseOptions: mongoose.ConnectOptions = {
-    serverSelectionTimeoutMS: 8000,
-    connectTimeoutMS: 8000,
+    serverSelectionTimeoutMS: 3000,
+    connectTimeoutMS: 3000,
+    maxPoolSize: 10,
   };
   return db ? baseOptions : { ...baseOptions, dbName: 'syllabusforge' };
 }
 
 // Ensure DB connection for serverless invocations (Vercel)
 export async function connectDB() {
-  if (mongoose.connection.readyState === 1) return;
-
-  const envUri = process.env.MONGO_URI || process.env.MONGODB_URI;
-
-  if (envUri) {
+  if (mongoose.connection.readyState === 1) return mongoose;
+  if (cachedPromise) {
     try {
-      await mongoose.connect(envUri, getConnectOptions(envUri));
-      console.log('Connected to MongoDB via env URI');
-      return;
-    } catch (err: any) {
-      console.warn(`Environment MongoDB connection failed (${err.message}). Trying Atlas cluster fallback...`);
+      await cachedPromise;
+      if ((mongoose.connection.readyState as number) === 1) return mongoose;
+    } catch {
+      cachedPromise = null;
     }
   }
 
-  // Fallback to verified Atlas cluster
-  await mongoose.connect(ATLAS_FALLBACK_URI, getConnectOptions(ATLAS_FALLBACK_URI));
-  console.log('Connected to MongoDB via ATLAS_FALLBACK_URI');
+  const doConnect = async () => {
+    const envUri = process.env.MONGO_URI || process.env.MONGODB_URI;
+    if (envUri) {
+      try {
+        const conn = await mongoose.connect(envUri, getConnectOptions(envUri));
+        console.log('Connected to MongoDB via env URI');
+        return conn;
+      } catch (err: any) {
+        console.warn(`Environment MongoDB connection failed (${err.message}). Trying Atlas cluster fallback...`);
+      }
+    }
+    const fallbackConn = await mongoose.connect(ATLAS_FALLBACK_URI, getConnectOptions(ATLAS_FALLBACK_URI));
+    console.log('Connected to MongoDB via ATLAS_FALLBACK_URI');
+    return fallbackConn;
+  };
+
+  cachedPromise = doConnect();
+  try {
+    return await cachedPromise;
+  } catch (err) {
+    cachedPromise = null;
+    throw err;
+  }
 }
 
 app.use(cors());
