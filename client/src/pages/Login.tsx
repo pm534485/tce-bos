@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { AlertCircle, Mail, Lock, ArrowRight } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
 // Authorized Google Email Validation Regex: Strictly *.tce.edu accounts (permits @tce.edu and @student.tce.edu)
 export const ALLOWED_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@(?:(?:[a-zA-Z0-9-]+\.)*tce\.edu)$/i;
@@ -42,12 +42,8 @@ const GOOGLE_CLIENT_ID =
   '615647398835-fo26hv337bphlvkoq6g91m0hu0b0ub1p.apps.googleusercontent.com';
 
 export const Login: React.FC = () => {
-  const { user, googleLogin, login } = useAuth();
+  const { user, googleLogin } = useAuth();
   const navigate = useNavigate();
-
-  const [authTab, setAuthTab] = useState<'google' | 'password'>('google');
-  const [emailInput, setEmailInput] = useState('');
-  const [passwordInput, setPasswordInput] = useState('');
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -65,7 +61,7 @@ export const Login: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      navigate('/courses/new', { replace: true });
+      navigate('/dashboard', { replace: true });
     }
   }, [user, navigate]);
 
@@ -122,7 +118,7 @@ export const Login: React.FC = () => {
         avatar: credAvatar,
         googleId: credSub,
       });
-      navigate('/courses/new');
+      navigate('/dashboard', { replace: true });
     } catch (err: any) {
       setError(err.message || 'Please sign in with your official tce.edu college email.');
     } finally {
@@ -227,7 +223,7 @@ export const Login: React.FC = () => {
                   avatar: userinfo?.picture,
                   googleId: userinfo?.sub,
                 });
-                navigate('/courses/new');
+                navigate('/dashboard', { replace: true });
               } catch (err: any) {
                 setError(err.message || 'Please sign in with your official tce.edu college email.');
               } finally {
@@ -246,26 +242,7 @@ export const Login: React.FC = () => {
     if (google?.accounts?.id) {
       google.accounts.id.prompt();
     } else {
-      setError('Google Workspace SSO is loading. Please wait a moment and try again, or use Institutional Email Sign-in below.');
-    }
-  };
-
-  // Institutional Email / Password Sign In
-  const handleInstitutionalLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!emailInput.trim() || !passwordInput) {
-      setError('Please provide your institutional email and password.');
-      return;
-    }
-    setError(null);
-    setLoading(true);
-    try {
-      await login(emailInput.trim(), passwordInput);
-      navigate('/');
-    } catch (err: any) {
-      setError(err.message || 'Invalid institutional credentials. Please try again.');
-    } finally {
-      setLoading(false);
+      setError('Google Workspace SSO is loading. Please wait a moment and try again.');
     }
   };
 
@@ -279,18 +256,18 @@ export const Login: React.FC = () => {
 
         {/* Top: Official College Logo Banner Card */}
         <div className="relative z-10">
-          <div className="bg-white rounded-2xl p-3 sm:p-4 shadow-xl max-w-[340px] sm:max-w-[400px] inline-block border border-white/40">
+          <div className="bg-white rounded-2xl px-5 py-4 sm:px-6 sm:py-5 shadow-xl w-full block border border-white/40 overflow-hidden">
             <img
               src="/tce-banner.png"
               alt="Thiagarajar College of Engineering - Since 1957"
-              className="w-full h-auto object-contain block"
+              className="w-full h-auto object-contain block -mt-[7%] -mb-[6.3%]"
             />
           </div>
         </div>
 
         {/* Middle: Page Title - Syllabus Automation Portal */}
-        <div className="relative z-10 my-auto py-10 md:py-16 max-w-xl">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.12]">
+        <div className="relative z-10 my-auto py-10 md:py-16">
+          <h1 className="text-4xl sm:text-5xl lg:text-[clamp(2rem,3vw,3.75rem)] font-black text-white tracking-tight leading-[1.12] lg:whitespace-nowrap">
             Syllabus Automation Portal
           </h1>
         </div>
@@ -301,41 +278,13 @@ export const Login: React.FC = () => {
 
       {/* RIGHT SIDE: Institutional Authentication Card */}
       <div className="w-full md:w-1/2 lg:w-5/12 flex items-center justify-center p-6 sm:p-8 lg:p-12 bg-[#F8FAFC]">
-        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-100 max-w-md w-full">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+        <div className="bg-white rounded-3xl p-8 sm:p-10 shadow-xl border border-slate-100 max-w-lg w-full">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
             Welcome back
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1 mb-6 leading-relaxed">
+          <p className="text-sm sm:text-base text-slate-500 mt-1 mb-6 leading-relaxed">
             Authenticate with your official institutional account to access your syllabus workspace.
           </p>
-
-          {/* Auth Method Switcher Tabs */}
-          <div className="flex bg-slate-100 p-1 rounded-xl mb-6 text-xs font-semibold">
-            <button
-              type="button"
-              onClick={() => { setAuthTab('google'); setError(null); }}
-              className={`flex-1 py-2 rounded-lg flex items-center justify-center space-x-1.5 transition-all ${
-                authTab === 'google'
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <GoogleIcon className="w-4 h-4" />
-              <span>Google Workspace SSO</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => { setAuthTab('password'); setError(null); }}
-              className={`flex-1 py-2 rounded-lg flex items-center justify-center space-x-1.5 transition-all ${
-                authTab === 'password'
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Lock className="w-3.5 h-3.5 text-slate-500" />
-              <span>Institutional Password</span>
-            </button>
-          </div>
 
           {/* Error Message Box */}
           {error && (
@@ -348,74 +297,20 @@ export const Login: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 1: Google SSO */}
-          {authTab === 'google' && (
-            <div className="space-y-4">
-              <div className="border border-slate-200/90 rounded-2xl p-6 flex flex-col items-center justify-center bg-slate-50/60 hover:bg-slate-50 transition-colors">
-                <button
-                  type="button"
-                  onClick={handleGoogleSignIn}
-                  disabled={loading}
-                  className="w-full py-3.5 px-6 rounded-full bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm shadow-sm border border-slate-200 hover:border-slate-300 flex items-center justify-center space-x-3 transition-all active:scale-[0.98] cursor-pointer"
-                >
-                  <GoogleIcon className="w-5 h-5 flex-shrink-0" />
-                  <span>{loading ? 'Signing in...' : 'Sign in with Google (@tce.edu)'}</span>
-                </button>
-                <div ref={googleButtonRef} className="hidden" />
-              </div>
-              <p className="text-[11px] text-center text-slate-400">
-                Authorized for faculty and students with official <strong className="text-slate-600">*.tce.edu</strong> accounts.
-              </p>
-            </div>
-          )}
-
-          {/* TAB 2: Institutional Email & Password */}
-          {authTab === 'password' && (
-            <form onSubmit={handleInstitutionalLogin} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Institutional Email ID
-                </label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="email"
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    placeholder="e.g. psaca@tce.edu or admin@syllabusforge.edu"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#800020]/20 focus:border-[#800020]"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="password"
-                    value={passwordInput}
-                    onChange={(e) => setPasswordInput(e.target.value)}
-                    placeholder="Enter account password"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#800020]/20 focus:border-[#800020]"
-                    required
-                  />
-                </div>
-              </div>
-
+          <div className="space-y-4">
+            <div className="border border-slate-200/90 rounded-2xl p-6 flex flex-col items-center justify-center bg-slate-50/60 hover:bg-slate-50 transition-colors">
               <button
-                type="submit"
+                type="button"
+                onClick={handleGoogleSignIn}
                 disabled={loading}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#800020] to-[#5a0016] text-white font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center space-x-2 active:scale-[0.98] disabled:opacity-70 cursor-pointer"
+                className="w-full py-3.5 px-6 rounded-full bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm shadow-sm border border-slate-200 hover:border-slate-300 flex items-center justify-center space-x-3 transition-all active:scale-[0.98] cursor-pointer"
               >
-                <span>{loading ? 'Authenticating...' : 'Sign In to Portal'}</span>
-                <ArrowRight className="w-4 h-4" />
+                <GoogleIcon className="w-5 h-5 flex-shrink-0" />
+                <span>{loading ? 'Signing in...' : 'Sign in with Google (@tce.edu)'}</span>
               </button>
-            </form>
-          )}
+              <div ref={googleButtonRef} className="hidden" />
+            </div>
+          </div>
         </div>
       </div>
     </div>

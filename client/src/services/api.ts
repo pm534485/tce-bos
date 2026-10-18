@@ -54,11 +54,6 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
 export const api = {
   // Auth
-  login: (data: { email: string; password: string }) =>
-    request<{ token: string; user: User }>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
   googleLogin: (data: { email?: string; name?: string; credential?: string; accessToken?: string; avatar?: string; googleId?: string }) =>
     request<{ token: string; user: User }>('/auth/google', {
       method: 'POST',
