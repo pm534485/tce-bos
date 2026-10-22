@@ -872,11 +872,11 @@ export const CourseWizard: React.FC = () => {
 
   // Real-time field-level validation helpers
   const getFieldErrors = (fieldName: string) => {
-    return validationReport.errors.filter(e => e.field === fieldName);
+    return validationReport.errors.filter(e => e.field === fieldName || e.field.startsWith(`${fieldName}.`));
   };
 
   const hasFieldError = (fieldName: string) => {
-    return validationReport.errors.some(e => e.field === fieldName);
+    return validationReport.errors.some(e => e.field === fieldName || e.field.startsWith(`${fieldName}.`));
   };
 
   // Compute live subject code with dash before user enters anything

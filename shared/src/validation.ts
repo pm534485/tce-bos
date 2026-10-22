@@ -1836,43 +1836,32 @@ export function validateCourse(
   };
 }
 
-// Helper: Suggest CO weightages proportioned by TPS level within 8-20 range summing to 100
+// Helper: Suggest CO weightages proportioned by TPS level summing to 100
 export function suggestCoWeightages(cos: CourseOutcome[]): number[] {
   if (!cos || cos.length === 0) return [];
   const n = cos.length;
+  if (n === 1) return [100];
 
   // Assign base score based on TPS level: TPS 2 -> 2, TPS 3 -> 3, TPS 4 -> 4, TPS 5 -> 5
   const tpsScores = cos.map(c => Math.max(2, c.tpsLevel || 3));
-  const totalScore = tpsScores.reduce((a, b) => a + b, 0);
+  const totalScore = tpsScores.reduce((a, b) => a + b, 0) || 1;
 
-  // Initial proportioning
-  let weights = tpsScores.map(score => Math.round((score / totalScore) * 100));
+  // Initial proportioning using Math.floor to guarantee sum <= 100
+  let weights = tpsScores.map(score => Math.floor((score / totalScore) * 100));
 
-  // Ensure bounds [10, 20]
-  weights = weights.map(w => Math.min(20, Math.max(10, w)));
-
-  // Adjust sum to exactly 100
-  let diff = 100 - weights.reduce((a, b) => a + b, 0);
+  // Distribute remainder so the sum is guaranteed to equal exactly 100
+  let remainder = 100 - weights.reduce((a, b) => a + b, 0);
   let idx = 0;
-  while (diff !== 0) {
-    if (diff > 0) {
-      if (weights[idx] < 20) {
-        weights[idx]++;
-        diff--;
-      }
-    } else {
-      if (weights[idx] > 10) {
-        weights[idx]--;
-        diff++;
-      }
-    }
-    idx = (idx + 1) % n;
+  while (remainder > 0 && idx < 200) {
+    weights[idx % n]++;
+    remainder--;
+    idx++;
   }
 
-  // Ensure they are not all equal if n >= 2
+  // Differentiate slightly if all equal and n >= 2
   const allEqual = weights.every(w => w === weights[0]);
   if (allEqual && n >= 2) {
-    if (weights[0] < 20 && weights[weights.length - 1] > 10) {
+    if (weights[0] > 2) {
       weights[0] += 2;
       weights[weights.length - 1] -= 2;
     }
