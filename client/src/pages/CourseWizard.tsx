@@ -1016,7 +1016,18 @@ export const CourseWizard: React.FC = () => {
         return `Theory (${numCr || 3} credits) requires minimum ${req} Course Outcomes with statements to continue (currently ${validCount}/${req})`;
       }
       case 3: return 'Complete assessment marks distribution (each component must total 100%) to continue';
-      case 4: return course.courseType === 'PRACTICAL' ? 'Complete laboratory experiments to continue' : 'Complete all syllabus modules & topics to continue';
+      case 4: {
+        if (course.courseType === 'PRACTICAL') {
+          const exps = course.experiments || [];
+          if (exps.length === 0) return 'Add at least one laboratory experiment to continue';
+          const emptyExp = exps.find(e => !(e.name || '').trim());
+          if (emptyExp) return `Experiment ${emptyExp.slNo || 1} title is missing - enter a title to continue`;
+          const expErrs = validationReport.errors.filter(e => e.field.startsWith('experiments'));
+          if (expErrs.length > 0) return `${expErrs[0].message} (${expErrs[0].fixHint || 'Map all COs to continue'})`;
+          return 'Complete laboratory experiments to continue';
+        }
+        return 'Complete all syllabus modules & topics to continue';
+      }
       case 5: return 'Add required textbook(s) & learning resources to continue';
       case 6: return 'Add course designer details (name and email) to continue';
       default: return 'Please complete required details to continue';
@@ -3777,9 +3788,44 @@ export const CourseWizard: React.FC = () => {
                     {/* Practical Experiments */}
                     {(course.courseType === 'PRACTICAL' || course.courseType === 'TCP') && (
                       <div className="space-y-4">
-                        <span className="font-bold text-xs text-slate-800 block">List of Experiments:</span>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div>
+                            <span className="font-bold text-xs text-slate-800 block">List of Experiments:</span>
+                            <span className="text-[11px] text-slate-500">Each experiment requires a title, openness level, and mapped Course Outcome(s).</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const cos = course.courseOutcomes || [];
+                              if (cos.length === 0) return;
+                              const updated = (course.experiments || []).map((exp, i) => {
+                                const assignedCo = cos[i % cos.length]?.coNo || 'CO1';
+                                const existing = (exp.coNos || []).filter(c => cos.some(x => x.coNo === c));
+                                const merged = existing.length > 0 ? existing : [assignedCo];
+                                return { ...exp, coNos: merged };
+                              });
+                              // Ensure all COs are covered across all experiments
+                              cos.forEach(co => {
+                                const covered = updated.some(e => (e.coNos || []).includes(co.coNo));
+                                if (!covered && updated.length > 0) {
+                                  const target = updated[updated.length - 1];
+                                  if (!target.coNos.includes(co.coNo)) {
+                                    target.coNos.push(co.coNo);
+                                  }
+                                }
+                              });
+                              updateField('experiments', updated);
+                            }}
+                            className="px-2.5 py-1 rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-semibold flex items-center space-x-1.5 transition-colors self-start sm:self-auto cursor-pointer shadow-xs"
+                            title="Automatically distribute Course Outcomes evenly across all experiments"
+                          >
+                            <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+                            <span>Auto-map COs</span>
+                          </button>
+                        </div>
+
                         {(course.experiments || []).map((exp, idx) => (
-                          <div key={idx} className="p-3 border border-slate-200 rounded-xl bg-slate-50/50 space-y-2">
+                          <div key={idx} className="p-3 border border-slate-200 rounded-xl bg-slate-50/50 space-y-2.5">
                             <div className="flex items-center justify-between">
                               <span className="font-bold text-xs text-slate-700">Exp. {exp.slNo || idx + 1}</span>
                               <button
@@ -3787,7 +3833,8 @@ export const CourseWizard: React.FC = () => {
                                   const updated = (course.experiments || []).filter((_, i) => i !== idx);
                                   updateField('experiments', updated);
                                 }}
-                                className="p-1 text-slate-400 hover:text-rose-600"
+                                className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
+                                title="Delete experiment"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -3804,7 +3851,7 @@ export const CourseWizard: React.FC = () => {
                                     updateField('experiments', updated);
                                   }}
                                   placeholder={`Enter Experiment ${exp.slNo || idx + 1} title`}
-                                  className="w-full p-2 border border-slate-300 rounded-lg text-xs"
+                                  className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white focus:outline-sky-500"
                                 />
                               </div>
 
@@ -3817,13 +3864,44 @@ export const CourseWizard: React.FC = () => {
                                     updated[idx] = { ...updated[idx], level: val };
                                     updateField('experiments', updated);
                                   }}
-                                  className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white"
+                                  className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white focus:outline-sky-500"
                                 >
                                   <option value={1}>Level 1: Structured (Open answers)</option>
                                   <option value={2}>Level 2: Guided (Open methods)</option>
                                   <option value={3}>Level 3: Inquiry (Fully open)</option>
                                 </select>
                               </div>
+                            </div>
+
+                            {/* Course Outcomes Mapping Pills */}
+                            <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-slate-200/60">
+                              <span className="text-[11px] font-semibold text-slate-500 mr-1">Mapped COs:</span>
+                              {(course.courseOutcomes || []).map(co => {
+                                const isSelected = (exp.coNos || []).includes(co.coNo);
+                                return (
+                                  <button
+                                    key={co.coNo}
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = [...(course.experiments || [])];
+                                      const current = updated[idx].coNos || [];
+                                      const next = isSelected
+                                        ? current.filter(c => c !== co.coNo)
+                                        : [...current, co.coNo];
+                                      updated[idx] = { ...updated[idx], coNos: next };
+                                      updateField('experiments', updated);
+                                    }}
+                                    className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+                                      isSelected
+                                        ? 'bg-sky-600 text-white shadow-xs'
+                                        : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 hover:border-slate-400'
+                                    }`}
+                                    title={`Toggle ${co.coNo} for Experiment ${exp.slNo || idx + 1}`}
+                                  >
+                                    {co.coNo}
+                                  </button>
+                                );
+                              })}
                             </div>
                           </div>
                         ))}
@@ -3832,20 +3910,29 @@ export const CourseWizard: React.FC = () => {
                           type="button"
                           onClick={() => {
                             const n = (course.experiments || []).length + 1;
+                            const cos = course.courseOutcomes || [];
+                            const assignedCo = cos[(n - 1) % (cos.length || 1)]?.coNo || 'CO1';
                             const newExp: LabExperiment = {
                               slNo: n,
                               name: '',
                               level: 2,
                               objectiveNos: [1],
-                              coNos: ['CO1'],
+                              coNos: [assignedCo],
                             };
                             updateField('experiments', [...(course.experiments || []), newExp]);
                           }}
-                          className="w-full py-2 rounded-xl border border-dashed border-slate-300 hover:border-sky-500 text-slate-600 hover:text-sky-700 text-xs font-semibold flex items-center justify-center space-x-1.5"
+                          className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 hover:border-sky-500 bg-white hover:bg-sky-50/50 text-slate-600 hover:text-sky-700 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
                         >
                           <Plus className="w-4 h-4" />
                           <span>Add Laboratory Experiment</span>
                         </button>
+
+                        <div className="mt-2 space-y-1">
+                          <InlineFieldError field="experiments" />
+                          {!hasFieldError('experiments') && (course.experiments || []).length > 0 && (
+                            <InlineFieldSuccess message="All laboratory experiments and Course Outcome mappings verified compliant" />
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
