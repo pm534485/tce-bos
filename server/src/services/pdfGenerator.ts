@@ -234,6 +234,23 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
     <div class="line-space"></div>
   `).join('');
 
+  // 4b. Laboratory Experiments formatting
+  const experimentsList = course.experiments || [];
+  const experimentsRowsHtml = experimentsList.length > 0
+    ? experimentsList.map((exp, idx) => `
+      <tr>
+        <td class="center">${exp.slNo || idx + 1}</td>
+        <td class="left">${exp.name || ''}</td>
+        <td class="center">Level ${exp.level || 1}</td>
+        <td class="center">${Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || '')}</td>
+      </tr>
+    `).join('')
+    : `
+      <tr>
+        <td colspan="4" class="center" style="font-style: italic; color: #64748b; padding: 10px;">No laboratory experiments entered yet</td>
+      </tr>
+    `;
+
   // 5. Learning Resources
   const formatCitation = (b: any) => {
     const parts: string[] = [];
@@ -615,17 +632,58 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
     ${headerText}
   </div>
 
+  ${isPractical ? `
+  <!-- List of Experiments with CO Mapping -->
+  <div class="gray-banner">List of Experiments with CO Mapping</div>
+  <div class="line-space"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 10%; text-align: center;">Sl. No.</th>
+        <th style="width: 55%; text-align: left;">Name of the Experiment</th>
+        <th style="width: 15%; text-align: center;">Level of Experiment</th>
+        <th style="width: 20%; text-align: center;">COs Addressed</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${experimentsRowsHtml}
+    </tbody>
+  </table>
+  ` : `
   <!-- Syllabus -->
   <div class="gray-banner">Syllabus</div>
   <div class="line-space"></div>
 
   ${modulesHtml}
+  `}
+
+  ${isTcp && experimentsList.length > 0 ? `
+  <div class="line-space"></div>
+  <div class="gray-banner">List of Experiments with CO Mapping</div>
+  <div class="line-space"></div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 10%; text-align: center;">Sl. No.</th>
+        <th style="width: 55%; text-align: left;">Name of the Experiment</th>
+        <th style="width: 15%; text-align: center;">Level of Experiment</th>
+        <th style="width: 20%; text-align: center;">COs Addressed</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${experimentsRowsHtml}
+    </tbody>
+  </table>
+  ` : ''}
 
   <!-- Learning Resources -->
-  <div class="gray-banner">6. Learning Resources</div>
+  <div class="line-space"></div>
+  <div class="gray-banner">${isPractical ? 'Learning Resources' : '6. Learning Resources'}</div>
   <div class="line-space"></div>
 
-  <div class="gray-banner">6.1 Text Book</div>
+  ${(!isPractical || (course.textBooks && course.textBooks.length > 0)) ? `
+  <div class="gray-banner">${isPractical ? 'Text Book(s)' : '6.1 Text Book'}</div>
   <div class="line-space"></div>
 
   <ul class="bullet-list">
@@ -633,8 +691,9 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
   </ul>
 
   <div class="line-space"></div>
+  ` : ''}
 
-  <div class="gray-banner">6.2 Reference Books & Web resources</div>
+  <div class="gray-banner">${isPractical ? 'Reference Books and Web resources' : '6.2 Reference Books & Web resources'}</div>
   <div class="line-space"></div>
 
   <ul class="bullet-list">
@@ -658,6 +717,7 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
     ${headerText}
   </div>
 
+  ${!isPractical ? `
   <!-- Course Contents and Lecture Schedule -->
   <div class="gray-banner">7. Course Contents and Lecture Schedule</div>
   <div class="line-space"></div>
@@ -683,9 +743,10 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
 
   <!-- Line space between each section -->
   <div class="line-space"></div>
+  ` : ''}
 
   <!-- Course Designer(s) -->
-  <div class="gray-banner">8. Course Designer(s):</div>
+  <div class="gray-banner">${isPractical ? '7. Course Designer(s):' : '8. Course Designer(s):'}</div>
   <div class="line-space"></div>
 
   <div class="section-p">

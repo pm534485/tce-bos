@@ -540,29 +540,6 @@ export async function generateDocxDocument(course: Course): Promise<Buffer> {
 
   // ==================== PAGE 2 ====================
 
-  // Shaded Syllabus Heading with PageBreak Before
-  children.push(createShadedBanner('Syllabus', { pageBreakBefore: true }));
-  children.push(createLineSpace());
-
-  // Syllabus modules
-  (course.modules || []).forEach(mod => {
-    children.push(new Paragraph({
-      alignment: AlignmentType.JUSTIFIED,
-      children: [
-        createText(`${mod.mainTopic}: `, { bold: true }),
-        createText(Array.isArray(mod.subtopics) ? mod.subtopics.join(' – ') : ''),
-      ],
-    }));
-    children.push(createLineSpace());
-  });
-
-  // 6. Learning Resources
-  children.push(createShadedBanner('6. Learning Resources'));
-  children.push(createLineSpace());
-
-  children.push(createShadedBanner('6.1 Text Book'));
-  children.push(createLineSpace());
-
   const formatCitation = (b: any) => {
     const parts: string[] = [];
     if (b.authors && String(b.authors).trim()) {
@@ -609,17 +586,116 @@ export async function generateDocxDocument(course: Course): Promise<Buffer> {
     return parts.join('; ');
   };
 
-  (course.textBooks || []).forEach(b => {
-    children.push(new Paragraph({
-      bullet: { level: 0 },
-      alignment: AlignmentType.JUSTIFIED,
-      children: [createText(formatCitation(b))],
-    }));
-  });
+  if (isPractical) {
+    // List of Experiments with CO Mapping
+    children.push(createShadedBanner('List of Experiments with CO Mapping', { pageBreakBefore: true }));
+    children.push(createLineSpace());
 
+    const expHeaderRow = new TableRow({
+      children: [
+        createCell('Sl. No.', { bold: true, widthPercent: 10, align: AlignmentType.CENTER }),
+        createCell('Name of the Experiment', { bold: true, widthPercent: 55 }),
+        createCell('Level of Experiment', { bold: true, widthPercent: 15, align: AlignmentType.CENTER }),
+        createCell('COs Addressed', { bold: true, widthPercent: 20, align: AlignmentType.CENTER }),
+      ],
+    });
+
+    const expRows = [expHeaderRow];
+    const experimentsList = course.experiments || [];
+    if (experimentsList.length > 0) {
+      experimentsList.forEach((exp, idx) => {
+        expRows.push(new TableRow({
+          children: [
+            createCell(String(exp.slNo || idx + 1), { widthPercent: 10, align: AlignmentType.CENTER }),
+            createCell(exp.name || '', { widthPercent: 55 }),
+            createCell(`Level ${exp.level || 1}`, { widthPercent: 15, align: AlignmentType.CENTER }),
+            createCell(Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || ''), { widthPercent: 20, align: AlignmentType.CENTER }),
+          ],
+        }));
+      });
+    } else {
+      expRows.push(new TableRow({
+        children: [
+          createCell('No laboratory experiments entered yet', { colSpan: 4, widthPercent: 100, align: AlignmentType.CENTER }),
+        ],
+      }));
+    }
+
+    children.push(new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: expRows,
+    }));
+    children.push(createLineSpace());
+  } else {
+    // Shaded Syllabus Heading with PageBreak Before
+    children.push(createShadedBanner('Syllabus', { pageBreakBefore: true }));
+    children.push(createLineSpace());
+
+    // Syllabus modules
+    (course.modules || []).forEach(mod => {
+      children.push(new Paragraph({
+        alignment: AlignmentType.JUSTIFIED,
+        children: [
+          createText(`${mod.mainTopic}: `, { bold: true }),
+          createText(Array.isArray(mod.subtopics) ? mod.subtopics.join(' – ') : ''),
+        ],
+      }));
+      children.push(createLineSpace());
+    });
+
+    // TCP course: include experiments if present
+    if (course.courseType === 'TCP' && (course.experiments || []).length > 0) {
+      children.push(createShadedBanner('List of Experiments with CO Mapping'));
+      children.push(createLineSpace());
+
+      const expHeaderRow = new TableRow({
+        children: [
+          createCell('Sl. No.', { bold: true, widthPercent: 10, align: AlignmentType.CENTER }),
+          createCell('Name of the Experiment', { bold: true, widthPercent: 55 }),
+          createCell('Level of Experiment', { bold: true, widthPercent: 15, align: AlignmentType.CENTER }),
+          createCell('COs Addressed', { bold: true, widthPercent: 20, align: AlignmentType.CENTER }),
+        ],
+      });
+
+      const expRows = [expHeaderRow];
+      course.experiments.forEach((exp, idx) => {
+        expRows.push(new TableRow({
+          children: [
+            createCell(String(exp.slNo || idx + 1), { widthPercent: 10, align: AlignmentType.CENTER }),
+            createCell(exp.name || '', { widthPercent: 55 }),
+            createCell(`Level ${exp.level || 1}`, { widthPercent: 15, align: AlignmentType.CENTER }),
+            createCell(Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || ''), { widthPercent: 20, align: AlignmentType.CENTER }),
+          ],
+        }));
+      });
+
+      children.push(new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: expRows,
+      }));
+      children.push(createLineSpace());
+    }
+  }
+
+  // Learning Resources
+  children.push(createShadedBanner(isPractical ? 'Learning Resources' : '6. Learning Resources'));
   children.push(createLineSpace());
 
-  children.push(createShadedBanner('6.2 Reference Books & Web resources'));
+  if (!isPractical || (course.textBooks && course.textBooks.length > 0)) {
+    children.push(createShadedBanner(isPractical ? 'Text Book(s)' : '6.1 Text Book'));
+    children.push(createLineSpace());
+
+    (course.textBooks || []).forEach(b => {
+      children.push(new Paragraph({
+        bullet: { level: 0 },
+        alignment: AlignmentType.JUSTIFIED,
+        children: [createText(formatCitation(b))],
+      }));
+    });
+    children.push(createLineSpace());
+  }
+
+  children.push(createShadedBanner(isPractical ? 'Reference Books and Web resources' : '6.2 Reference Books & Web resources'));
   children.push(createLineSpace());
 
   (course.referenceBooks || []).forEach(b => {
@@ -647,79 +723,81 @@ export async function generateDocxDocument(course: Course): Promise<Buffer> {
 
   // ==================== PAGE 3 ====================
 
-  // 7. Course Contents and Lecture Schedule with PageBreak Before
-  children.push(createShadedBanner('7. Course Contents and Lecture Schedule', { pageBreakBefore: true }));
-  children.push(createLineSpace());
+  if (!isPractical) {
+    // 7. Course Contents and Lecture Schedule with PageBreak Before
+    children.push(createShadedBanner('7. Course Contents and Lecture Schedule', { pageBreakBefore: true }));
+    children.push(createLineSpace());
 
-  let scheduleItems = course.lectureScheduleItems || [];
-  if (scheduleItems.length === 0 && (course.modules || []).length > 0) {
-    scheduleItems = [];
-    (course.modules || []).forEach((mod, modIdx) => {
-      const modNo = String(mod.moduleNo || modIdx + 1);
-      if (mod.subtopics && mod.subtopics.length > 0) {
-        const totalModPeriods = Number(mod.periods) || 5;
-        const perTopic = Math.max(1, Math.floor(totalModPeriods / mod.subtopics.length));
-        mod.subtopics.forEach((sub, sIdx) => {
+    let scheduleItems = course.lectureScheduleItems || [];
+    if (scheduleItems.length === 0 && (course.modules || []).length > 0) {
+      scheduleItems = [];
+      (course.modules || []).forEach((mod, modIdx) => {
+        const modNo = String(mod.moduleNo || modIdx + 1);
+        if (mod.subtopics && mod.subtopics.length > 0) {
+          const totalModPeriods = Number(mod.periods) || 5;
+          const perTopic = Math.max(1, Math.floor(totalModPeriods / mod.subtopics.length));
+          mod.subtopics.forEach((sub, sIdx) => {
+            scheduleItems.push({
+              moduleNo: modNo,
+              topic: sIdx === 0 ? `${mod.mainTopic}: ${sub}` : sub,
+              periods: sIdx === mod.subtopics.length - 1 ? totalModPeriods - (perTopic * (mod.subtopics.length - 1)) : perTopic,
+            });
+          });
+        } else {
           scheduleItems.push({
             moduleNo: modNo,
-            topic: sIdx === 0 ? `${mod.mainTopic}: ${sub}` : sub,
-            periods: sIdx === mod.subtopics.length - 1 ? totalModPeriods - (perTopic * (mod.subtopics.length - 1)) : perTopic,
+            topic: mod.mainTopic,
+            periods: Number(mod.periods) || 5,
           });
-        });
-      } else {
-        scheduleItems.push({
-          moduleNo: modNo,
-          topic: mod.mainTopic,
-          periods: Number(mod.periods) || 5,
-        });
-      }
+        }
+      });
+    }
+
+    const schedHeaderRow = new TableRow({
+      children: [
+        createCell('Module No', { bold: true, widthPercent: 12, align: AlignmentType.CENTER }),
+        createCell('Topics', { bold: true, widthPercent: 58 }),
+        createCell('No of Periods', { bold: true, widthPercent: 14, align: AlignmentType.CENTER }),
+        createCell('Course Outcomes', { bold: true, widthPercent: 16, align: AlignmentType.CENTER }),
+      ],
     });
-  }
 
-  const schedHeaderRow = new TableRow({
-    children: [
-      createCell('Module No', { bold: true, widthPercent: 12, align: AlignmentType.CENTER }),
-      createCell('Topics', { bold: true, widthPercent: 58 }),
-      createCell('No of Periods', { bold: true, widthPercent: 14, align: AlignmentType.CENTER }),
-      createCell('Course Outcomes', { bold: true, widthPercent: 16, align: AlignmentType.CENTER }),
-    ],
-  });
+    let totalPeriods = 0;
+    const schedRows = [schedHeaderRow];
+    scheduleItems.forEach(item => {
+      const p = Number(item.periods) || 0;
+      totalPeriods += p;
+      const periodDisplay = item.periods !== undefined && item.periods !== null && item.periods !== '' ? String(item.periods) : '';
+      const coDisplay = Array.isArray(item.coMapping) ? item.coMapping.join(', ') : (item.coMapping || '');
+      schedRows.push(new TableRow({
+        children: [
+          createCell(item.moduleNo || '', { widthPercent: 12, align: AlignmentType.CENTER }),
+          createCell(item.topic || '', { widthPercent: 58 }),
+          createCell(periodDisplay, { widthPercent: 14, align: AlignmentType.CENTER }),
+          createCell(coDisplay, { widthPercent: 16, align: AlignmentType.CENTER }),
+        ],
+      }));
+    });
 
-  let totalPeriods = 0;
-  const schedRows = [schedHeaderRow];
-  scheduleItems.forEach(item => {
-    const p = Number(item.periods) || 0;
-    totalPeriods += p;
-    const periodDisplay = item.periods !== undefined && item.periods !== null && item.periods !== '' ? String(item.periods) : '';
-    const coDisplay = Array.isArray(item.coMapping) ? item.coMapping.join(', ') : (item.coMapping || '');
     schedRows.push(new TableRow({
       children: [
-        createCell(item.moduleNo || '', { widthPercent: 12, align: AlignmentType.CENTER }),
-        createCell(item.topic || '', { widthPercent: 58 }),
-        createCell(periodDisplay, { widthPercent: 14, align: AlignmentType.CENTER }),
-        createCell(coDisplay, { widthPercent: 16, align: AlignmentType.CENTER }),
+        createCell('Total Periods', { bold: true, widthPercent: 70, colSpan: 2, align: AlignmentType.CENTER }),
+        createCell(String(totalPeriods), { bold: true, widthPercent: 14, align: AlignmentType.CENTER }),
+        createCell('', { widthPercent: 16, align: AlignmentType.CENTER }),
       ],
     }));
-  });
 
-  schedRows.push(new TableRow({
-    children: [
-      createCell('Total Periods', { bold: true, widthPercent: 70, colSpan: 2, align: AlignmentType.CENTER }),
-      createCell(String(totalPeriods), { bold: true, widthPercent: 14, align: AlignmentType.CENTER }),
-      createCell('', { widthPercent: 16, align: AlignmentType.CENTER }),
-    ],
-  }));
+    children.push(new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: schedRows,
+    }));
 
-  children.push(new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    rows: schedRows,
-  }));
+    // Line space between sections
+    children.push(createLineSpace());
+  }
 
-  // Line space between sections
-  children.push(createLineSpace());
-
-  // 8. Course Designer(s)
-  children.push(createShadedBanner('8. Course Designer(s):'));
+  // Course Designer(s)
+  children.push(createShadedBanner(isPractical ? '7. Course Designer(s):' : '8. Course Designer(s):', isPractical ? { pageBreakBefore: true } : {}));
   children.push(createLineSpace());
 
   const designers = course.designers || [];
