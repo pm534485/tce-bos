@@ -644,7 +644,8 @@ export async function generateDocxDocument(course: Course): Promise<Buffer> {
     });
 
     // TCP course: include experiments if present
-    if (course.courseType === 'TCP' && (course.experiments || []).length > 0) {
+    const tcpExperiments = course.experiments || [];
+    if (course.courseType === 'TCP' && tcpExperiments.length > 0) {
       children.push(createShadedBanner('List of Experiments with CO Mapping'));
       children.push(createLineSpace());
 
@@ -658,7 +659,7 @@ export async function generateDocxDocument(course: Course): Promise<Buffer> {
       });
 
       const expRows = [expHeaderRow];
-      course.experiments.forEach((exp, idx) => {
+      tcpExperiments.forEach((exp, idx) => {
         expRows.push(new TableRow({
           children: [
             createCell(String(exp.slNo || idx + 1), { widthPercent: 10, align: AlignmentType.CENTER }),

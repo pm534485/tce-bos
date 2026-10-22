@@ -658,7 +658,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
                 </thead>
                 <tbody>
                   {(course.experiments && course.experiments.length > 0) ? (
-                    course.experiments.map((exp, idx) => (
+                    (course.experiments || []).map((exp, idx) => (
                       <tr key={idx} className="border-b border-black">
                         <td className="border border-black p-1.5 text-center">{exp.slNo || idx + 1}</td>
                         <td className="border border-black p-1.5 text-left">{exp.name || ''}</td>
