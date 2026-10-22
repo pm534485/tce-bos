@@ -93,18 +93,10 @@ function createCell(
   } = {}
 ) {
   const children = typeof textOrRuns === 'string'
-    ? (textOrRuns ? [new Paragraph({
+    ? (textOrRuns ? textOrRuns.split('\n').map(line => new Paragraph({
         alignment: options.align || AlignmentType.LEFT,
-        children: textOrRuns.split('\n').map((line, i) =>
-          new TextRun({
-            text: line,
-            font: 'Arial',
-            size: options.size !== undefined ? options.size : 19,
-            bold: !!options.bold,
-            break: i > 0 ? 1 : undefined,
-          })
-        ),
-      })] : [new Paragraph({ children: [] })])
+        children: [createText(line, { bold: options.bold, size: options.size || 19 })],
+      })) : [new Paragraph({ children: [] })])
     : [new Paragraph({
         alignment: options.align || AlignmentType.LEFT,
         children: textOrRuns,

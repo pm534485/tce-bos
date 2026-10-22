@@ -211,6 +211,8 @@ export interface Course {
     updatedAt: string;
     changesSummary: string;
   }>;
+  bosMeetingDate?: string;
+  academicCouncilDate?: string;
   createdAt?: string;
   updatedAt?: string;
 }
