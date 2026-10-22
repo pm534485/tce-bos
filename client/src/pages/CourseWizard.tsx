@@ -85,7 +85,7 @@ export const splitSubtopics = (raw: string | string[]): string[] => {
   return out;
 };
 
-// Performance Indicator (PI) Selector Component (Direct Entry + Checkbox Selector)
+// Performance Indicator (PI) Creatable Multi-Select Combobox Component
 interface PiCheckboxSelectorProps {
   value: string;
   onChange: (newPi: string, matchedTpsLevel?: number) => void;
@@ -94,52 +94,49 @@ interface PiCheckboxSelectorProps {
 
 const PiCheckboxSelector: React.FC<PiCheckboxSelectorProps> = ({ value, onChange, coNo }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const [customPiInput, setCustomPiInput] = useState('');
-  const popoverRef = useRef<HTMLDivElement>(null);
+  const [inputValue, setInputValue] = useState('');
+  const [activeIndex, setActiveIndex] = useState<number>(-1);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLElement | null)[]>([]);
+
+  // Parse existing selected PIs from the comma/semicolon/space-separated string
+  const selectedPis = (value || '')
+    .split(/[,;\s]+/)
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  // Close dropdown on click outside; commit any typed text before closing
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        if (inputValue.trim()) {
+          commitInput(inputValue.trim());
+        }
         setIsOpen(false);
+        setActiveIndex(-1);
       }
     };
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
+  }, [isOpen, inputValue, selectedPis]);
 
-  const selectedPis = (value || '')
-    .split(/[,;\s]+/)
-    .map(s => s.trim())
-    .filter(Boolean);
-
-  const togglePi = (piCode: string) => {
-    let nextList: string[];
-    if (selectedPis.includes(piCode)) {
-      nextList = selectedPis.filter(p => p !== piCode);
-    } else {
-      nextList = [...selectedPis, piCode];
+  // Scroll keyboard-navigated item into view
+  useEffect(() => {
+    if (activeIndex >= 0 && itemRefs.current[activeIndex]) {
+      itemRefs.current[activeIndex]?.scrollIntoView({ block: 'nearest' });
     }
-    const joined = nextList.join(', ');
-    const matched = PERFORMANCE_INDICATORS.find(p => p.piNumber === piCode);
-    onChange(joined, matched?.tpsLevel);
-  };
+  }, [activeIndex]);
 
-  const handleAddCustom = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const trimmed = customPiInput.trim();
-    if (!trimmed) return;
-    const newItems = trimmed.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean);
-    const combined = Array.from(new Set([...selectedPis, ...newItems]));
-    onChange(combined.join(', '));
-    setCustomPiInput('');
-  };
-
+  // Live filter standard PIs based on input text
+  const trimmedInput = inputValue.trim();
   const filteredPis = PERFORMANCE_INDICATORS.filter(pi => {
-    if (!search.trim()) return true;
-    const q = search.toLowerCase();
+    if (!trimmedInput) return true;
+    const q = trimmedInput.toLowerCase();
     return (
       pi.piNumber.toLowerCase().includes(q) ||
       pi.descriptor.toLowerCase().includes(q) ||
@@ -147,8 +144,171 @@ const PiCheckboxSelector: React.FC<PiCheckboxSelectorProps> = ({ value, onChange
     );
   });
 
+  // Check if typed text matches an existing standard PI or is already selected
+  const hasExactChecklistMatch = PERFORMANCE_INDICATORS.some(
+    pi => pi.piNumber.toLowerCase() === trimmedInput.toLowerCase()
+  );
+  const isInputAlreadySelected = selectedPis.some(
+    p => p.toLowerCase() === trimmedInput.toLowerCase()
+  );
+  // Show "Add <typed text> as custom PI" option if non-empty, not already selected, and not an exact standard match
+  const showCustomOption = trimmedInput.length > 0 && !hasExactChecklistMatch && !isInputAlreadySelected;
+
+  // Navigable items count: if custom option is shown, index 0 is custom option, 1..N are filtered items
+  const totalNavItems = (showCustomOption ? 1 : 0) + filteredPis.length;
+
+  const commitInput = (raw: string) => {
+    const tokens = raw
+      .split(/[,;\n\r]+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+    if (tokens.length === 0) {
+      setInputValue('');
+      return;
+    }
+
+    let updatedList = [...selectedPis];
+    let lastMatchedTpsLevel: number | undefined;
+
+    for (const token of tokens) {
+      if (!token) continue;
+      // Prevent duplicates (case-insensitive check)
+      if (!updatedList.some(p => p.toLowerCase() === token.toLowerCase())) {
+        updatedList.push(token);
+        const matched = PERFORMANCE_INDICATORS.find(
+          p => p.piNumber.toLowerCase() === token.toLowerCase()
+        );
+        if (matched?.tpsLevel) {
+          lastMatchedTpsLevel = matched.tpsLevel;
+        }
+      }
+    }
+
+    if (updatedList.length !== selectedPis.length) {
+      onChange(updatedList.join(', '), lastMatchedTpsLevel);
+    }
+    setInputValue('');
+    setActiveIndex(-1);
+  };
+
+  const togglePi = (piCode: string) => {
+    const trimmed = piCode.trim();
+    if (!trimmed) return;
+    const exists = selectedPis.some(p => p.toLowerCase() === trimmed.toLowerCase());
+    let nextList: string[];
+    let matchedTpsLevel: number | undefined;
+
+    if (exists) {
+      nextList = selectedPis.filter(p => p.toLowerCase() !== trimmed.toLowerCase());
+    } else {
+      nextList = [...selectedPis, trimmed];
+      const matched = PERFORMANCE_INDICATORS.find(
+        p => p.piNumber.toLowerCase() === trimmed.toLowerCase()
+      );
+      matchedTpsLevel = matched?.tpsLevel;
+    }
+
+    onChange(nextList.join(', '), matchedTpsLevel);
+  };
+
+  const removePi = (piCode: string) => {
+    const nextList = selectedPis.filter(p => p.toLowerCase() !== piCode.toLowerCase());
+    onChange(nextList.join(', '));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && inputValue === '' && selectedPis.length > 0) {
+      // Remove last chip on backspace with empty input
+      e.preventDefault();
+      const nextList = selectedPis.slice(0, -1);
+      onChange(nextList.join(', '));
+      return;
+    }
+
+    if (e.key === ',') {
+      e.preventDefault();
+      if (trimmedInput) {
+        commitInput(trimmedInput);
+      }
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!isOpen) {
+        setIsOpen(true);
+        setActiveIndex(0);
+      } else if (totalNavItems > 0) {
+        setActiveIndex(prev => (prev + 1 < totalNavItems ? prev + 1 : 0));
+      }
+      return;
+    }
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!isOpen) {
+        setIsOpen(true);
+        setActiveIndex(totalNavItems - 1);
+      } else if (totalNavItems > 0) {
+        setActiveIndex(prev => (prev > 0 ? prev - 1 : totalNavItems - 1));
+      }
+      return;
+    }
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (isOpen && activeIndex >= 0) {
+        if (showCustomOption && activeIndex === 0) {
+          commitInput(trimmedInput);
+        } else {
+          const piIndex = showCustomOption ? activeIndex - 1 : activeIndex;
+          if (filteredPis[piIndex]) {
+            togglePi(filteredPis[piIndex].piNumber);
+          }
+        }
+      } else if (trimmedInput) {
+        commitInput(trimmedInput);
+      }
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsOpen(false);
+      setActiveIndex(-1);
+      return;
+    }
+
+    if (e.key === 'Tab') {
+      if (trimmedInput) {
+        commitInput(trimmedInput);
+      }
+      setIsOpen(false);
+      setActiveIndex(-1);
+      return;
+    }
+  };
+
+  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    if (containerRef.current && containerRef.current.contains(e.relatedTarget as Node)) {
+      return;
+    }
+    if (trimmedInput) {
+      commitInput(trimmedInput);
+    }
+    setIsOpen(false);
+    setActiveIndex(-1);
+  };
+
+  const handleContainerClick = () => {
+    inputRef.current?.focus();
+    if (!isOpen) {
+      setIsOpen(true);
+    }
+  };
+
   return (
-    <div className="relative" ref={popoverRef}>
+    <div className="relative" ref={containerRef}>
       <div className="flex items-center justify-between mb-1">
         <label className="text-[11px] font-bold text-slate-600">
           Performance Indicators (PIs)
@@ -160,131 +320,161 @@ const PiCheckboxSelector: React.FC<PiCheckboxSelectorProps> = ({ value, onChange
         )}
       </div>
 
-      <div className="flex items-center space-x-1.5">
-        <input
-          type="text"
-          value={value || ''}
-          onChange={e => {
-            const val = e.target.value;
-            const matched = PERFORMANCE_INDICATORS.find(p => p.piNumber === val.trim());
-            onChange(val, matched?.tpsLevel);
-          }}
-          placeholder="Type or check PIs (e.g. 1.2.1, 2.1.3)"
-          className="flex-1 p-2 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-sky-500 font-mono"
-          title={`Type custom Performance Indicators or open Checklist for ${coNo}`}
-        />
+      <div
+        onClick={handleContainerClick}
+        className={`w-full min-h-[38px] px-2 py-1 border rounded-lg text-xs bg-white flex items-center transition-all cursor-text ${
+          isOpen
+            ? 'border-sky-500 ring-2 ring-sky-500/20'
+            : 'border-slate-300 hover:border-slate-400'
+        }`}
+        title={`Type or choose Performance Indicators for ${coNo}`}
+      >
+        <div className="flex-1 flex flex-wrap items-center gap-1.5 min-w-0 py-0.5">
+          {selectedPis.map(piCode => (
+            <span
+              key={piCode}
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 text-[11px] font-mono font-semibold shadow-2xs"
+            >
+              <span>{piCode}</span>
+              <button
+                type="button"
+                tabIndex={-1}
+                onMouseDown={e => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  removePi(piCode);
+                }}
+                className="text-sky-600 hover:text-rose-600 hover:bg-sky-200/60 rounded p-0.5 transition-colors cursor-pointer leading-none flex items-center justify-center"
+                title={`Remove ${piCode}`}
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputValue}
+            onChange={e => {
+              setInputValue(e.target.value);
+              if (!isOpen) setIsOpen(true);
+              setActiveIndex(-1);
+            }}
+            onFocus={() => {
+              if (!isOpen) setIsOpen(true);
+            }}
+            onBlur={handleInputBlur}
+            onKeyDown={handleKeyDown}
+            placeholder={
+              selectedPis.length === 0 ? 'Type or choose PIs (e.g. 5.2.1)' : 'Add PI...'
+            }
+            className="flex-1 min-w-[70px] border-none outline-none p-0 text-xs font-mono text-slate-800 placeholder:text-slate-400 placeholder:font-sans bg-transparent focus:ring-0"
+          />
+        </div>
         <button
           type="button"
-          onClick={() => setIsOpen(prev => !prev)}
-          className={`px-2.5 py-2 border rounded-lg text-xs font-semibold flex items-center space-x-1 transition-all flex-shrink-0 cursor-pointer ${
-            isOpen
-              ? 'bg-sky-100 border-sky-400 text-sky-800'
-              : 'bg-slate-50 border-slate-300 text-slate-700 hover:bg-slate-100 hover:border-slate-400'
-          }`}
-          title="Open checklist to select from standard performance indicators"
+          tabIndex={-1}
+          onClick={e => {
+            e.stopPropagation();
+            if (isOpen) {
+              setIsOpen(false);
+            } else {
+              setIsOpen(true);
+              inputRef.current?.focus();
+            }
+          }}
+          className="ml-1 p-1 text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0 cursor-pointer rounded"
+          title={isOpen ? 'Close PI dropdown' : 'Open PI checklist dropdown'}
         >
-          <CheckSquare className="w-3.5 h-3.5 text-sky-600" />
-          <span className="hidden sm:inline">Checklist</span>
-          {isOpen ? <ChevronUp className="w-3 h-3 ml-0.5" /> : <ChevronDown className="w-3 h-3 ml-0.5" />}
+          <ChevronDown
+            className={`w-3.5 h-3.5 transition-transform duration-150 ${
+              isOpen ? 'rotate-180 text-sky-600' : ''
+            }`}
+          />
         </button>
       </div>
 
       {isOpen && (
-        <div className="absolute z-50 left-0 right-0 sm:right-auto sm:w-92 mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl p-2.5 animate-in fade-in duration-150">
+        <div
+          onMouseDown={e => e.preventDefault()}
+          className="absolute z-50 right-0 top-full mt-1 w-[calc(100vw-3rem)] max-w-sm sm:w-96 bg-white border border-slate-200 rounded-xl shadow-2xl p-2.5 animate-in fade-in duration-150 text-slate-800"
+          style={{ minWidth: '280px' }}
+        >
           <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
             <span className="text-xs font-bold text-slate-900 flex items-center space-x-1">
               <CheckSquare className="w-3.5 h-3.5 text-sky-600 mr-1" />
-              <span>Select or Add PIs ({coNo})</span>
+              <span>PI Checklist ({coNo})</span>
             </span>
             <span className="text-[10px] text-slate-500 font-semibold bg-slate-100 px-1.5 py-0.5 rounded">
               {selectedPis.length} active
             </span>
           </div>
 
-          {/* Quick Custom PI Entry Input */}
-          <div className="flex items-center space-x-1.5 mb-2 pb-2 border-b border-slate-100">
-            <input
-              type="text"
-              value={customPiInput}
-              onChange={e => setCustomPiInput(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddCustom();
-                }
-              }}
-              placeholder="Enter custom PI code..."
-              className="flex-1 px-2 py-1 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-sky-500 bg-slate-50/50 font-mono"
-            />
+          {/* Custom PI Add Option (if typed text doesn't match standard checklist item) */}
+          {showCustomOption && (
             <button
               type="button"
-              onClick={() => handleAddCustom()}
-              disabled={!customPiInput.trim()}
-              className="px-2.5 py-1 bg-sky-600 hover:bg-sky-700 disabled:bg-slate-200 disabled:text-slate-400 text-white text-[11px] font-bold rounded-lg transition-colors flex items-center space-x-0.5"
+              ref={el => { itemRefs.current[0] = el; }}
+              onClick={() => {
+                commitInput(trimmedInput);
+                inputRef.current?.focus();
+              }}
+              onMouseEnter={() => setActiveIndex(0)}
+              className={`w-full text-left px-2.5 py-1.5 mb-2 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition-colors border border-dashed cursor-pointer ${
+                activeIndex === 0
+                  ? 'bg-sky-100 border-sky-400 text-sky-900 ring-1 ring-sky-400'
+                  : 'bg-sky-50/80 border-sky-300 text-sky-800 hover:bg-sky-100'
+              }`}
             >
-              <Plus className="w-3 h-3" />
-              <span>Add</span>
+              <Plus className="w-3.5 h-3.5 text-sky-600 flex-shrink-0" />
+              <span className="truncate">
+                Add <strong className="font-mono font-bold">"{trimmedInput}"</strong> as custom PI
+              </span>
             </button>
-          </div>
-
-          {/* Selected Tags Chips */}
-          {selectedPis.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-2 pb-2 border-b border-slate-100 max-h-20 overflow-y-auto">
-              {selectedPis.map(piCode => (
-                <span
-                  key={piCode}
-                  className="inline-flex items-center px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 text-[11px] font-bold font-mono shadow-2xs"
-                >
-                  {piCode}
-                  <button
-                    type="button"
-                    onClick={() => togglePi(piCode)}
-                    className="ml-1 text-sky-600 hover:text-sky-950 font-bold"
-                    title={`Remove ${piCode}`}
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
           )}
 
-          {/* Search Box */}
-          <div className="relative mb-2">
-            <Search className="w-3 h-3 text-slate-400 absolute left-2.5 top-2" />
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search standard PIs..."
-              className="w-full pl-7 pr-2.5 py-1 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-sky-500 bg-slate-50/50"
-            />
-          </div>
-
-          {/* Checkboxes List */}
-          <div className="max-h-52 overflow-y-auto space-y-1 pr-1 text-xs divide-y divide-slate-100">
+          {/* Standard PI Checklist Scrollable Area */}
+          <div ref={listRef} className="max-h-56 overflow-y-auto space-y-1 pr-1 text-xs divide-y divide-slate-100">
             {filteredPis.length === 0 ? (
-              <div className="p-3 text-center text-slate-400 text-xs">No matching standard PIs</div>
+              !showCustomOption ? (
+                <div className="p-3 text-center text-slate-400 text-xs">
+                  No matching standard performance indicators
+                </div>
+              ) : null
             ) : (
-              filteredPis.map(pi => {
-                const isChecked = selectedPis.includes(pi.piNumber);
+              filteredPis.map((pi, pIdx) => {
+                const itemIndex = showCustomOption ? pIdx + 1 : pIdx;
+                const isChecked = selectedPis.some(p => p.toLowerCase() === pi.piNumber.toLowerCase());
+                const isActive = activeIndex === itemIndex;
+
                 return (
-                  <label
+                  <div
                     key={pi.piNumber}
+                    ref={el => { itemRefs.current[itemIndex] = el; }}
+                    onClick={() => {
+                      togglePi(pi.piNumber);
+                      inputRef.current?.focus();
+                    }}
+                    onMouseEnter={() => setActiveIndex(itemIndex)}
                     className={`flex items-start space-x-2 p-1.5 rounded-lg cursor-pointer transition-colors ${
-                      isChecked ? 'bg-sky-50/90 text-sky-950 font-medium' : 'hover:bg-slate-50 text-slate-700'
+                      isActive
+                        ? 'bg-sky-100/90 ring-1 ring-sky-300'
+                        : isChecked
+                        ? 'bg-sky-50/90 text-sky-950 font-medium'
+                        : 'hover:bg-slate-50 text-slate-700'
                     }`}
                   >
                     <input
                       type="checkbox"
                       checked={isChecked}
-                      onChange={() => togglePi(pi.piNumber)}
-                      className="mt-0.5 rounded text-sky-600 focus:ring-sky-500 h-3.5 w-3.5 cursor-pointer"
+                      onChange={() => {}}
+                      tabIndex={-1}
+                      className="mt-0.5 rounded text-sky-600 focus:ring-sky-500 h-3.5 w-3.5 cursor-pointer flex-shrink-0"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <span className="font-mono font-bold text-sky-900 text-xs">{pi.piNumber}</span>
-                        <span className="text-[10px] px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded font-semibold">
+                        <span className="text-[10px] px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded font-semibold ml-2">
                           TPS {pi.tpsLevel}
                         </span>
                       </div>
@@ -292,24 +482,32 @@ const PiCheckboxSelector: React.FC<PiCheckboxSelectorProps> = ({ value, onChange
                         {pi.descriptor}
                       </p>
                     </div>
-                  </label>
+                  </div>
                 );
               })
             )}
           </div>
 
+          {/* Dropdown Footer */}
           <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => onChange('')}
-              className="text-[11px] text-slate-500 hover:text-rose-600 font-semibold"
-            >
-              Clear All
-            </button>
+            {selectedPis.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onChange('');
+                  inputRef.current?.focus();
+                }}
+                className="text-[11px] text-slate-500 hover:text-rose-600 font-semibold cursor-pointer"
+              >
+                Clear All
+              </button>
+            ) : (
+              <span className="text-[10px] text-slate-400">Press Enter or comma to add custom</span>
+            )}
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-bold rounded-lg transition-colors"
+              className="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer ml-auto"
             >
               Done
             </button>
