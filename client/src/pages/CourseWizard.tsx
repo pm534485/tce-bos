@@ -1188,6 +1188,39 @@ export const CourseWizard: React.FC = () => {
       weights[n - 1] += 100 - base * n;
     }
 
+    if (course.courseType === 'PRACTICAL') {
+      const allIndices = Array.from({ length: n }, (_, i) => i);
+      const distribute = (indices: number[]) => {
+        const col = new Array(n).fill(0);
+        const subW = indices.map(i => weights[i]);
+        const sum = subW.reduce((a, b) => a + b, 0) || 1;
+        let acc = 0;
+        indices.forEach((idx, k) => {
+          if (k === indices.length - 1) {
+            col[idx] = 100 - acc;
+          } else {
+            const v = Math.round((weights[idx] / sum) * 100);
+            col[idx] = v;
+            acc += v;
+          }
+        });
+        return col;
+      };
+
+      const ca = distribute(allIndices);
+      const model = distribute(allIndices);
+      const term = distribute(allIndices);
+
+      const matrix = cos.map((c, i) => ({
+        coNo: c.coNo,
+        practicalCa: ca[i],
+        practicalModel: model[i],
+        terminalExam: term[i],
+      }));
+      updateField('assessmentMatrix', matrix);
+      return;
+    }
+
     if (course.courseType === 'TCP') {
       const mid = Math.max(1, Math.floor(n / 2));
       const distribute = (indices: number[]) => {
@@ -1291,7 +1324,15 @@ export const CourseWizard: React.FC = () => {
   // Reset Assessment Pattern table for manual entry
   const handleResetAssessment = () => {
     const cos = course.courseOutcomes || [];
-    if (course.courseType === 'TCP') {
+    if (course.courseType === 'PRACTICAL') {
+      const resetMatrix = cos.map(c => ({
+        coNo: c.coNo,
+        practicalCa: 0,
+        practicalModel: 0,
+        terminalExam: 0,
+      }));
+      updateField('assessmentMatrix', resetMatrix);
+    } else if (course.courseType === 'TCP') {
       const resetMatrix = cos.map(c => ({
         coNo: c.coNo,
         theoryCat1: 0,
@@ -2581,33 +2622,284 @@ export const CourseWizard: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Practical Component Table (Fixed by guideline) */}
+                    {/* Practical Component Table (Fixed by guideline & Assessment Pattern Grid) */}
                     {course.courseType === 'PRACTICAL' && (
-                      <div className="p-4 bg-emerald-50/50 border border-emerald-200 rounded-xl space-y-3">
-                        <span className="font-bold text-xs text-emerald-900 block">
-                          Standard Laboratory Assessment Framework (200 Marks Total):
-                        </span>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center text-xs">
-                          <div className="p-3 bg-white rounded-lg border border-emerald-200">
-                            <span className="text-slate-500 block">Continuous Assessment</span>
-                            <span className="text-lg font-extrabold text-emerald-700">75 Marks</span>
-                            <span className="text-[10px] text-slate-400 block">Pre/In/Post lab</span>
+                      <div className="space-y-5">
+                        <div className="p-4 bg-emerald-50/50 border border-emerald-200 rounded-xl space-y-3">
+                          <span className="font-bold text-xs text-emerald-900 block">
+                            Standard Laboratory Assessment Framework (200 Marks Total):
+                          </span>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center text-xs">
+                            <div className="p-3 bg-white rounded-lg border border-emerald-200">
+                              <span className="text-slate-500 block">Continuous Assessment</span>
+                              <span className="text-lg font-extrabold text-emerald-700">75 Marks</span>
+                              <span className="text-[10px] text-slate-400 block">Pre/In/Post lab</span>
+                            </div>
+                            <div className="p-3 bg-white rounded-lg border border-emerald-200">
+                              <span className="text-slate-500 block">Model Test</span>
+                              <span className="text-lg font-extrabold text-emerald-700">25 Marks</span>
+                              <span className="text-[10px] text-slate-400 block">Rubrics 3 domains</span>
+                            </div>
+                            <div className="p-3 bg-white rounded-lg border border-emerald-200">
+                              <span className="text-slate-500 block">Total Internal</span>
+                              <span className="text-lg font-extrabold text-emerald-700">100 Marks</span>
+                              <span className="text-[10px] text-slate-400 block">Continuous + Model</span>
+                            </div>
+                            <div className="p-3 bg-white rounded-lg border border-emerald-200">
+                              <span className="text-slate-500 block">End Semester Exam</span>
+                              <span className="text-lg font-extrabold text-emerald-700">100 Marks</span>
+                              <span className="text-[10px] text-slate-400 block">Rubrics 3 domains</span>
+                            </div>
                           </div>
-                          <div className="p-3 bg-white rounded-lg border border-emerald-200">
-                            <span className="text-slate-500 block">Model Test</span>
-                            <span className="text-lg font-extrabold text-emerald-700">25 Marks</span>
-                            <span className="text-[10px] text-slate-400 block">Rubrics 3 domains</span>
+                        </div>
+
+                        {/* Laboratory Assessment Pattern Grid */}
+                        <div className="space-y-3 pt-1">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                              <h3 className="text-base font-bold text-slate-900">
+                                Laboratory Assessment Pattern (Mark Distribution)
+                              </h3>
+                              <p className="text-xs text-slate-500">
+                                Mark percentage distribution across Practical OCR/Continuous Assessment, Model Test CO-wise, and Terminal Exam (Practical). Each column must sum to exactly 100%.
+                              </p>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={handleAutoFillAssessment}
+                                className="px-3 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-xs"
+                                title="Automatically populate marks distribution based on Course Outcomes"
+                              >
+                                <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+                                <span>Fill based on COs</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleResetAssessment}
+                                className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-xs"
+                                title="Reset all values to 0 to fill manually"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                                <span>Reset (Fill Manually)</span>
+                              </button>
+                              <div className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg border border-slate-200">
+                                {(course.courseOutcomes || []).length} COs Configured
+                              </div>
+                            </div>
                           </div>
-                          <div className="p-3 bg-white rounded-lg border border-emerald-200">
-                            <span className="text-slate-500 block">Total Internal</span>
-                            <span className="text-lg font-extrabold text-emerald-700">100 Marks</span>
-                            <span className="text-[10px] text-slate-400 block">Continuous + Model</span>
-                          </div>
-                          <div className="p-3 bg-white rounded-lg border border-emerald-200">
-                            <span className="text-slate-500 block">End Semester Exam</span>
-                            <span className="text-lg font-extrabold text-emerald-700">100 Marks</span>
-                            <span className="text-[10px] text-slate-400 block">Rubrics 3 domains</span>
-                          </div>
+
+                          {(course.courseOutcomes || []).length === 0 ? (
+                            <div className="p-6 bg-amber-50 border border-amber-200 rounded-xl text-center">
+                              <p className="text-xs text-amber-800 font-semibold">
+                                No Course Outcomes defined yet. Please return to Step 3 (Course Outcomes) to add COs first.
+                              </p>
+                            </div>
+                          ) : (
+                            <div>
+                              {/* Title bar: full-width light-gray bar */}
+                              <div className="bg-[#D9D9D9] font-bold px-3 py-1.5 text-black text-xs sm:text-sm w-full text-left">
+                                Assessment Pattern
+                              </div>
+
+                              {/* Table with two-level grouped header */}
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-xs border-collapse border border-black table-fixed bg-white">
+                                  <thead>
+                                    <tr>
+                                      <th
+                                        rowSpan={3}
+                                        className="border border-black p-2 text-center align-middle font-bold text-black w-[16%]"
+                                      >
+                                        CO
+                                      </th>
+                                      <th
+                                        colSpan={2}
+                                        className="border border-black p-2 text-center font-bold text-black"
+                                      >
+                                        Practical
+                                      </th>
+                                      <th
+                                        rowSpan={2}
+                                        className="border border-black p-2 text-center align-middle font-bold text-black w-[28%]"
+                                      >
+                                        Terminal Exam<br />(Practical)
+                                      </th>
+                                    </tr>
+                                    <tr>
+                                      <th className="border border-black p-2 text-center font-bold text-black w-[28%]">
+                                        OCR/Continuous Assessment
+                                      </th>
+                                      <th className="border border-black p-2 text-center font-bold text-black w-[28%]">
+                                        Model Test CO-wise
+                                      </th>
+                                    </tr>
+                                    <tr>
+                                      <th className="border border-black p-1 text-center font-bold text-black text-[10px]">
+                                        % of Marks
+                                      </th>
+                                      <th className="border border-black p-1 text-center font-bold text-black text-[10px]">
+                                        % of Marks
+                                      </th>
+                                      <th className="border border-black p-1 text-center font-bold text-black text-[10px]">
+                                        % of Marks
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {(course.courseOutcomes || []).map(co => {
+                                      const rawRow = (course.assessmentMatrix || []).find(r => r.coNo === co.coNo);
+                                      const caVal = rawRow?.practicalCa !== undefined
+                                        ? rawRow.practicalCa
+                                        : (rawRow?.cat1 !== undefined ? rawRow.cat1 : '');
+                                      const modelVal = rawRow?.practicalModel !== undefined
+                                        ? rawRow.practicalModel
+                                        : (rawRow?.cat2 !== undefined ? rawRow.cat2 : (rawRow?.assignment1 !== undefined ? rawRow.assignment1 : ''));
+                                      const termVal = rawRow?.terminalExam !== undefined
+                                        ? rawRow.terminalExam
+                                        : (rawRow?.tcpTerminal !== undefined ? rawRow.tcpTerminal : '');
+
+                                      const updateCell = (col: 'practicalCa' | 'practicalModel' | 'terminalExam', valStr: string) => {
+                                        const numVal = valStr === '' ? 0 : Math.max(0, Math.min(100, parseInt(valStr, 10) || 0));
+                                        const matrix = [...(course.assessmentMatrix || [])];
+                                        const idx = matrix.findIndex(r => r.coNo === co.coNo);
+                                        if (idx >= 0) {
+                                          const existing = matrix[idx];
+                                          matrix[idx] = {
+                                            ...existing,
+                                            coNo: co.coNo,
+                                            practicalCa: col === 'practicalCa' ? numVal : (existing.practicalCa !== undefined ? existing.practicalCa : (existing.cat1 || 0)),
+                                            practicalModel: col === 'practicalModel' ? numVal : (existing.practicalModel !== undefined ? existing.practicalModel : (existing.cat2 || existing.assignment1 || 0)),
+                                            terminalExam: col === 'terminalExam' ? numVal : (existing.terminalExam !== undefined ? existing.terminalExam : (existing.tcpTerminal || 0)),
+                                            [col]: numVal,
+                                          };
+                                        } else {
+                                          matrix.push({
+                                            coNo: co.coNo,
+                                            practicalCa: col === 'practicalCa' ? numVal : 0,
+                                            practicalModel: col === 'practicalModel' ? numVal : 0,
+                                            terminalExam: col === 'terminalExam' ? numVal : 0,
+                                            [col]: numVal,
+                                          });
+                                        }
+                                        updateField('assessmentMatrix', matrix);
+                                      };
+
+                                      return (
+                                        <tr key={co.coNo} className="hover:bg-slate-50/50">
+                                          <td className="border border-black p-2 text-left pl-3 font-normal text-black">
+                                            <span className="font-bold">{co.coNo}</span>
+                                            {co.tpsLevel && (
+                                              <span className="block text-[10px] text-slate-500 font-medium">
+                                                TPS {co.tpsLevel}
+                                              </span>
+                                            )}
+                                          </td>
+                                          <td className="border border-black p-1.5 text-center">
+                                            <input
+                                              type="number"
+                                              min={0}
+                                              max={100}
+                                              value={caVal === '' ? '' : (caVal || 0)}
+                                              placeholder="0"
+                                              onChange={e => updateCell('practicalCa', e.target.value)}
+                                              className="w-16 p-1 border border-slate-300 rounded text-center text-xs font-semibold focus:outline-sky-500"
+                                            />
+                                          </td>
+                                          <td className="border border-black p-1.5 text-center">
+                                            <input
+                                              type="number"
+                                              min={0}
+                                              max={100}
+                                              value={modelVal === '' ? '' : (modelVal || 0)}
+                                              placeholder="0"
+                                              onChange={e => updateCell('practicalModel', e.target.value)}
+                                              className="w-16 p-1 border border-slate-300 rounded text-center text-xs font-semibold focus:outline-sky-500"
+                                            />
+                                          </td>
+                                          <td className="border border-black p-1.5 text-center">
+                                            <input
+                                              type="number"
+                                              min={0}
+                                              max={100}
+                                              value={termVal === '' ? '' : (termVal || 0)}
+                                              placeholder="0"
+                                              onChange={e => updateCell('terminalExam', e.target.value)}
+                                              className="w-16 p-1 border border-slate-300 rounded text-center text-xs font-semibold focus:outline-sky-500"
+                                            />
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                  <tfoot>
+                                    {(() => {
+                                      const cos = course.courseOutcomes || [];
+                                      const sumCa = cos.reduce((acc, co) => {
+                                        const r = (course.assessmentMatrix || []).find(x => x.coNo === co.coNo);
+                                        const v = r?.practicalCa !== undefined ? r.practicalCa : (r?.cat1 || 0);
+                                        return acc + (Number(v) || 0);
+                                      }, 0);
+                                      const sumModel = cos.reduce((acc, co) => {
+                                        const r = (course.assessmentMatrix || []).find(x => x.coNo === co.coNo);
+                                        const v = r?.practicalModel !== undefined ? r.practicalModel : (r?.cat2 || r?.assignment1 || 0);
+                                        return acc + (Number(v) || 0);
+                                      }, 0);
+                                      const sumTerm = cos.reduce((acc, co) => {
+                                        const r = (course.assessmentMatrix || []).find(x => x.coNo === co.coNo);
+                                        const v = r?.terminalExam !== undefined ? r.terminalExam : (r?.tcpTerminal || 0);
+                                        return acc + (Number(v) || 0);
+                                      }, 0);
+
+                                      return (
+                                        <tr>
+                                          <td className="border border-black p-2 text-left pl-3 font-bold text-black">
+                                            Total
+                                          </td>
+                                          <td
+                                            className={`border border-black p-2 text-center font-bold ${
+                                              sumCa === 100 ? 'text-emerald-700 bg-emerald-50/50' : 'text-rose-600 bg-rose-50/50'
+                                            }`}
+                                          >
+                                            {sumCa}%
+                                          </td>
+                                          <td
+                                            className={`border border-black p-2 text-center font-bold ${
+                                              sumModel === 100 ? 'text-emerald-700 bg-emerald-50/50' : 'text-rose-600 bg-rose-50/50'
+                                            }`}
+                                          >
+                                            {sumModel}%
+                                          </td>
+                                          <td
+                                            className={`border border-black p-2 text-center font-bold ${
+                                              sumTerm === 100 ? 'text-emerald-700 bg-emerald-50/50' : 'text-rose-600 bg-rose-50/50'
+                                            }`}
+                                          >
+                                            {sumTerm}%
+                                          </td>
+                                        </tr>
+                                      );
+                                    })()}
+                                  </tfoot>
+                                </table>
+                              </div>
+
+                              {/* Footer Note */}
+                              <div className="mt-3 flex justify-between text-xs text-slate-700 font-sans">
+                                <span>Passed in BoS Meeting {course.bosMeetingDate || '30.05.2026'}</span>
+                                <span>
+                                  Approved in 71<sup>st</sup> Academic council meeting {course.academicCouncilDate || '27.06.2026'}
+                                </span>
+                              </div>
+
+                              <div className="mt-3 space-y-1">
+                                <InlineFieldError field="assessmentMatrix" />
+                                {!hasFieldError('assessmentMatrix') && (course.assessmentMatrix || []).length > 0 && (
+                                  <InlineFieldSuccess message="Laboratory assessment matrix marks distribution verified (all columns total 100%)" />
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}

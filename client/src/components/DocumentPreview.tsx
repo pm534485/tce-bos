@@ -53,8 +53,12 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
 
   const headerText = getDegreeProgramHeader(course);
   const titleCaps = (course.courseName || '').toUpperCase();
-  const bosMeetingText = 'Passed in BoS Meeting 30.05.2026';
-  const acmMeetingText = 'Approved in 71st Academic council meeting 27.06.2026';
+  const bosMeetingText = `Passed in BoS Meeting ${course.bosMeetingDate || '30.05.2026'}`;
+  const acmMeetingText = (
+    <>
+      Approved in 71<sup>st</sup> Academic council meeting {course.academicCouncilDate || '27.06.2026'}
+    </>
+  );
 
   const handleDownload = async (format: 'docx' | 'pdf') => {
     try {
@@ -119,11 +123,53 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
   // 3. Assessment Pattern Matrix
   const matrix = course.assessmentMatrix || [];
   const isTcp = course.courseType === 'TCP';
+  const isPractical = course.courseType === 'PRACTICAL';
   let totalCol1 = 0;
   let totalCol2 = 0;
   let totalCol3 = 0;
   let totalCol4 = 0;
   let totalCol5 = 0;
+
+  // Practical / Laboratory Assessment Pattern Data
+  let totalPracticalCa = 0;
+  let totalPracticalModel = 0;
+  let totalPracticalTerm = 0;
+
+  const practicalRows = coList.map((co, idx) => {
+    const row = matrix.find(m => m.coNo === co.coNo);
+    let ca: number | string = '';
+    let model: number | string = '';
+    let term: number | string = '';
+
+    if (row) {
+      ca = row.practicalCa !== undefined && row.practicalCa !== null && row.practicalCa > 0
+        ? row.practicalCa
+        : (row.cat1 && row.cat1 > 0 ? row.cat1 : '');
+      model = row.practicalModel !== undefined && row.practicalModel !== null && row.practicalModel > 0
+        ? row.practicalModel
+        : (row.cat2 && row.cat2 > 0 ? row.cat2 : (row.assignment1 && row.assignment1 > 0 ? row.assignment1 : ''));
+      term = row.terminalExam !== undefined && row.terminalExam !== null && row.terminalExam > 0
+        ? row.terminalExam
+        : (row.tcpTerminal && row.tcpTerminal > 0 ? row.tcpTerminal : '');
+    } else {
+      const n = coList.length || 1;
+      const base = Math.floor(100 / n);
+      ca = idx === n - 1 ? 100 - base * (n - 1) : base;
+      model = idx === n - 1 ? 100 - base * (n - 1) : base;
+      term = idx === n - 1 ? 100 - base * (n - 1) : base;
+    }
+
+    if (typeof ca === 'number') totalPracticalCa += ca;
+    if (typeof model === 'number') totalPracticalModel += model;
+    if (typeof term === 'number') totalPracticalTerm += term;
+
+    return {
+      coNo: co.coNo,
+      ca,
+      model,
+      term,
+    };
+  });
 
   const assessmentRows = coList.map((co, idx) => {
     const row = matrix.find(m => m.coNo === co.coNo);
@@ -428,54 +474,136 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
           <div className="h-3.5 my-1" />
 
           {/* Assessment Pattern */}
-          <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1">
-            Assessment Pattern
-          </div>
-          <table className="w-full border-collapse border border-black mb-0 text-xs">
-            <thead>
-              <tr>
-                <th rowSpan={2} className="border border-black p-1.5 text-center align-middle w-[10%]">CO</th>
-                <th className="border border-black p-1.5 text-center w-[18%]">{isTcp ? 'Theory CAT1' : 'CAT1'}</th>
-                <th className="border border-black p-1.5 text-center w-[18%]">{isTcp ? 'Theory CAT2' : 'Assignment 1'}</th>
-                <th className="border border-black p-1.5 text-center w-[18%]">{isTcp ? 'Practical CA' : 'CAT2'}</th>
-                <th className="border border-black p-1.5 text-center w-[18%]">{isTcp ? 'Model Test' : 'Assignment 2'}</th>
-                <th className="border border-black p-1.5 text-center w-[18%]">Terminal Exam</th>
-              </tr>
-              <tr>
-                <th className="border border-black p-1 text-center font-bold text-[10px]">% of Marks</th>
-                <th className="border border-black p-1 text-center font-bold text-[10px]">% of Marks</th>
-                <th className="border border-black p-1 text-center font-bold text-[10px]">% of Marks</th>
-                <th className="border border-black p-1 text-center font-bold text-[10px]">% of Marks</th>
-                <th className="border border-black p-1 text-center font-bold text-[10px]">% of Marks</th>
-              </tr>
-            </thead>
-            <tbody>
-              {assessmentRows.map(row => (
-                <tr key={row.coNo} className="border-b border-black">
-                  <td className="border border-black p-1.5 text-center font-bold">{row.coNo}</td>
-                  <td className="border border-black p-1.5 text-center">{row.col1}</td>
-                  <td className="border border-black p-1.5 text-center">{row.col2}</td>
-                  <td className="border border-black p-1.5 text-center">{row.col3}</td>
-                  <td className="border border-black p-1.5 text-center">{row.col4}</td>
-                  <td className="border border-black p-1.5 text-center">{row.col5}</td>
-                </tr>
-              ))}
-              <tr>
-                <td className="border border-black p-1.5 text-center font-bold">Total</td>
-                <td className="border border-black p-1.5 text-center font-bold">{totalCol1 || 100}</td>
-                <td className="border border-black p-1.5 text-center font-bold">{totalCol2 || 100}</td>
-                <td className="border border-black p-1.5 text-center font-bold">{totalCol3 || 100}</td>
-                <td className="border border-black p-1.5 text-center font-bold">{totalCol4 || 100}</td>
-                <td className="border border-black p-1.5 text-center font-bold">{totalCol5 || 100}</td>
-              </tr>
-            </tbody>
-          </table>
+          {isPractical ? (
+            <div>
+              <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1 text-left">
+                Assessment Pattern
+              </div>
+              <table className="w-full border-collapse border border-black mb-0 text-xs table-fixed">
+                <thead>
+                  <tr>
+                    <th rowSpan={3} className="border border-black p-1.5 text-center align-middle font-bold w-[16%]">
+                      CO
+                    </th>
+                    <th colSpan={2} className="border border-black p-1.5 text-center font-bold">
+                      Practical
+                    </th>
+                    <th rowSpan={2} className="border border-black p-1.5 text-center align-middle font-bold w-[28%]">
+                      Terminal Exam<br />(Practical)
+                    </th>
+                  </tr>
+                  <tr>
+                    <th className="border border-black p-1.5 text-center font-bold w-[28%]">
+                      OCR/Continuous Assessment
+                    </th>
+                    <th className="border border-black p-1.5 text-center font-bold w-[28%]">
+                      Model Test CO-wise
+                    </th>
+                  </tr>
+                  <tr>
+                    <th className="border border-black p-1 text-center font-bold text-[10px]">
+                      % of Marks
+                    </th>
+                    <th className="border border-black p-1 text-center font-bold text-[10px]">
+                      % of Marks
+                    </th>
+                    <th className="border border-black p-1 text-center font-bold text-[10px]">
+                      % of Marks
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {practicalRows.map(row => (
+                    <tr key={row.coNo} className="border-b border-black">
+                      <td className="border border-black p-1.5 text-left font-normal pl-3">
+                        {row.coNo}
+                      </td>
+                      <td className="border border-black p-1.5 text-center">
+                        {row.ca !== '' ? row.ca : ''}
+                      </td>
+                      <td className="border border-black p-1.5 text-center">
+                        {row.model !== '' ? row.model : ''}
+                      </td>
+                      <td className="border border-black p-1.5 text-center">
+                        {row.term !== '' ? row.term : ''}
+                      </td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td className="border border-black p-1.5 text-left font-bold pl-3">
+                      Total
+                    </td>
+                    <td className="border border-black p-1.5 text-center font-bold">
+                      {totalPracticalCa || 100}
+                    </td>
+                    <td className="border border-black p-1.5 text-center font-bold">
+                      {totalPracticalModel || 100}
+                    </td>
+                    <td className="border border-black p-1.5 text-center font-bold">
+                      {totalPracticalTerm || 100}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
 
-          {/* Running Footer Note */}
-          <div className="mt-14 pt-4 flex justify-between text-[11px] text-slate-800">
-            <span>{bosMeetingText}</span>
-            <span>{acmMeetingText}</span>
-          </div>
+              {/* Running Footer Note */}
+              <div className="mt-14 pt-4 flex justify-between text-[11px] text-slate-800">
+                <span>{bosMeetingText}</span>
+                <span>{acmMeetingText}</span>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1">
+                Assessment Pattern
+              </div>
+              <table className="w-full border-collapse border border-black mb-0 text-xs">
+                <thead>
+                  <tr>
+                    <th rowSpan={2} className="border border-black p-1.5 text-center align-middle w-[10%]">CO</th>
+                    <th className="border border-black p-1.5 text-center w-[18%]">{isTcp ? 'Theory CAT1' : 'CAT1'}</th>
+                    <th className="border border-black p-1.5 text-center w-[18%]">{isTcp ? 'Theory CAT2' : 'Assignment 1'}</th>
+                    <th className="border border-black p-1.5 text-center w-[18%]">{isTcp ? 'Practical CA' : 'CAT2'}</th>
+                    <th className="border border-black p-1.5 text-center w-[18%]">{isTcp ? 'Model Test' : 'Assignment 2'}</th>
+                    <th className="border border-black p-1.5 text-center w-[18%]">Terminal Exam</th>
+                  </tr>
+                  <tr>
+                    <th className="border border-black p-1 text-center font-bold text-[10px]">% of Marks</th>
+                    <th className="border border-black p-1 text-center font-bold text-[10px]">% of Marks</th>
+                    <th className="border border-black p-1 text-center font-bold text-[10px]">% of Marks</th>
+                    <th className="border border-black p-1 text-center font-bold text-[10px]">% of Marks</th>
+                    <th className="border border-black p-1 text-center font-bold text-[10px]">% of Marks</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assessmentRows.map(row => (
+                    <tr key={row.coNo} className="border-b border-black">
+                      <td className="border border-black p-1.5 text-center font-bold">{row.coNo}</td>
+                      <td className="border border-black p-1.5 text-center">{row.col1}</td>
+                      <td className="border border-black p-1.5 text-center">{row.col2}</td>
+                      <td className="border border-black p-1.5 text-center">{row.col3}</td>
+                      <td className="border border-black p-1.5 text-center">{row.col4}</td>
+                      <td className="border border-black p-1.5 text-center">{row.col5}</td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td className="border border-black p-1.5 text-center font-bold">Total</td>
+                    <td className="border border-black p-1.5 text-center font-bold">{totalCol1 || 100}</td>
+                    <td className="border border-black p-1.5 text-center font-bold">{totalCol2 || 100}</td>
+                    <td className="border border-black p-1.5 text-center font-bold">{totalCol3 || 100}</td>
+                    <td className="border border-black p-1.5 text-center font-bold">{totalCol4 || 100}</td>
+                    <td className="border border-black p-1.5 text-center font-bold">{totalCol5 || 100}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Running Footer Note */}
+              <div className="mt-14 pt-4 flex justify-between text-[11px] text-slate-800">
+                <span>{bosMeetingText}</span>
+                <span>{acmMeetingText}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ==================== PAGE 2 SHEET ==================== */}

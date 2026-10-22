@@ -971,6 +971,62 @@ export function validateAssessmentPattern(
     });
   }
 
+  if (courseType === 'PRACTICAL') {
+    // Columns: OCR/Continuous Assessment (practicalCa), Model Test CO-wise (practicalModel), Terminal Exam (Practical) (terminalExam)
+    const colTotals = {
+      practicalCa: 0,
+      practicalModel: 0,
+      terminalExam: 0,
+    };
+
+    const coAppearance: Record<string, number> = {};
+
+    matrix.forEach(row => {
+      // Map legacy columns if practicalCa/practicalModel are not directly set
+      const caVal = Number(row.practicalCa !== undefined ? row.practicalCa : row.cat1) || 0;
+      const modelVal = Number(row.practicalModel !== undefined ? row.practicalModel : (row.cat2 || row.assignment1)) || 0;
+      const termVal = Number(row.terminalExam !== undefined ? row.terminalExam : row.tcpTerminal) || 0;
+
+      colTotals.practicalCa += caVal;
+      colTotals.practicalModel += modelVal;
+      colTotals.terminalExam += termVal;
+
+      coAppearance[row.coNo] = (coAppearance[row.coNo] || 0) + caVal + modelVal + termVal;
+    });
+
+    const columns: Array<{ name: keyof typeof colTotals; label: string }> = [
+      { name: 'practicalCa', label: 'OCR/Continuous Assessment' },
+      { name: 'practicalModel', label: 'Model Test CO-wise' },
+      { name: 'terminalExam', label: 'Terminal Exam (Practical)' },
+    ];
+
+    columns.forEach(col => {
+      const total = colTotals[col.name];
+      if (Math.abs(total - 100) > 0.01) {
+        results.push({
+          id: `B6_LAB_COL_SUM_${col.name}`,
+          field: `assessmentMatrix.${col.name}`,
+          severity: 'error',
+          message: `Assessment column "${col.label}" must total 100% (currently ${total}%).`,
+          fixHint: `Adjust row values so that ${col.label} column sum equals exactly 100%.`,
+        });
+      }
+    });
+
+    // Every CO must appear in at least one component
+    cos.forEach(co => {
+      if (!coAppearance[co.coNo] || coAppearance[co.coNo] <= 0) {
+        results.push({
+          id: `B6_LAB_CO_MISSING_${co.coNo}`,
+          field: 'assessmentMatrix',
+          severity: 'error',
+          message: `${co.coNo} does not appear in any assessment component.`,
+          fixHint: `Allocate marks for ${co.coNo} in at least one Practical assessment component.`,
+        });
+      }
+    });
+  }
+
   return results;
 }
 
