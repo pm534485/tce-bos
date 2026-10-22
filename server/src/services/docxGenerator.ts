@@ -312,82 +312,87 @@ export async function generateDocxDocument(course: Course): Promise<Buffer> {
   const matrix = course.assessmentMatrix || [];
 
   if (isPractical) {
+    const terminalBracket = (course.courseType === 'PRACTICAL' || course.teExamType === 'TCP-P') ? '(Practical)' : '(Theory)';
+
     const assessHeader1 = new TableRow({
       children: [
-        createCell('CO', { bold: true, widthPercent: 16, align: AlignmentType.CENTER, verticalMerge: VerticalMergeType.RESTART }),
-        createCell('Practical', { bold: true, widthPercent: 56, align: AlignmentType.CENTER, colSpan: 2 }),
-        createCell('Terminal Exam\n(Practical)', { bold: true, widthPercent: 28, align: AlignmentType.CENTER, verticalMerge: VerticalMergeType.RESTART }),
+        createCell('CO', { bold: true, widthPercent: 10, align: AlignmentType.CENTER, verticalMerge: VerticalMergeType.RESTART }),
+        createCell('Theory', { bold: true, widthPercent: 36, align: AlignmentType.CENTER, colSpan: 2 }),
+        createCell('Practical', { bold: true, widthPercent: 36, align: AlignmentType.CENTER, colSpan: 2 }),
+        createCell(`Terminal Exam\n${terminalBracket}`, { bold: true, widthPercent: 18, align: AlignmentType.CENTER, verticalMerge: VerticalMergeType.RESTART }),
       ],
     });
 
     const assessHeader2 = new TableRow({
       children: [
-        createCell('', { widthPercent: 16, verticalMerge: VerticalMergeType.CONTINUE }),
-        createCell('OCR/Continuous Assessment', { bold: true, widthPercent: 28, align: AlignmentType.CENTER }),
-        createCell('Model Test CO-wise', { bold: true, widthPercent: 28, align: AlignmentType.CENTER }),
-        createCell('', { widthPercent: 28, verticalMerge: VerticalMergeType.CONTINUE }),
+        createCell('', { widthPercent: 10, verticalMerge: VerticalMergeType.CONTINUE }),
+        createCell('CAT1', { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
+        createCell('CAT2', { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
+        createCell('OCR/Continuous Assessment', { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
+        createCell('Model Test CO-wise', { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
+        createCell('', { widthPercent: 18, verticalMerge: VerticalMergeType.CONTINUE }),
       ],
     });
 
     const assessHeader3 = new TableRow({
       children: [
-        createCell('', { widthPercent: 16, verticalMerge: VerticalMergeType.CONTINUE }),
-        createCell('% of Marks', { bold: true, widthPercent: 28, align: AlignmentType.CENTER, size: 17 }),
-        createCell('% of Marks', { bold: true, widthPercent: 28, align: AlignmentType.CENTER, size: 17 }),
-        createCell('% of Marks', { bold: true, widthPercent: 28, align: AlignmentType.CENTER, size: 17 }),
+        createCell('', { widthPercent: 10, verticalMerge: VerticalMergeType.CONTINUE }),
+        createCell('% of Marks', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, size: 17 }),
+        createCell('% of Marks', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, size: 17 }),
+        createCell('% of Marks', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, size: 17 }),
+        createCell('% of Marks', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, size: 17 }),
+        createCell('% of Marks', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, size: 17 }),
       ],
     });
 
+    let totPracticalCat1 = 0;
+    let totPracticalCat2 = 0;
     let totPracticalCa = 0;
     let totPracticalModel = 0;
     let totPracticalTerm = 0;
 
-    const practicalDataRows = coList.map((co, idx) => {
+    const practicalDataRows = coList.map((co) => {
       const row = matrix.find(m => m.coNo === co.coNo);
+      let cat1: number | string = '';
+      let cat2: number | string = '';
       let ca: number | string = '';
       let model: number | string = '';
       let term: number | string = '';
 
       if (row) {
-        ca = row.practicalCa !== undefined && row.practicalCa !== null && row.practicalCa > 0
-          ? row.practicalCa
-          : (row.cat1 && row.cat1 > 0 ? row.cat1 : '');
-        model = row.practicalModel !== undefined && row.practicalModel !== null && row.practicalModel > 0
-          ? row.practicalModel
-          : ((row.cat2 || row.assignment1) && ((row.cat2 || 0) > 0 || (row.assignment1 || 0) > 0) ? (row.cat2 || row.assignment1 || '') : '');
-        term = row.terminalExam !== undefined && row.terminalExam !== null && row.terminalExam > 0
-          ? row.terminalExam
-          : (row.tcpTerminal && row.tcpTerminal > 0 ? row.tcpTerminal : '');
-      } else {
-        const numCos = Math.max(coList.length, 1);
-        const base = Math.floor(100 / numCos);
-        const rem = 100 % numCos;
-        const val = idx < rem ? base + 1 : base;
-        ca = val;
-        model = val;
-        term = val;
+        cat1 = row.theoryCat1 && row.theoryCat1 > 0 ? row.theoryCat1 : (row.cat1 && row.cat1 > 0 ? row.cat1 : '');
+        cat2 = row.theoryCat2 && row.theoryCat2 > 0 ? row.theoryCat2 : (row.cat2 && row.cat2 > 0 ? row.cat2 : (row.assignment1 && row.assignment1 > 0 ? row.assignment1 : ''));
+        ca = row.practicalCa && row.practicalCa > 0 ? row.practicalCa : '';
+        model = row.practicalModel && row.practicalModel > 0 ? row.practicalModel : '';
+        term = row.terminalExam && row.terminalExam > 0 ? row.terminalExam : (row.tcpTerminal && row.tcpTerminal > 0 ? row.tcpTerminal : '');
       }
 
+      if (typeof cat1 === 'number') totPracticalCat1 += cat1;
+      if (typeof cat2 === 'number') totPracticalCat2 += cat2;
       if (typeof ca === 'number') totPracticalCa += ca;
       if (typeof model === 'number') totPracticalModel += model;
       if (typeof term === 'number') totPracticalTerm += term;
 
       return new TableRow({
         children: [
-          createCell(co.coNo, { widthPercent: 16, align: AlignmentType.LEFT }),
-          createCell(String(ca !== '' ? ca : ''), { widthPercent: 28, align: AlignmentType.CENTER }),
-          createCell(String(model !== '' ? model : ''), { widthPercent: 28, align: AlignmentType.CENTER }),
-          createCell(String(term !== '' ? term : ''), { widthPercent: 28, align: AlignmentType.CENTER }),
+          createCell(co.coNo, { widthPercent: 10, align: AlignmentType.LEFT }),
+          createCell(cat1 !== '' ? String(cat1) : '', { widthPercent: 18, align: AlignmentType.CENTER }),
+          createCell(cat2 !== '' ? String(cat2) : '', { widthPercent: 18, align: AlignmentType.CENTER }),
+          createCell(ca !== '' ? String(ca) : '', { widthPercent: 18, align: AlignmentType.CENTER }),
+          createCell(model !== '' ? String(model) : '', { widthPercent: 18, align: AlignmentType.CENTER }),
+          createCell(term !== '' ? String(term) : '', { widthPercent: 18, align: AlignmentType.CENTER }),
         ],
       });
     });
 
     const assessTotalRow = new TableRow({
       children: [
-        createCell('Total', { bold: true, widthPercent: 16, align: AlignmentType.LEFT }),
-        createCell(String(totPracticalCa || 100), { bold: true, widthPercent: 28, align: AlignmentType.CENTER }),
-        createCell(String(totPracticalModel || 100), { bold: true, widthPercent: 28, align: AlignmentType.CENTER }),
-        createCell(String(totPracticalTerm || 100), { bold: true, widthPercent: 28, align: AlignmentType.CENTER }),
+        createCell('Total', { bold: true, widthPercent: 10, align: AlignmentType.LEFT }),
+        createCell(String(totPracticalCat1 || 100), { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
+        createCell(String(totPracticalCat2 || 100), { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
+        createCell(String(totPracticalCa || 100), { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
+        createCell(String(totPracticalModel || 100), { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
+        createCell(String(totPracticalTerm || 100), { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
       ],
     });
 

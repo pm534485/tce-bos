@@ -1189,7 +1189,7 @@ export const CourseWizard: React.FC = () => {
     }
 
     if (course.courseType === 'PRACTICAL') {
-      const allIndices = Array.from({ length: n }, (_, i) => i);
+      const mid = Math.max(1, Math.floor(n / 2));
       const distribute = (indices: number[]) => {
         const col = new Array(n).fill(0);
         const subW = indices.map(i => weights[i]);
@@ -1207,15 +1207,26 @@ export const CourseWizard: React.FC = () => {
         return col;
       };
 
+      const t1Indices = Array.from({ length: mid }, (_, i) => i);
+      const t2Indices = Array.from({ length: n - mid }, (_, i) => i + mid);
+      const allIndices = Array.from({ length: n }, (_, i) => i);
+
+      const t1 = distribute(t1Indices);
+      const t2 = distribute(t2Indices);
       const ca = distribute(allIndices);
       const model = distribute(allIndices);
       const term = distribute(allIndices);
 
       const matrix = cos.map((c, i) => ({
         coNo: c.coNo,
+        cat1: t1[i],
+        theoryCat1: t1[i],
+        cat2: t2[i],
+        theoryCat2: t2[i],
         practicalCa: ca[i],
         practicalModel: model[i],
         terminalExam: term[i],
+        tcpTerminal: term[i],
       }));
       updateField('assessmentMatrix', matrix);
       return;
@@ -1327,9 +1338,14 @@ export const CourseWizard: React.FC = () => {
     if (course.courseType === 'PRACTICAL') {
       const resetMatrix = cos.map(c => ({
         coNo: c.coNo,
+        cat1: 0,
+        theoryCat1: 0,
+        cat2: 0,
+        theoryCat2: 0,
         practicalCa: 0,
         practicalModel: 0,
         terminalExam: 0,
+        tcpTerminal: 0,
       }));
       updateField('assessmentMatrix', resetMatrix);
     } else if (course.courseType === 'TCP') {
@@ -2661,7 +2677,7 @@ export const CourseWizard: React.FC = () => {
                                 Laboratory Assessment Pattern (Mark Distribution)
                               </h3>
                               <p className="text-xs text-slate-500">
-                                Mark percentage distribution across Practical OCR/Continuous Assessment, Model Test CO-wise, and Terminal Exam (Practical). Each column must sum to exactly 100%.
+                                Mark percentage distribution across Theory (CAT1, CAT2), Practical (OCR/Continuous Assessment, Model Test CO-wise), and Terminal Exam {(course.courseType === 'PRACTICAL' || course.teExamType === 'TCP-P') ? '(Practical)' : '(Theory)'}. Each column must sum to exactly 100%.
                               </p>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
@@ -2709,9 +2725,15 @@ export const CourseWizard: React.FC = () => {
                                     <tr>
                                       <th
                                         rowSpan={3}
-                                        className="border border-black p-2 text-center align-middle font-bold text-black w-[16%]"
+                                        className="border border-black p-2 text-center align-middle font-bold text-black w-[10%]"
                                       >
                                         CO
+                                      </th>
+                                      <th
+                                        colSpan={2}
+                                        className="border border-black p-2 text-center font-bold text-black"
+                                      >
+                                        Theory
                                       </th>
                                       <th
                                         colSpan={2}
@@ -2721,20 +2743,32 @@ export const CourseWizard: React.FC = () => {
                                       </th>
                                       <th
                                         rowSpan={2}
-                                        className="border border-black p-2 text-center align-middle font-bold text-black w-[28%]"
+                                        className="border border-black p-2 text-center align-middle font-bold text-black w-[18%]"
                                       >
-                                        Terminal Exam<br />(Practical)
+                                        Terminal Exam<br />{(course.courseType === 'PRACTICAL' || course.teExamType === 'TCP-P') ? '(Practical)' : '(Theory)'}
                                       </th>
                                     </tr>
                                     <tr>
-                                      <th className="border border-black p-2 text-center font-bold text-black w-[28%]">
+                                      <th className="border border-black p-2 text-center font-bold text-black w-[18%]">
+                                        CAT1
+                                      </th>
+                                      <th className="border border-black p-2 text-center font-bold text-black w-[18%]">
+                                        CAT2
+                                      </th>
+                                      <th className="border border-black p-2 text-center font-bold text-black w-[18%]">
                                         OCR/Continuous Assessment
                                       </th>
-                                      <th className="border border-black p-2 text-center font-bold text-black w-[28%]">
+                                      <th className="border border-black p-2 text-center font-bold text-black w-[18%]">
                                         Model Test CO-wise
                                       </th>
                                     </tr>
                                     <tr>
+                                      <th className="border border-black p-1 text-center font-bold text-black text-[10px]">
+                                        % of Marks
+                                      </th>
+                                      <th className="border border-black p-1 text-center font-bold text-black text-[10px]">
+                                        % of Marks
+                                      </th>
                                       <th className="border border-black p-1 text-center font-bold text-black text-[10px]">
                                         % of Marks
                                       </th>
@@ -2749,17 +2783,23 @@ export const CourseWizard: React.FC = () => {
                                   <tbody>
                                     {(course.courseOutcomes || []).map(co => {
                                       const rawRow = (course.assessmentMatrix || []).find(r => r.coNo === co.coNo);
+                                      const cat1Val = rawRow?.theoryCat1 !== undefined
+                                        ? rawRow.theoryCat1
+                                        : (rawRow?.cat1 !== undefined ? rawRow.cat1 : '');
+                                      const cat2Val = rawRow?.theoryCat2 !== undefined
+                                        ? rawRow.theoryCat2
+                                        : (rawRow?.cat2 !== undefined ? rawRow.cat2 : (rawRow?.assignment1 !== undefined ? rawRow.assignment1 : ''));
                                       const caVal = rawRow?.practicalCa !== undefined
                                         ? rawRow.practicalCa
-                                        : (rawRow?.cat1 !== undefined ? rawRow.cat1 : '');
+                                        : '';
                                       const modelVal = rawRow?.practicalModel !== undefined
                                         ? rawRow.practicalModel
-                                        : (rawRow?.cat2 !== undefined ? rawRow.cat2 : (rawRow?.assignment1 !== undefined ? rawRow.assignment1 : ''));
+                                        : '';
                                       const termVal = rawRow?.terminalExam !== undefined
                                         ? rawRow.terminalExam
                                         : (rawRow?.tcpTerminal !== undefined ? rawRow.tcpTerminal : '');
 
-                                      const updateCell = (col: 'practicalCa' | 'practicalModel' | 'terminalExam', valStr: string) => {
+                                      const updateCell = (col: 'theoryCat1' | 'theoryCat2' | 'practicalCa' | 'practicalModel' | 'terminalExam', valStr: string) => {
                                         const numVal = valStr === '' ? 0 : Math.max(0, Math.min(100, parseInt(valStr, 10) || 0));
                                         const matrix = [...(course.assessmentMatrix || [])];
                                         const idx = matrix.findIndex(r => r.coNo === co.coNo);
@@ -2768,17 +2808,27 @@ export const CourseWizard: React.FC = () => {
                                           matrix[idx] = {
                                             ...existing,
                                             coNo: co.coNo,
-                                            practicalCa: col === 'practicalCa' ? numVal : (existing.practicalCa !== undefined ? existing.practicalCa : (existing.cat1 || 0)),
-                                            practicalModel: col === 'practicalModel' ? numVal : (existing.practicalModel !== undefined ? existing.practicalModel : (existing.cat2 || existing.assignment1 || 0)),
-                                            terminalExam: col === 'terminalExam' ? numVal : (existing.terminalExam !== undefined ? existing.terminalExam : (existing.tcpTerminal || 0)),
+                                            theoryCat1: col === 'theoryCat1' ? numVal : (existing.theoryCat1 ?? existing.cat1 ?? 0),
+                                            cat1: col === 'theoryCat1' ? numVal : (existing.cat1 ?? existing.theoryCat1 ?? 0),
+                                            theoryCat2: col === 'theoryCat2' ? numVal : (existing.theoryCat2 ?? existing.cat2 ?? existing.assignment1 ?? 0),
+                                            cat2: col === 'theoryCat2' ? numVal : (existing.cat2 ?? existing.theoryCat2 ?? 0),
+                                            practicalCa: col === 'practicalCa' ? numVal : (existing.practicalCa ?? 0),
+                                            practicalModel: col === 'practicalModel' ? numVal : (existing.practicalModel ?? 0),
+                                            terminalExam: col === 'terminalExam' ? numVal : (existing.terminalExam ?? existing.tcpTerminal ?? 0),
+                                            tcpTerminal: col === 'terminalExam' ? numVal : (existing.tcpTerminal ?? existing.terminalExam ?? 0),
                                             [col]: numVal,
                                           };
                                         } else {
                                           matrix.push({
                                             coNo: co.coNo,
+                                            theoryCat1: col === 'theoryCat1' ? numVal : 0,
+                                            cat1: col === 'theoryCat1' ? numVal : 0,
+                                            theoryCat2: col === 'theoryCat2' ? numVal : 0,
+                                            cat2: col === 'theoryCat2' ? numVal : 0,
                                             practicalCa: col === 'practicalCa' ? numVal : 0,
                                             practicalModel: col === 'practicalModel' ? numVal : 0,
                                             terminalExam: col === 'terminalExam' ? numVal : 0,
+                                            tcpTerminal: col === 'terminalExam' ? numVal : 0,
                                             [col]: numVal,
                                           });
                                         }
@@ -2800,7 +2850,29 @@ export const CourseWizard: React.FC = () => {
                                               type="number"
                                               min={0}
                                               max={100}
-                                              value={caVal === '' ? '' : (caVal || 0)}
+                                              value={cat1Val && Number(cat1Val) > 0 ? cat1Val : ''}
+                                              placeholder="0"
+                                              onChange={e => updateCell('theoryCat1', e.target.value)}
+                                              className="w-16 p-1 border border-slate-300 rounded text-center text-xs font-semibold focus:outline-sky-500"
+                                            />
+                                          </td>
+                                          <td className="border border-black p-1.5 text-center">
+                                            <input
+                                              type="number"
+                                              min={0}
+                                              max={100}
+                                              value={cat2Val && Number(cat2Val) > 0 ? cat2Val : ''}
+                                              placeholder="0"
+                                              onChange={e => updateCell('theoryCat2', e.target.value)}
+                                              className="w-16 p-1 border border-slate-300 rounded text-center text-xs font-semibold focus:outline-sky-500"
+                                            />
+                                          </td>
+                                          <td className="border border-black p-1.5 text-center">
+                                            <input
+                                              type="number"
+                                              min={0}
+                                              max={100}
+                                              value={caVal && Number(caVal) > 0 ? caVal : ''}
                                               placeholder="0"
                                               onChange={e => updateCell('practicalCa', e.target.value)}
                                               className="w-16 p-1 border border-slate-300 rounded text-center text-xs font-semibold focus:outline-sky-500"
@@ -2811,7 +2883,7 @@ export const CourseWizard: React.FC = () => {
                                               type="number"
                                               min={0}
                                               max={100}
-                                              value={modelVal === '' ? '' : (modelVal || 0)}
+                                              value={modelVal && Number(modelVal) > 0 ? modelVal : ''}
                                               placeholder="0"
                                               onChange={e => updateCell('practicalModel', e.target.value)}
                                               className="w-16 p-1 border border-slate-300 rounded text-center text-xs font-semibold focus:outline-sky-500"
@@ -2822,7 +2894,7 @@ export const CourseWizard: React.FC = () => {
                                               type="number"
                                               min={0}
                                               max={100}
-                                              value={termVal === '' ? '' : (termVal || 0)}
+                                              value={termVal && Number(termVal) > 0 ? termVal : ''}
                                               placeholder="0"
                                               onChange={e => updateCell('terminalExam', e.target.value)}
                                               className="w-16 p-1 border border-slate-300 rounded text-center text-xs font-semibold focus:outline-sky-500"
@@ -2835,14 +2907,24 @@ export const CourseWizard: React.FC = () => {
                                   <tfoot>
                                     {(() => {
                                       const cos = course.courseOutcomes || [];
+                                      const sumCat1 = cos.reduce((acc, co) => {
+                                        const r = (course.assessmentMatrix || []).find(x => x.coNo === co.coNo);
+                                        const v = r?.theoryCat1 !== undefined ? r.theoryCat1 : (r?.cat1 || 0);
+                                        return acc + (Number(v) || 0);
+                                      }, 0);
+                                      const sumCat2 = cos.reduce((acc, co) => {
+                                        const r = (course.assessmentMatrix || []).find(x => x.coNo === co.coNo);
+                                        const v = r?.theoryCat2 !== undefined ? r.theoryCat2 : (r?.cat2 || r?.assignment1 || 0);
+                                        return acc + (Number(v) || 0);
+                                      }, 0);
                                       const sumCa = cos.reduce((acc, co) => {
                                         const r = (course.assessmentMatrix || []).find(x => x.coNo === co.coNo);
-                                        const v = r?.practicalCa !== undefined ? r.practicalCa : (r?.cat1 || 0);
+                                        const v = r?.practicalCa !== undefined ? r.practicalCa : 0;
                                         return acc + (Number(v) || 0);
                                       }, 0);
                                       const sumModel = cos.reduce((acc, co) => {
                                         const r = (course.assessmentMatrix || []).find(x => x.coNo === co.coNo);
-                                        const v = r?.practicalModel !== undefined ? r.practicalModel : (r?.cat2 || r?.assignment1 || 0);
+                                        const v = r?.practicalModel !== undefined ? r.practicalModel : 0;
                                         return acc + (Number(v) || 0);
                                       }, 0);
                                       const sumTerm = cos.reduce((acc, co) => {
@@ -2855,6 +2937,20 @@ export const CourseWizard: React.FC = () => {
                                         <tr>
                                           <td className="border border-black p-2 text-left pl-3 font-bold text-black">
                                             Total
+                                          </td>
+                                          <td
+                                            className={`border border-black p-2 text-center font-bold ${
+                                              sumCat1 === 100 ? 'text-emerald-700 bg-emerald-50/50' : 'text-rose-600 bg-rose-50/50'
+                                            }`}
+                                          >
+                                            {sumCat1}%
+                                          </td>
+                                          <td
+                                            className={`border border-black p-2 text-center font-bold ${
+                                              sumCat2 === 100 ? 'text-emerald-700 bg-emerald-50/50' : 'text-rose-600 bg-rose-50/50'
+                                            }`}
+                                          >
+                                            {sumCat2}%
                                           </td>
                                           <td
                                             className={`border border-black p-2 text-center font-bold ${

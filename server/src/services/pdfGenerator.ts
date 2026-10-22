@@ -112,37 +112,32 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
   let totalCol5 = 0;
 
   // Practical totals
+  let totalPracticalCat1 = 0;
+  let totalPracticalCat2 = 0;
   let totalPracticalCa = 0;
   let totalPracticalModel = 0;
   let totalPracticalTerm = 0;
+  const terminalExamBracket = (course.courseType === 'PRACTICAL' || course.teExamType === 'TCP-P') ? '(Practical)' : '(Theory)';
 
   const practicalRowsHtml = isPractical
     ? coList.map((co, idx) => {
         const row = matrix.find(m => m.coNo === co.coNo);
+        let cat1: number | string = '';
+        let cat2: number | string = '';
         let ca: number | string = '';
         let model: number | string = '';
         let term: number | string = '';
 
         if (row) {
-          ca = row.practicalCa !== undefined && row.practicalCa !== null && row.practicalCa > 0
-            ? row.practicalCa
-            : (row.cat1 && row.cat1 > 0 ? row.cat1 : '');
-          model = row.practicalModel !== undefined && row.practicalModel !== null && row.practicalModel > 0
-            ? row.practicalModel
-            : ((row.cat2 || row.assignment1) && ((row.cat2 || 0) > 0 || (row.assignment1 || 0) > 0) ? (row.cat2 || row.assignment1 || '') : '');
-          term = row.terminalExam !== undefined && row.terminalExam !== null && row.terminalExam > 0
-            ? row.terminalExam
-            : (row.tcpTerminal && row.tcpTerminal > 0 ? row.tcpTerminal : '');
-        } else {
-          const numCos = Math.max(coList.length, 1);
-          const base = Math.floor(100 / numCos);
-          const rem = 100 % numCos;
-          const val = idx < rem ? base + 1 : base;
-          ca = val;
-          model = val;
-          term = val;
+          cat1 = row.theoryCat1 && row.theoryCat1 > 0 ? row.theoryCat1 : (row.cat1 && row.cat1 > 0 ? row.cat1 : '');
+          cat2 = row.theoryCat2 && row.theoryCat2 > 0 ? row.theoryCat2 : (row.cat2 && row.cat2 > 0 ? row.cat2 : (row.assignment1 && row.assignment1 > 0 ? row.assignment1 : ''));
+          ca = row.practicalCa && row.practicalCa > 0 ? row.practicalCa : '';
+          model = row.practicalModel && row.practicalModel > 0 ? row.practicalModel : '';
+          term = row.terminalExam && row.terminalExam > 0 ? row.terminalExam : (row.tcpTerminal && row.tcpTerminal > 0 ? row.tcpTerminal : '');
         }
 
+        if (typeof cat1 === 'number') totalPracticalCat1 += cat1;
+        if (typeof cat2 === 'number') totalPracticalCat2 += cat2;
         if (typeof ca === 'number') totalPracticalCa += ca;
         if (typeof model === 'number') totalPracticalModel += model;
         if (typeof term === 'number') totalPracticalTerm += term;
@@ -150,6 +145,8 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
         return `
           <tr>
             <td class="left" style="padding-left: 10px;">${co.coNo}</td>
+            <td class="center">${cat1 !== '' ? cat1 : ''}</td>
+            <td class="center">${cat2 !== '' ? cat2 : ''}</td>
             <td class="center">${ca !== '' ? ca : ''}</td>
             <td class="center">${model !== '' ? model : ''}</td>
             <td class="center">${term !== '' ? term : ''}</td>
@@ -536,15 +533,20 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
   <table style="table-layout: fixed; width: 100%; border-collapse: collapse;">
     <thead>
       <tr>
-        <th rowspan="3" class="center" style="width: 16%; vertical-align: middle;">CO</th>
+        <th rowspan="3" class="center" style="width: 10%; vertical-align: middle;">CO</th>
+        <th colspan="2" class="center">Theory</th>
         <th colspan="2" class="center">Practical</th>
-        <th rowspan="2" class="center" style="width: 28%; vertical-align: middle;">Terminal Exam<br>(Practical)</th>
+        <th rowspan="2" class="center" style="width: 18%; vertical-align: middle;">Terminal Exam<br>${terminalExamBracket}</th>
       </tr>
       <tr>
-        <th class="center" style="width: 28%;">OCR/Continuous Assessment</th>
-        <th class="center" style="width: 28%;">Model Test CO-wise</th>
+        <th class="center" style="width: 18%;">CAT1</th>
+        <th class="center" style="width: 18%;">CAT2</th>
+        <th class="center" style="width: 18%;">OCR/Continuous Assessment</th>
+        <th class="center" style="width: 18%;">Model Test CO-wise</th>
       </tr>
       <tr>
+        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
         <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
         <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
         <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
@@ -554,6 +556,8 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
       ${practicalRowsHtml}
       <tr>
         <td class="left font-bold" style="padding-left: 10px;">Total</td>
+        <td class="center font-bold">${totalPracticalCat1 || 100}</td>
+        <td class="center font-bold">${totalPracticalCat2 || 100}</td>
         <td class="center font-bold">${totalPracticalCa || 100}</td>
         <td class="center font-bold">${totalPracticalModel || 100}</td>
         <td class="center font-bold">${totalPracticalTerm || 100}</td>
