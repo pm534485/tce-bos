@@ -1264,37 +1264,67 @@ export function validateLearningResources(
   textBooks: LearningResource[],
   referenceBooks: LearningResource[],
   regulationYear = 2026,
-  isAdvanced = false
+  isAdvanced = false,
+  courseType?: CourseType
 ): ValidationRuleResult[] {
   const results: ValidationRuleResult[] = [];
-
-  // Text books: min 1, max 2
   const textList = textBooks || [];
-  if (textList.length < 1 || textList.length > 2) {
-    results.push({
-      id: 'B10_TEXTBOOK_COUNT',
-      field: 'textBooks',
-      severity: 'error',
-      message: `A course must list 1 to 2 Text Books (currently ${textList.length}).`,
-      fixHint: 'Ensure exactly 1 or 2 text books are specified.',
-    });
+  const refList = referenceBooks || [];
+  const isLab = courseType === 'PRACTICAL';
+
+  // Text books:
+  // For Theory / TCP: strictly 1 to 2 Text Books required
+  // For Practical (Laboratory): Text Books are optional (0 to 2), as lab courses rely on Reference Books & Manuals
+  if (!isLab) {
+    if (textList.length < 1 || textList.length > 2) {
+      results.push({
+        id: 'B10_TEXTBOOK_COUNT',
+        field: 'textBooks',
+        severity: 'error',
+        message: `A theory course must list 1 to 2 Text Books (currently ${textList.length}).`,
+        fixHint: 'Ensure exactly 1 or 2 text books are specified.',
+      });
+    }
+  } else {
+    if (textList.length > 2) {
+      results.push({
+        id: 'B10_TEXTBOOK_COUNT',
+        field: 'textBooks',
+        severity: 'error',
+        message: `A laboratory course can list up to 2 Text Books (currently ${textList.length}).`,
+        fixHint: 'Ensure at most 2 text books are specified.',
+      });
+    }
   }
 
-  // Reference books: 3 to 6
-  const refList = referenceBooks || [];
-  if (refList.length < 3 || refList.length > 6) {
-    results.push({
-      id: 'B10_REFBOOK_COUNT',
-      field: 'referenceBooks',
-      severity: 'error',
-      message: `A course must list 3 to 6 Reference Books (currently ${refList.length}).`,
-      fixHint: 'Add or remove reference books to have between 3 and 6 titles.',
-    });
+  // Reference books:
+  // For Theory / TCP: 3 to 6 Reference Books
+  // For Practical (Laboratory): at least 1 and up to 6 Reference Books / Lab Manuals
+  if (isLab) {
+    if (refList.length < 1 || refList.length > 6) {
+      results.push({
+        id: 'B10_REFBOOK_COUNT',
+        field: 'referenceBooks',
+        severity: 'error',
+        message: `A laboratory course must list at least 1 Reference Book or Lab Manual (currently ${refList.length}).`,
+        fixHint: 'Add 1 to 6 reference books or laboratory manuals.',
+      });
+    }
+  } else {
+    if (refList.length < 3 || refList.length > 6) {
+      results.push({
+        id: 'B10_REFBOOK_COUNT',
+        field: 'referenceBooks',
+        severity: 'error',
+        message: `A course must list 3 to 6 Reference Books (currently ${refList.length}).`,
+        fixHint: 'Add or remove reference books to have between 3 and 6 titles.',
+      });
+    }
   }
 
   const allBooks = [
-    ...textList.map((b, idx) => ({ ...b, section: 'textBooks', label: `Text Book ${idx + 1}` })),
-    ...refList.map((b, idx) => ({ ...b, section: 'referenceBooks', label: `Reference Book ${idx + 1}` })),
+    ...textList.map((b, idx) => ({ ...b, idx, section: 'textBooks', label: `Text Book ${idx + 1}` })),
+    ...refList.map((b, idx) => ({ ...b, idx, section: 'referenceBooks', label: `Reference Book ${idx + 1}` })),
   ];
 
   let hasRecentBook = false;
@@ -1303,7 +1333,7 @@ export function validateLearningResources(
     if (!book.authors || !book.authors.trim()) {
       results.push({
         id: `B10_AUTHOR_MISSING_${book.label}`,
-        field: `${book.section}.authors`,
+        field: `${book.section}.${book.idx}.authors`,
         severity: 'error',
         message: `${book.label}: Author name(s) is required.`,
         fixHint: 'Enter author name(s).',
@@ -1313,7 +1343,7 @@ export function validateLearningResources(
     if (!book.title || !book.title.trim()) {
       results.push({
         id: `B10_TITLE_MISSING_${book.label}`,
-        field: `${book.section}.title`,
+        field: `${book.section}.${book.idx}.title`,
         severity: 'error',
         message: `${book.label}: Title is required.`,
         fixHint: 'Enter publication title.',
@@ -1323,7 +1353,7 @@ export function validateLearningResources(
     if (!book.year) {
       results.push({
         id: `B10_YEAR_MISSING_${book.label}`,
-        field: `${book.section}.year`,
+        field: `${book.section}.${book.idx}.year`,
         severity: 'error',
         message: `${book.label}: Publication year is mandatory.`,
         fixHint: 'Enter publication year (e.g. 2021).',
@@ -1333,7 +1363,7 @@ export function validateLearningResources(
       if (isNaN(yearNum) || yearNum < 1900 || yearNum > regulationYear + 1) {
         results.push({
           id: `B10_YEAR_INVALID_${book.label}`,
-          field: `${book.section}.year`,
+          field: `${book.section}.${book.idx}.year`,
           severity: 'error',
           message: `${book.label}: Publication year is invalid (${book.year}).`,
           fixHint: 'Provide a valid 4-digit calendar year.',
@@ -1345,7 +1375,7 @@ export function validateLearningResources(
         } else if (isAdvanced) {
           results.push({
             id: `B10_RECENCY_ADVANCED_${book.label}`,
-            field: `${book.section}.year`,
+            field: `${book.section}.${book.idx}.year`,
             severity: 'error',
             message: `${book.label} (${yearNum}) exceeds 5-year recency limit for advanced/elective courses (syllabus year: ${regulationYear}).`,
             fixHint: `For advanced courses, publications should be ${regulationYear - 5} or newer. If retaining classic reference, provide at least one recent edition.`,
@@ -1443,8 +1473,8 @@ export function validateSdgAlignment(
       results.push({
         id: `B11_SDG_MISSING_ACTIVITY_${sdg}`,
         field: 'sdgActivities',
-        severity: 'error',
-        message: `SDG ${sdg} is assigned in Course Outcomes but has no corresponding academic activity.`,
+        severity: 'warning',
+        message: `SDG ${sdg} is assigned in Course Outcomes. Add a corresponding academic activity when configuring modules.`,
         fixHint: `Add at least one concrete academic activity for SDG ${sdg} with deliverable and linked module.`,
       });
     }
@@ -1804,15 +1834,18 @@ export function validateCourse(
     course.textBooks,
     course.referenceBooks,
     course.regulationYear,
-    course.isAdvanced || course.categoryAbbr === 'PEC' || course.categoryAbbr === 'OEC'
+    course.isAdvanced || course.categoryAbbr === 'PEC' || course.categoryAbbr === 'OEC',
+    course.courseType
   ));
 
-  // B11: SDG Alignment
-  allResults.push(...validateSdgAlignment(
-    course.courseOutcomes || [],
-    course.sdgActivities || [],
-    course.modules || []
-  ));
+  // B11: SDG Alignment (Theory and TCP only)
+  if (course.courseType === 'THEORY' || course.courseType === 'TCP') {
+    allResults.push(...validateSdgAlignment(
+      course.courseOutcomes || [],
+      course.sdgActivities || [],
+      course.modules || []
+    ));
+  }
 
   // B12: Prerequisites and Designers
   allResults.push(...validatePrerequisitesAndDesigners(

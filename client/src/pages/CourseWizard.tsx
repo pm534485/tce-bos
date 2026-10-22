@@ -974,10 +974,18 @@ export const CourseWizard: React.FC = () => {
   // Step 5 validation: Learning Resources
   const isStep5Complete = Boolean(
     course.courseType === 'PRACTICAL'
-      ? !validationReport.errors.some(e => e.field.startsWith('textBooks') || e.field.startsWith('referenceBooks') || e.field.startsWith('sdgActivities'))
-      : (course.textBooks || []).length > 0 &&
-        (course.textBooks || []).every(tb => (tb.title || '').trim().length > 0 && (tb.authors || '').trim().length > 0) &&
-        !validationReport.errors.some(e => e.field.startsWith('textBooks') || e.field.startsWith('referenceBooks') || e.field.startsWith('sdgActivities'))
+      ? (course.referenceBooks || []).length >= 1 &&
+        (course.referenceBooks || []).length <= 6 &&
+        (course.referenceBooks || []).every(rb => (rb.title || '').trim().length > 0 && (rb.authors || '').trim().length > 0 && Boolean(rb.year)) &&
+        ((course.textBooks || []).length === 0 || ((course.textBooks || []).length <= 2 && (course.textBooks || []).every(tb => (tb.title || '').trim().length > 0 && (tb.authors || '').trim().length > 0 && Boolean(tb.year)))) &&
+        !validationReport.errors.some(e => e.field.startsWith('textBooks') || e.field.startsWith('referenceBooks'))
+      : (course.textBooks || []).length >= 1 &&
+        (course.textBooks || []).length <= 2 &&
+        (course.textBooks || []).every(tb => (tb.title || '').trim().length > 0 && (tb.authors || '').trim().length > 0 && Boolean(tb.year)) &&
+        (course.referenceBooks || []).length >= 3 &&
+        (course.referenceBooks || []).length <= 6 &&
+        (course.referenceBooks || []).every(rb => (rb.title || '').trim().length > 0 && (rb.authors || '').trim().length > 0 && Boolean(rb.year)) &&
+        !validationReport.errors.some(e => e.field.startsWith('textBooks') || e.field.startsWith('referenceBooks'))
   );
 
   // Step 6 validation: Course Designers
@@ -1028,7 +1036,45 @@ export const CourseWizard: React.FC = () => {
         }
         return 'Complete all syllabus modules & topics to continue';
       }
-      case 5: return 'Add required textbook(s) & learning resources to continue';
+      case 5: {
+        const isLab = course.courseType === 'PRACTICAL';
+        const tbs = course.textBooks || [];
+        const rbs = course.referenceBooks || [];
+
+        // Check textbooks for Theory
+        if (!isLab) {
+          if (tbs.length === 0) return 'Add at least 1 Text Book (1–2 required) to continue';
+          if (tbs.length > 2) return `A course can have at most 2 Text Books (currently ${tbs.length})`;
+        } else {
+          if (tbs.length > 2) return `A laboratory course can have at most 2 Text Books (currently ${tbs.length})`;
+        }
+        for (let i = 0; i < tbs.length; i++) {
+          const b = tbs[i];
+          if (!b.title?.trim()) return `Text Book ${i + 1} title is missing - enter title to continue`;
+          if (!b.authors?.trim()) return `Text Book ${i + 1} author is missing - enter author name(s) to continue`;
+          if (!b.year) return `Text Book ${i + 1} publication year is missing - enter year to continue`;
+        }
+
+        // Check reference books
+        if (isLab) {
+          if (rbs.length === 0) return 'Add at least 1 Reference Book or Lab Manual to continue';
+          if (rbs.length > 6) return `A laboratory course can have at most 6 Reference Books (currently ${rbs.length})`;
+        } else {
+          if (rbs.length < 3) return `Add at least 3 Reference Books (currently ${rbs.length}/3) to continue`;
+          if (rbs.length > 6) return `A course can have at most 6 Reference Books (currently ${rbs.length})`;
+        }
+        for (let i = 0; i < rbs.length; i++) {
+          const b = rbs[i];
+          if (!b.title?.trim()) return `Reference Book ${i + 1} title is missing - enter title to continue`;
+          if (!b.authors?.trim()) return `Reference Book ${i + 1} author is missing - enter author name(s) to continue`;
+          if (!b.year) return `Reference Book ${i + 1} publication year is missing - enter year to continue`;
+        }
+
+        const resErrs = validationReport.errors.filter(e => e.field.startsWith('textBooks') || e.field.startsWith('referenceBooks'));
+        if (resErrs.length > 0) return `${resErrs[0].message} (${resErrs[0].fixHint || 'Correct learning resource'})`;
+
+        return 'Add required textbook(s) & learning resources to continue';
+      }
       case 6: return 'Add course designer details (name and email) to continue';
       default: return 'Please complete required details to continue';
     }
@@ -3944,7 +3990,9 @@ export const CourseWizard: React.FC = () => {
                     <div>
                       <h2 className="text-xl font-bold text-slate-900">6. Learning Resources</h2>
                       <p className="text-sm text-slate-500 mt-1">
-                        Must specify <strong>1 to 2 Text Books</strong> and <strong>3 to 6 Reference Books</strong> with mandatory publication year.
+                        {course.courseType === 'PRACTICAL'
+                          ? 'Must specify at least 1 and up to 6 Reference Books or Laboratory Manuals with publication year. Text Books are optional for laboratory courses.'
+                          : 'Must specify 1 to 2 Text Books and 3 to 6 Reference Books with mandatory publication year.'}
                       </p>
                     </div>
 
@@ -3952,82 +4000,119 @@ export const CourseWizard: React.FC = () => {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-xs text-slate-800">
-                          Text Books (1–2 required, format: Author, "Title", Publisher, Edition, Year):
+                          {course.courseType === 'PRACTICAL'
+                            ? 'Text Books (Optional for Laboratory courses, up to 2):'
+                            : 'Text Books (1–2 required, format: Author, "Title", Publisher, Edition, Year):'}
                         </span>
                         <span className="text-xs text-slate-500 font-semibold">
                           {(course.textBooks || []).length} / 2
                         </span>
                       </div>
                       {(course.textBooks || []).map((b, idx) => (
-                        <div key={idx} className="p-3 border border-slate-200 rounded-xl bg-slate-50/50 space-y-2">
+                        <div key={idx} className="p-3.5 border border-slate-200 rounded-xl bg-slate-50/50 space-y-2.5">
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-xs text-slate-700">Text Book {idx + 1}</span>
                             <button
+                              type="button"
                               onClick={() => {
                                 const updated = (course.textBooks || []).filter((_, i) => i !== idx);
                                 updateField('textBooks', updated);
                               }}
-                              className="p-1 text-slate-400 hover:text-rose-600"
+                              className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
+                              title="Delete Text Book"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
-                            <input
-                              type="text"
-                              value={b.authors}
-                              onChange={e => {
-                                const updated = [...(course.textBooks || [])];
-                                updated[idx] = { ...updated[idx], authors: e.target.value };
-                                updateField('textBooks', updated);
-                              }}
-                              placeholder="Enter author(s)"
-                              className="p-2 border border-slate-300 rounded text-xs"
-                            />
-                            <input
-                              type="text"
-                              value={b.title}
-                              onChange={e => {
-                                const updated = [...(course.textBooks || [])];
-                                updated[idx] = { ...updated[idx], title: e.target.value };
-                                updateField('textBooks', updated);
-                              }}
-                              placeholder="Enter textbook title"
-                              className="p-2 border border-slate-300 rounded text-xs"
-                            />
-                            <input
-                              type="text"
-                              value={b.edition || ''}
-                              onChange={e => {
-                                const updated = [...(course.textBooks || [])];
-                                updated[idx] = { ...updated[idx], edition: e.target.value };
-                                updateField('textBooks', updated);
-                              }}
-                              placeholder="Enter edition"
-                              className="p-2 border border-slate-300 rounded text-xs"
-                            />
-                            <input
-                              type="text"
-                              value={b.publisher || ''}
-                              onChange={e => {
-                                const updated = [...(course.textBooks || [])];
-                                updated[idx] = { ...updated[idx], publisher: e.target.value };
-                                updateField('textBooks', updated);
-                              }}
-                              placeholder="Enter publisher"
-                              className="p-2 border border-slate-300 rounded text-xs"
-                            />
-                            <input
-                              type="number"
-                              value={b.year || ''}
-                              onChange={e => {
-                                const updated = [...(course.textBooks || [])];
-                                updated[idx] = { ...updated[idx], year: parseInt(e.target.value) || '' };
-                                updateField('textBooks', updated);
-                              }}
-                              placeholder="Enter publication year"
-                              className="p-2 border border-slate-300 rounded text-xs font-bold"
-                            />
+                          <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                            <div className="md:col-span-3">
+                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                                Author(s) <span className="text-rose-500">*</span>
+                              </label>
+                              <input
+                                type="text"
+                                value={b.authors}
+                                onChange={e => {
+                                  const updated = [...(course.textBooks || [])];
+                                  updated[idx] = { ...updated[idx], authors: e.target.value };
+                                  updateField('textBooks', updated);
+                                }}
+                                placeholder="e.g. A. Silberschatz, P. Galvin"
+                                className={`w-full p-2 border rounded-lg text-xs bg-white ${
+                                  !b.authors?.trim() ? 'border-amber-300 focus:border-sky-500' : 'border-slate-300'
+                                }`}
+                              />
+                            </div>
+                            <div className="md:col-span-4">
+                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                                Title <span className="text-rose-500">*</span>
+                              </label>
+                              <input
+                                type="text"
+                                value={b.title}
+                                onChange={e => {
+                                  const updated = [...(course.textBooks || [])];
+                                  updated[idx] = { ...updated[idx], title: e.target.value };
+                                  updateField('textBooks', updated);
+                                }}
+                                placeholder="e.g. Operating System Concepts"
+                                className={`w-full p-2 border rounded-lg text-xs bg-white ${
+                                  !b.title?.trim() ? 'border-amber-300 focus:border-sky-500' : 'border-slate-300'
+                                }`}
+                              />
+                            </div>
+                            <div className="md:col-span-1">
+                              <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                                Edition
+                              </label>
+                              <input
+                                type="text"
+                                value={b.edition || ''}
+                                onChange={e => {
+                                  const updated = [...(course.textBooks || [])];
+                                  updated[idx] = { ...updated[idx], edition: e.target.value };
+                                  updateField('textBooks', updated);
+                                }}
+                                placeholder="10th"
+                                className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white text-center"
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                                Publisher
+                              </label>
+                              <input
+                                type="text"
+                                value={b.publisher || ''}
+                                onChange={e => {
+                                  const updated = [...(course.textBooks || [])];
+                                  updated[idx] = { ...updated[idx], publisher: e.target.value };
+                                  updateField('textBooks', updated);
+                                }}
+                                placeholder="Wiley"
+                                className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white"
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                                Year <span className="text-rose-500">*</span>
+                              </label>
+                              <input
+                                type="number"
+                                min={1950}
+                                max={2030}
+                                value={b.year || ''}
+                                onChange={e => {
+                                  const updated = [...(course.textBooks || [])];
+                                  updated[idx] = { ...updated[idx], year: parseInt(e.target.value) || '' };
+                                  updateField('textBooks', updated);
+                                }}
+                                placeholder="2023"
+                                className={`w-full p-2 border rounded-lg text-xs bg-white font-bold text-center ${
+                                  !b.year ? 'border-amber-300 focus:border-sky-500' : 'border-slate-300'
+                                }`}
+                              />
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -4046,7 +4131,7 @@ export const CourseWizard: React.FC = () => {
                             };
                             updateField('textBooks', [...(course.textBooks || []), newBook]);
                           }}
-                          className="w-full py-2 rounded-xl border border-dashed border-slate-300 text-slate-600 hover:text-sky-700 text-xs font-semibold"
+                          className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 hover:border-sky-500 bg-white hover:bg-sky-50/50 text-slate-600 hover:text-sky-700 text-xs font-semibold transition-colors cursor-pointer"
                         >
                           + Add Text Book
                         </button>
@@ -4057,14 +4142,16 @@ export const CourseWizard: React.FC = () => {
                     <div className="space-y-3 pt-4 border-t border-slate-200">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-xs text-slate-800">
-                          Reference Books (3–6 required):
+                          {course.courseType === 'PRACTICAL'
+                            ? 'Reference Books / Lab Manuals (1–6 required):'
+                            : 'Reference Books (3–6 required):'}
                         </span>
                         <span className="text-xs text-slate-500 font-semibold">
-                          {(course.referenceBooks || []).length} / 3–6
+                          {(course.referenceBooks || []).length} / {course.courseType === 'PRACTICAL' ? '1–6' : '3–6'}
                         </span>
                       </div>
                       {(course.referenceBooks || []).map((b, idx) => (
-                        <div key={idx} className="p-3 border border-slate-200 rounded-xl bg-slate-50/50 space-y-2">
+                        <div key={idx} className="p-3.5 border border-slate-200 rounded-xl bg-slate-50/50 space-y-2.5">
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-xs text-slate-700">Reference Book {idx + 1}</span>
                             <button
@@ -4073,67 +4160,101 @@ export const CourseWizard: React.FC = () => {
                                 const updated = (course.referenceBooks || []).filter((_, i) => i !== idx);
                                 updateField('referenceBooks', updated);
                               }}
-                              className="p-1 text-slate-400 hover:text-rose-600"
+                              className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
+                              title="Delete Reference Book"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
-                            <input
-                              type="text"
-                              value={b.authors}
-                              onChange={e => {
-                                const updated = [...(course.referenceBooks || [])];
-                                updated[idx] = { ...updated[idx], authors: e.target.value };
-                                updateField('referenceBooks', updated);
-                              }}
-                              placeholder="Enter author(s)"
-                              className="p-2 border border-slate-300 rounded text-xs"
-                            />
-                            <input
-                              type="text"
-                              value={b.title}
-                              onChange={e => {
-                                const updated = [...(course.referenceBooks || [])];
-                                updated[idx] = { ...updated[idx], title: e.target.value };
-                                updateField('referenceBooks', updated);
-                              }}
-                              placeholder="Enter reference book title"
-                              className="p-2 border border-slate-300 rounded text-xs"
-                            />
-                            <input
-                              type="text"
-                              value={b.edition || ''}
-                              onChange={e => {
-                                const updated = [...(course.referenceBooks || [])];
-                                updated[idx] = { ...updated[idx], edition: e.target.value };
-                                updateField('referenceBooks', updated);
-                              }}
-                              placeholder="Enter edition"
-                              className="p-2 border border-slate-300 rounded text-xs"
-                            />
-                            <input
-                              type="text"
-                              value={b.publisher || ''}
-                              onChange={e => {
-                                const updated = [...(course.referenceBooks || [])];
-                                updated[idx] = { ...updated[idx], publisher: e.target.value };
-                                updateField('referenceBooks', updated);
-                              }}
-                              placeholder="Enter publisher"
-                              className="p-2 border border-slate-300 rounded text-xs"
-                            />
-                            <input
-                              type="number"
-                              value={b.year || ''}
-                              onChange={e => {
-                                const updated = [...(course.referenceBooks || [])];
-                                updated[idx] = { ...updated[idx], year: parseInt(e.target.value) || '' };
-                                updateField('referenceBooks', updated);
-                              }}
-                              placeholder="Enter publication year"
-                              className="p-2 border border-slate-300 rounded text-xs font-bold"
-                            />
+                          <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                            <div className="md:col-span-3">
+                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                                Author(s) <span className="text-rose-500">*</span>
+                              </label>
+                              <input
+                                type="text"
+                                value={b.authors}
+                                onChange={e => {
+                                  const updated = [...(course.referenceBooks || [])];
+                                  updated[idx] = { ...updated[idx], authors: e.target.value };
+                                  updateField('referenceBooks', updated);
+                                }}
+                                placeholder="e.g. W. Stallings"
+                                className={`w-full p-2 border rounded-lg text-xs bg-white ${
+                                  !b.authors?.trim() ? 'border-amber-300 focus:border-sky-500' : 'border-slate-300'
+                                }`}
+                              />
+                            </div>
+                            <div className="md:col-span-4">
+                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                                Title <span className="text-rose-500">*</span>
+                              </label>
+                              <input
+                                type="text"
+                                value={b.title}
+                                onChange={e => {
+                                  const updated = [...(course.referenceBooks || [])];
+                                  updated[idx] = { ...updated[idx], title: e.target.value };
+                                  updateField('referenceBooks', updated);
+                                }}
+                                placeholder="e.g. Operating Systems: Internals and Design Principles"
+                                className={`w-full p-2 border rounded-lg text-xs bg-white ${
+                                  !b.title?.trim() ? 'border-amber-300 focus:border-sky-500' : 'border-slate-300'
+                                }`}
+                              />
+                            </div>
+                            <div className="md:col-span-1">
+                              <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                                Edition
+                              </label>
+                              <input
+                                type="text"
+                                value={b.edition || ''}
+                                onChange={e => {
+                                  const updated = [...(course.referenceBooks || [])];
+                                  updated[idx] = { ...updated[idx], edition: e.target.value };
+                                  updateField('referenceBooks', updated);
+                                }}
+                                placeholder="9th"
+                                className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white text-center"
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                                Publisher
+                              </label>
+                              <input
+                                type="text"
+                                value={b.publisher || ''}
+                                onChange={e => {
+                                  const updated = [...(course.referenceBooks || [])];
+                                  updated[idx] = { ...updated[idx], publisher: e.target.value };
+                                  updateField('referenceBooks', updated);
+                                }}
+                                placeholder="Pearson"
+                                className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white"
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                                Year <span className="text-rose-500">*</span>
+                              </label>
+                              <input
+                                type="number"
+                                min={1950}
+                                max={2030}
+                                value={b.year || ''}
+                                onChange={e => {
+                                  const updated = [...(course.referenceBooks || [])];
+                                  updated[idx] = { ...updated[idx], year: parseInt(e.target.value) || '' };
+                                  updateField('referenceBooks', updated);
+                                }}
+                                placeholder="2021"
+                                className={`w-full p-2 border rounded-lg text-xs bg-white font-bold text-center ${
+                                  !b.year ? 'border-amber-300 focus:border-sky-500' : 'border-slate-300'
+                                }`}
+                              />
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -4152,7 +4273,7 @@ export const CourseWizard: React.FC = () => {
                             };
                             updateField('referenceBooks', [...(course.referenceBooks || []), newBook]);
                           }}
-                          className="w-full py-2 rounded-xl border border-dashed border-slate-300 text-slate-600 hover:text-sky-700 text-xs font-semibold"
+                          className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 hover:border-sky-500 bg-white hover:bg-sky-50/50 text-slate-600 hover:text-sky-700 text-xs font-semibold transition-colors cursor-pointer"
                         >
                           + Add Reference Book
                         </button>
