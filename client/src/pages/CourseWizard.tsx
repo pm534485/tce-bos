@@ -965,6 +965,7 @@ export const CourseWizard: React.FC = () => {
     course.courseType === 'PRACTICAL'
       ? (course.experiments || []).length > 0 &&
         (course.experiments || []).every(exp => (exp.name || '').trim().length > 0) &&
+        ((course.modules || []).length === 0 || (course.modules || []).every(m => (m.mainTopic || '').trim().length > 0)) &&
         !validationReport.errors.some(e => e.field.startsWith('experiments') || e.field.startsWith('coursePlan'))
       : (course.modules || []).length > 0 &&
         (course.modules || []).every(m => (m.mainTopic || '').trim().length > 0 && (m.subtopics || []).length > 0) &&
@@ -1436,8 +1437,8 @@ export const CourseWizard: React.FC = () => {
     { id: 'assessment', title: '4. Assessment Pattern', desc: 'Continuous & Terminal exam' },
     {
       id: 'syllabus',
-      title: course.courseType === 'PRACTICAL' ? '5. Laboratory Experiments' : '5. Syllabus & Content',
-      desc: course.courseType === 'PRACTICAL' ? 'Experiments & Annexure 1' : 'Modules & Schedule',
+      title: course.courseType === 'PRACTICAL' ? '5. Syllabus & Experiments' : '5. Syllabus & Content',
+      desc: course.courseType === 'PRACTICAL' ? 'Modules, Schedule & Experiments' : 'Modules & Schedule',
     },
     { id: 'resources', title: '6. Learning Resources', desc: 'Text & reference books' },
     { id: 'designers', title: '7. Course Designers', desc: 'Faculty details & emails' },
@@ -1995,10 +1996,9 @@ export const CourseWizard: React.FC = () => {
                             type="number"
                             min={0}
                             value={course.L === ('' as any) ? '' : (course.L ?? '')}
-                            disabled={course.courseType === 'PRACTICAL'}
                             onChange={e => updateField('L', e.target.value === '' ? ('' as any) : parseInt(e.target.value) || 0)}
                             placeholder="0"
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500 disabled:bg-slate-100 disabled:text-slate-400"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500"
                           />
                         </div>
 
@@ -2010,10 +2010,9 @@ export const CourseWizard: React.FC = () => {
                             type="number"
                             min={0}
                             value={course.T === ('' as any) ? '' : (course.T ?? '')}
-                            disabled={course.courseType === 'PRACTICAL'}
                             onChange={e => updateField('T', e.target.value === '' ? ('' as any) : parseInt(e.target.value) || 0)}
                             placeholder="0"
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500 disabled:bg-slate-100 disabled:text-slate-400"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500"
                           />
                         </div>
 
@@ -3195,17 +3194,19 @@ export const CourseWizard: React.FC = () => {
                   <div className="space-y-6">
                     <div>
                       <h2 className="text-xl font-bold text-slate-900">
-                        {course.courseType === 'PRACTICAL' ? '5. Laboratory Experiments' : '5. Syllabus Modules'}
+                        {course.courseType === 'PRACTICAL'
+                          ? '5. Syllabus, Schedule & Laboratory Experiments'
+                          : (course.courseType === 'TCP' ? '5. Syllabus, Schedule & Experiments' : '5. Syllabus Modules & Lecture Schedule')}
                       </h2>
                       <p className="text-sm text-slate-500 mt-1">
                         {course.courseType === 'PRACTICAL'
-                          ? 'Specify experiments with inquiry openness levels (1/2/3) and Annexure 1 course plan.'
+                          ? 'Configure syllabus modules, lecture/contact schedule, and laboratory experiments with inquiry openness levels (1/2/3).'
                           : 'Modules must contain main topic and ordered subtopics.'}
                       </p>
                     </div>
 
-                    {/* Theory / TCP Modules */}
-                    {(course.courseType === 'THEORY' || course.courseType === 'TCP') && (
+                    {/* Syllabus Modules & Lecture Schedule (Theory, TCP, and Laboratory courses) */}
+                    {(course.courseType === 'THEORY' || course.courseType === 'TCP' || course.courseType === 'PRACTICAL') && (
                       <div className="space-y-4">
                         {(course.modules || []).map((mod, idx) => (
                           <div key={idx} className="p-4 border border-slate-200 rounded-xl bg-slate-50/50 space-y-3">
@@ -3295,7 +3296,7 @@ export const CourseWizard: React.FC = () => {
                         {/* Hierarchical Course Contents and Lecture Schedule */}
                         <div className="pt-6 border-t border-slate-200 space-y-4">
                           {(() => {
-                            const effectiveLectureCredits = (course.courseType === 'TCP' && (course.L || 0) > 0) ? course.L : course.credits;
+                            const effectiveLectureCredits = ((course.courseType === 'TCP' || course.courseType === 'PRACTICAL') && (course.L || 0) > 0) ? course.L : course.credits;
                             const lectureCriteria = getExpectedHoursCriteria(effectiveLectureCredits);
 
                             const handleSyncFromModules = () => {

@@ -1804,8 +1804,10 @@ export function validateCourse(
     componentWeights
   ));
 
-  // B7: Syllabus Modules (Theory / TCP)
+  // B7: Syllabus Modules (Theory / TCP, and optional for Practical if modules provided)
   if (course.courseType === 'THEORY' || course.courseType === 'TCP') {
+    allResults.push(...validateSyllabusModules(course.modules, course.courseOutcomes || []));
+  } else if (course.courseType === 'PRACTICAL' && course.modules && course.modules.length > 0) {
     allResults.push(...validateSyllabusModules(course.modules, course.courseOutcomes || []));
   }
 

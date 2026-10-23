@@ -632,49 +632,23 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
     ${headerText}
   </div>
 
-  ${isPractical ? `
-  <!-- List of Experiments with CO Mapping -->
-  <div class="gray-banner">List of Experiments with CO Mapping</div>
-  <div class="line-space"></div>
-
-  <table>
-    <thead>
-      <tr>
-        <th style="width: 10%; text-align: center;">Sl. No.</th>
-        <th style="width: 55%; text-align: left;">Name of the Experiment</th>
-        <th style="width: 15%; text-align: center;">Level of Experiment</th>
-        <th style="width: 20%; text-align: center;">COs Addressed</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${experimentsRowsHtml}
-    </tbody>
-  </table>
-  ` : `
   <!-- Syllabus -->
   <div class="gray-banner">Syllabus</div>
   <div class="line-space"></div>
 
   ${modulesHtml}
-  `}
 
-  ${isTcp && experimentsList.length > 0 ? `
-  <div class="line-space"></div>
-  <div class="gray-banner">List of Experiments with CO Mapping</div>
-  <div class="line-space"></div>
-  <table>
-    <thead>
-      <tr>
-        <th style="width: 10%; text-align: center;">Sl. No.</th>
-        <th style="width: 55%; text-align: left;">Name of the Experiment</th>
-        <th style="width: 15%; text-align: center;">Level of Experiment</th>
-        <th style="width: 20%; text-align: center;">COs Addressed</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${experimentsRowsHtml}
-    </tbody>
-  </table>
+  ${(isPractical || isTcp) && experimentsList.length > 0 ? `
+  <div style="margin-top: 10px;">
+    <div style="font-weight: bold; text-decoration: underline; font-size: 10pt; margin-bottom: 6px;">Practical:</div>
+    <ol style="margin: 0; padding-left: 22px; font-size: 10pt; line-height: 1.35;">
+      ${experimentsList.map(exp => `<li style="margin-bottom: 3px; text-align: justify;">${exp.name}</li>`).join('')}
+    </ol>
+  </div>
+  ` : ''}
+
+  ${(!modules || modules.length === 0) && (!experimentsList || experimentsList.length === 0) ? `
+  <div class="section-p" style="font-style: italic; color: #64748b;">No syllabus topics or laboratory experiments added yet.</div>
   ` : ''}
 
   <!-- Learning Resources -->
@@ -717,9 +691,9 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
     ${headerText}
   </div>
 
-  ${!isPractical ? `
+  ${(scheduleItems.length > 0 || modules.length > 0) ? `
   <!-- Course Contents and Lecture Schedule -->
-  <div class="gray-banner">7. Course Contents and Lecture Schedule</div>
+  <div class="gray-banner">Course Contents and Lecture Schedule</div>
   <div class="line-space"></div>
 
   <table>
@@ -745,8 +719,31 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
   <div class="line-space"></div>
   ` : ''}
 
+  ${(isPractical || isTcp) && experimentsList.length > 0 ? `
+  <!-- List of Experiments with CO Mapping -->
+  <div class="gray-banner">List of Experiments with CO Mapping</div>
+  <div class="line-space"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 10%; text-align: center;">Sl. No.</th>
+        <th style="width: 55%; text-align: left;">Name of the Experiment</th>
+        <th style="width: 15%; text-align: center;">Level of Experiment</th>
+        <th style="width: 20%; text-align: center;">COs Addressed</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${experimentsRowsHtml}
+    </tbody>
+  </table>
+
+  <!-- Line space between each section -->
+  <div class="line-space"></div>
+  ` : ''}
+
   <!-- Course Designer(s) -->
-  <div class="gray-banner">${isPractical ? '7. Course Designer(s):' : '8. Course Designer(s):'}</div>
+  <div class="gray-banner">Course Designer(s):</div>
   <div class="line-space"></div>
 
   <div class="section-p">

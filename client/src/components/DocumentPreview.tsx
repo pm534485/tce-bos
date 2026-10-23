@@ -640,92 +640,46 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
             {headerText}
           </div>
 
-          {/* Practical: List of Experiments with CO Mapping | Theory: Syllabus */}
-          {isPractical ? (
-            <div>
-              <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-                List of Experiments with CO Mapping
-              </div>
-              <div className="h-3.5 my-1" />
-              <table className="w-full border-collapse border border-black mb-0 text-xs">
-                <thead>
-                  <tr className="border-b border-black">
-                    <th className="border border-black p-1.5 text-center w-[10%]">Sl. No.</th>
-                    <th className="border border-black p-1.5 text-left w-[55%]">Name of the Experiment</th>
-                    <th className="border border-black p-1.5 text-center w-[15%]">Level of Experiment</th>
-                    <th className="border border-black p-1.5 text-center w-[20%]">COs Addressed</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(course.experiments && course.experiments.length > 0) ? (
-                    (course.experiments || []).map((exp, idx) => (
-                      <tr key={idx} className="border-b border-black">
-                        <td className="border border-black p-1.5 text-center">{exp.slNo || idx + 1}</td>
-                        <td className="border border-black p-1.5 text-left">{exp.name || ''}</td>
-                        <td className="border border-black p-1.5 text-center">Level {exp.level || 1}</td>
-                        <td className="border border-black p-1.5 text-center">
-                          {Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || '')}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={4} className="border border-black p-3 text-center text-slate-500 italic">
-                        No laboratory experiments entered yet
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+          {/* Syllabus Section */}
+          <div>
+            <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
+              Syllabus
             </div>
-          ) : (
-            <div>
-              <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-                Syllabus
-              </div>
-              <div className="h-3.5 my-1" />
+            <div className="h-3.5 my-1" />
 
-              {/* Topics */}
-              {(course.modules || []).map((mod, idx) => (
-                <div key={idx} className="mb-3 text-xs leading-relaxed text-justify">
-                  <span className="font-bold text-black">{mod.mainTopic}: </span>
-                  <span className="text-black">{Array.isArray(mod.subtopics) ? mod.subtopics.join(' – ') : ''}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* TCP Course: Also includes List of Experiments if present */}
-          {isTcp && (course.experiments && course.experiments.length > 0) && (
-            <div className="mt-4">
-              <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-                List of Experiments with CO Mapping
+            {/* Theory Modules (if any entered) */}
+            {(course.modules && course.modules.length > 0) && (
+              <div className="space-y-3">
+                {course.modules.map((mod, idx) => (
+                  <div key={idx} className="text-xs leading-relaxed text-justify">
+                    <span className="font-bold text-black">{mod.mainTopic}: </span>
+                    <span className="text-black">{Array.isArray(mod.subtopics) ? mod.subtopics.join(' – ') : ''}</span>
+                  </div>
+                ))}
               </div>
-              <div className="h-3.5 my-1" />
-              <table className="w-full border-collapse border border-black mb-0 text-xs">
-                <thead>
-                  <tr className="border-b border-black">
-                    <th className="border border-black p-1.5 text-center w-[10%]">Sl. No.</th>
-                    <th className="border border-black p-1.5 text-left w-[55%]">Name of the Experiment</th>
-                    <th className="border border-black p-1.5 text-center w-[15%]">Level of Experiment</th>
-                    <th className="border border-black p-1.5 text-center w-[20%]">COs Addressed</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(course.experiments || []).map((exp, idx) => (
-                    <tr key={idx} className="border-b border-black">
-                      <td className="border border-black p-1.5 text-center">{exp.slNo || idx + 1}</td>
-                      <td className="border border-black p-1.5 text-left">{exp.name || ''}</td>
-                      <td className="border border-black p-1.5 text-center">Level {exp.level || 1}</td>
-                      <td className="border border-black p-1.5 text-center">
-                        {Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || '')}
-                      </td>
-                    </tr>
+            )}
+
+            {/* Practical Experiments under Syllabus (matching official TCE format) */}
+            {(isPractical || isTcp) && (course.experiments && course.experiments.length > 0) && (
+              <div className={course.modules && course.modules.length > 0 ? "mt-4" : ""}>
+                <div className="font-bold underline text-xs text-black mb-1.5">Practical:</div>
+                <ol className="list-decimal pl-5 space-y-1 text-xs text-black">
+                  {course.experiments.map((exp, idx) => (
+                    <li key={idx} className="text-justify">
+                      {exp.name}
+                    </li>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                </ol>
+              </div>
+            )}
+
+            {/* Fallback if neither modules nor experiments entered yet */}
+            {(!course.modules || course.modules.length === 0) && (!course.experiments || course.experiments.length === 0) && (
+              <div className="text-xs italic text-slate-500 py-1">
+                No syllabus topics or laboratory experiments added yet.
+              </div>
+            )}
+          </div>
 
           {/* Line space between sections */}
           <div className="h-3.5 my-1" />
@@ -791,11 +745,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
             {headerText}
           </div>
 
-          {/* Theory / TCP: 7. Course Contents and Lecture Schedule */}
-          {!isPractical && (
+          {/* Course Contents and Lecture Schedule */}
+          {(scheduleItems.length > 0 || (course.modules && course.modules.length > 0)) && (
             <>
               <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-                7. Course Contents and Lecture Schedule
+                Course Contents and Lecture Schedule
               </div>
               <div className="h-3.5 my-1" />
 
@@ -833,9 +787,44 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
             </>
           )}
 
+          {/* List of Experiments with CO Mapping table (Practical & TCP courses) */}
+          {(isPractical || isTcp) && (course.experiments && course.experiments.length > 0) && (
+            <>
+              <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
+                List of Experiments with CO Mapping
+              </div>
+              <div className="h-3.5 my-1" />
+
+              <table className="w-full border-collapse border border-black mb-0 text-xs">
+                <thead>
+                  <tr className="border-b border-black">
+                    <th className="border border-black p-1.5 text-center w-[10%]">Sl. No.</th>
+                    <th className="border border-black p-1.5 text-left w-[55%]">Name of the Experiment</th>
+                    <th className="border border-black p-1.5 text-center w-[15%]">Level of Experiment</th>
+                    <th className="border border-black p-1.5 text-center w-[20%]">COs Addressed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(course.experiments || []).map((exp, idx) => (
+                    <tr key={idx} className="border-b border-black">
+                      <td className="border border-black p-1.5 text-center">{exp.slNo || idx + 1}</td>
+                      <td className="border border-black p-1.5 text-left">{exp.name || ''}</td>
+                      <td className="border border-black p-1.5 text-center">Level {exp.level || 1}</td>
+                      <td className="border border-black p-1.5 text-center">
+                        {Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || '')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div className="h-3.5 my-1" />
+            </>
+          )}
+
           {/* Course Designer(s) */}
           <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-            {isPractical ? '7. Course Designer(s):' : '8. Course Designer(s):'}
+            Course Designer(s):
           </div>
           <div className="h-3.5 my-1" />
 
