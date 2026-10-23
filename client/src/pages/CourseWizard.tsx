@@ -2340,10 +2340,6 @@ export const CourseWizard: React.FC = () => {
                               {co.coNo || `CO${idx + 1}`}
                             </span>
                             <div className="flex items-center space-x-2">
-                              {/* Verb Helper Pill */}
-                              <div className="text-xs text-slate-500">
-                                Approved TPS {co.tpsLevel} Verbs: {TPS_VERBS[co.tpsLevel]?.slice(0, 4).join(', ')}
-                              </div>
                               <button
                                 onClick={() => {
                                   const updated = (course.courseOutcomes || []).filter((_, i) => i !== idx);
@@ -2352,6 +2348,7 @@ export const CourseWizard: React.FC = () => {
                                   updateField('courseOutcomes', renumbered);
                                 }}
                                 className="p-1 text-slate-400 hover:text-rose-600 rounded"
+                                title="Delete Course Outcome"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -2360,9 +2357,16 @@ export const CourseWizard: React.FC = () => {
 
                           <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                             <div className="md:col-span-8">
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                                Outcome Statement (must start with TPS {co.tpsLevel} verb)
-                              </label>
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
+                                <label className="block text-[11px] font-bold text-slate-700">
+                                  Outcome Statement (must start with TPS {co.tpsLevel} verb)
+                                </label>
+                                {TPS_VERBS[co.tpsLevel]?.length > 0 && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-xs">
+                                    Approved TPS {co.tpsLevel} Verbs: <span className="ml-1 font-black text-amber-950 underline decoration-amber-400">{TPS_VERBS[co.tpsLevel]?.slice(0, 4).join(', ')}</span>
+                                  </span>
+                                )}
+                              </div>
                               <textarea
                                 rows={2}
                                 value={co.statement || ''}
@@ -2390,12 +2394,12 @@ export const CourseWizard: React.FC = () => {
                                 }}
                                 className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white"
                               >
-                                <option value={1}>TPS 1 (Remember)</option>
-<option value={2}>TPS 2 (Understand)</option>
-<option value={3}>TPS 3 (Apply)</option>
-<option value={4}>TPS 4 (Analyze)</option>
-<option value={5}>TPS 5 (Evaluate)</option>
-<option value={6}>TPS 6 (Create)</option>
+                                <option value={1} disabled className="text-slate-400 bg-slate-100">TPS 1 (Remember)</option>
+                                <option value={2}>TPS 2 (Understand)</option>
+                                <option value={3}>TPS 3 (Apply)</option>
+                                <option value={4}>TPS 4 (Analyze)</option>
+                                <option value={5}>TPS 5 (Evaluate)</option>
+                                <option value={6}>TPS 6 (Create)</option>
                               </select>
                             </div>
 

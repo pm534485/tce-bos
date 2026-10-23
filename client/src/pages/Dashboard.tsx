@@ -265,7 +265,7 @@ export const Dashboard: React.FC = () => {
             className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-[#7B1113] hover:bg-[#5E0D0E] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
           >
             <PlusCircle className="w-4 h-4" />
-            <span>Create New Syllabus</span>
+            <span>Create New Course</span>
           </button>
         </div>
       ) : (

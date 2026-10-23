@@ -122,7 +122,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNewCourse }) => {
                   className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#800020] hover:bg-[#660019] text-white text-sm font-medium shadow-sm transition-all"
                 >
                   <PlusCircle className="w-4 h-4" />
-                  <span>New Syllabus</span>
+                  <span>New Course</span>
                 </button>
               )}
 
@@ -204,7 +204,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNewCourse }) => {
             <div className="bg-[#F8F9FB] p-5 border-b border-slate-200">
               <div className="flex items-center space-x-2 text-[#800020] mb-1">
                 <BookOpen className="w-5 h-5 text-[#800020]" />
-                <h3 className="text-lg font-bold font-tce">Create New University Syllabus</h3>
+                <h3 className="text-lg font-bold font-tce">Create New University Course</h3>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed">
                 Select the course delivery category for <strong>Regulation 2026</strong>. The wizard will automatically configure institutional guidelines, contact hours, TPS outcomes and assessment schemes.
