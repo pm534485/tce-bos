@@ -837,6 +837,61 @@ export function validateAssessmentPattern(courseType, cos, matrix, tolerance = 3
             }
         });
     }
+    if (courseType === 'PRACTICAL') {
+        // Columns: Theory CAT1, Theory CAT2, Practical Continuous Assessment, Practical Model Test, Terminal Exam (Practical)
+        const colTotals = {
+            theoryCat1: 0,
+            theoryCat2: 0,
+            practicalCa: 0,
+            practicalModel: 0,
+            terminalExam: 0,
+        };
+        const coAppearance = {};
+        matrix.forEach(row => {
+            const c1 = Number(row.theoryCat1 !== undefined ? row.theoryCat1 : row.cat1) || 0;
+            const c2 = Number(row.theoryCat2 !== undefined ? row.theoryCat2 : (row.cat2 || row.assignment1)) || 0;
+            const c3 = Number(row.practicalCa) || 0;
+            const c4 = Number(row.practicalModel) || 0;
+            const c5 = Number(row.terminalExam !== undefined ? row.terminalExam : row.tcpTerminal) || 0;
+            colTotals.theoryCat1 += c1;
+            colTotals.theoryCat2 += c2;
+            colTotals.practicalCa += c3;
+            colTotals.practicalModel += c4;
+            colTotals.terminalExam += c5;
+            coAppearance[row.coNo] = (coAppearance[row.coNo] || 0) + c1 + c2 + c3 + c4 + c5;
+        });
+        const columns = [
+            { name: 'theoryCat1', label: 'CAT1' },
+            { name: 'theoryCat2', label: 'CAT2' },
+            { name: 'practicalCa', label: 'OCR/Continuous Assessment' },
+            { name: 'practicalModel', label: 'Model Test CO-wise' },
+            { name: 'terminalExam', label: 'Terminal Exam (Practical)' },
+        ];
+        columns.forEach(col => {
+            const total = colTotals[col.name];
+            if (Math.abs(total - 100) > 0.01) {
+                results.push({
+                    id: `B6_LAB_COL_SUM_${col.name}`,
+                    field: `assessmentMatrix.${col.name}`,
+                    severity: 'error',
+                    message: `Assessment column "${col.label}" must total 100% (currently ${total}%).`,
+                    fixHint: `Adjust row values so that ${col.label} column sum equals exactly 100%.`,
+                });
+            }
+        });
+        // Every CO must appear in at least one component
+        cos.forEach(co => {
+            if (!coAppearance[co.coNo] || coAppearance[co.coNo] <= 0) {
+                results.push({
+                    id: `B6_LAB_CO_MISSING_${co.coNo}`,
+                    field: 'assessmentMatrix',
+                    severity: 'error',
+                    message: `${co.coNo} does not appear in any assessment component.`,
+                    fixHint: `Allocate marks for ${co.coNo} in at least one assessment component.`,
+                });
+            }
+        });
+    }
     return results;
 }
 // B7: Syllabus Modules Validation
@@ -1024,40 +1079,71 @@ export function validateLectureSchedule(courseType, modules, credits, L = 0, lec
     return results;
 }
 // B10: Learning Resources Validation
-export function validateLearningResources(textBooks, referenceBooks, regulationYear = 2026, isAdvanced = false) {
+export function validateLearningResources(textBooks, referenceBooks, regulationYear = 2026, isAdvanced = false, courseType) {
     const results = [];
-    // Text books: min 1, max 2
     const textList = textBooks || [];
-    if (textList.length < 1 || textList.length > 2) {
-        results.push({
-            id: 'B10_TEXTBOOK_COUNT',
-            field: 'textBooks',
-            severity: 'error',
-            message: `A course must list 1 to 2 Text Books (currently ${textList.length}).`,
-            fixHint: 'Ensure exactly 1 or 2 text books are specified.',
-        });
-    }
-    // Reference books: 3 to 6
     const refList = referenceBooks || [];
-    if (refList.length < 3 || refList.length > 6) {
-        results.push({
-            id: 'B10_REFBOOK_COUNT',
-            field: 'referenceBooks',
-            severity: 'error',
-            message: `A course must list 3 to 6 Reference Books (currently ${refList.length}).`,
-            fixHint: 'Add or remove reference books to have between 3 and 6 titles.',
-        });
+    const isLab = courseType === 'PRACTICAL';
+    // Text books:
+    // For Theory / TCP: strictly 1 to 2 Text Books required
+    // For Practical (Laboratory): Text Books are optional (0 to 2), as lab courses rely on Reference Books & Manuals
+    if (!isLab) {
+        if (textList.length < 1 || textList.length > 2) {
+            results.push({
+                id: 'B10_TEXTBOOK_COUNT',
+                field: 'textBooks',
+                severity: 'error',
+                message: `A theory course must list 1 to 2 Text Books (currently ${textList.length}).`,
+                fixHint: 'Ensure exactly 1 or 2 text books are specified.',
+            });
+        }
+    }
+    else {
+        if (textList.length > 2) {
+            results.push({
+                id: 'B10_TEXTBOOK_COUNT',
+                field: 'textBooks',
+                severity: 'error',
+                message: `A laboratory course can list up to 2 Text Books (currently ${textList.length}).`,
+                fixHint: 'Ensure at most 2 text books are specified.',
+            });
+        }
+    }
+    // Reference books:
+    // For Theory / TCP: 3 to 6 Reference Books
+    // For Practical (Laboratory): at least 1 and up to 6 Reference Books / Lab Manuals
+    if (isLab) {
+        if (refList.length < 1 || refList.length > 6) {
+            results.push({
+                id: 'B10_REFBOOK_COUNT',
+                field: 'referenceBooks',
+                severity: 'error',
+                message: `A laboratory course must list at least 1 Reference Book or Lab Manual (currently ${refList.length}).`,
+                fixHint: 'Add 1 to 6 reference books or laboratory manuals.',
+            });
+        }
+    }
+    else {
+        if (refList.length < 3 || refList.length > 6) {
+            results.push({
+                id: 'B10_REFBOOK_COUNT',
+                field: 'referenceBooks',
+                severity: 'error',
+                message: `A course must list 3 to 6 Reference Books (currently ${refList.length}).`,
+                fixHint: 'Add or remove reference books to have between 3 and 6 titles.',
+            });
+        }
     }
     const allBooks = [
-        ...textList.map((b, idx) => ({ ...b, section: 'textBooks', label: `Text Book ${idx + 1}` })),
-        ...refList.map((b, idx) => ({ ...b, section: 'referenceBooks', label: `Reference Book ${idx + 1}` })),
+        ...textList.map((b, idx) => ({ ...b, idx, section: 'textBooks', label: `Text Book ${idx + 1}` })),
+        ...refList.map((b, idx) => ({ ...b, idx, section: 'referenceBooks', label: `Reference Book ${idx + 1}` })),
     ];
     let hasRecentBook = false;
     allBooks.forEach(book => {
         if (!book.authors || !book.authors.trim()) {
             results.push({
                 id: `B10_AUTHOR_MISSING_${book.label}`,
-                field: `${book.section}.authors`,
+                field: `${book.section}.${book.idx}.authors`,
                 severity: 'error',
                 message: `${book.label}: Author name(s) is required.`,
                 fixHint: 'Enter author name(s).',
@@ -1066,7 +1152,7 @@ export function validateLearningResources(textBooks, referenceBooks, regulationY
         if (!book.title || !book.title.trim()) {
             results.push({
                 id: `B10_TITLE_MISSING_${book.label}`,
-                field: `${book.section}.title`,
+                field: `${book.section}.${book.idx}.title`,
                 severity: 'error',
                 message: `${book.label}: Title is required.`,
                 fixHint: 'Enter publication title.',
@@ -1075,7 +1161,7 @@ export function validateLearningResources(textBooks, referenceBooks, regulationY
         if (!book.year) {
             results.push({
                 id: `B10_YEAR_MISSING_${book.label}`,
-                field: `${book.section}.year`,
+                field: `${book.section}.${book.idx}.year`,
                 severity: 'error',
                 message: `${book.label}: Publication year is mandatory.`,
                 fixHint: 'Enter publication year (e.g. 2021).',
@@ -1086,7 +1172,7 @@ export function validateLearningResources(textBooks, referenceBooks, regulationY
             if (isNaN(yearNum) || yearNum < 1900 || yearNum > regulationYear + 1) {
                 results.push({
                     id: `B10_YEAR_INVALID_${book.label}`,
-                    field: `${book.section}.year`,
+                    field: `${book.section}.${book.idx}.year`,
                     severity: 'error',
                     message: `${book.label}: Publication year is invalid (${book.year}).`,
                     fixHint: 'Provide a valid 4-digit calendar year.',
@@ -1100,7 +1186,7 @@ export function validateLearningResources(textBooks, referenceBooks, regulationY
                 else if (isAdvanced) {
                     results.push({
                         id: `B10_RECENCY_ADVANCED_${book.label}`,
-                        field: `${book.section}.year`,
+                        field: `${book.section}.${book.idx}.year`,
                         severity: 'error',
                         message: `${book.label} (${yearNum}) exceeds 5-year recency limit for advanced/elective courses (syllabus year: ${regulationYear}).`,
                         fixHint: `For advanced courses, publications should be ${regulationYear - 5} or newer. If retaining classic reference, provide at least one recent edition.`,
@@ -1185,8 +1271,8 @@ export function validateSdgAlignment(cos, sdgActivities, modules) {
             results.push({
                 id: `B11_SDG_MISSING_ACTIVITY_${sdg}`,
                 field: 'sdgActivities',
-                severity: 'error',
-                message: `SDG ${sdg} is assigned in Course Outcomes but has no corresponding academic activity.`,
+                severity: 'warning',
+                message: `SDG ${sdg} is assigned in Course Outcomes. Add a corresponding academic activity when configuring modules.`,
                 fixHint: `Add at least one concrete academic activity for SDG ${sdg} with deliverable and linked module.`,
             });
         }
@@ -1487,8 +1573,11 @@ export function validateCourse(course, existingProgrammeCodes = [], tolerance = 
     allResults.push(...validateCourseOutcomes(course.courseOutcomes, course.courseType, allowTps1, course.credits));
     // B6: Assessment Pattern
     allResults.push(...validateAssessmentPattern(course.courseType, course.courseOutcomes || [], course.assessmentMatrix || [], tolerance, componentWeights));
-    // B7: Syllabus Modules (Theory / TCP)
+    // B7: Syllabus Modules (Theory / TCP, and optional for Practical if modules provided)
     if (course.courseType === 'THEORY' || course.courseType === 'TCP') {
+        allResults.push(...validateSyllabusModules(course.modules, course.courseOutcomes || []));
+    }
+    else if (course.courseType === 'PRACTICAL' && course.modules && course.modules.length > 0) {
         allResults.push(...validateSyllabusModules(course.modules, course.courseOutcomes || []));
     }
     // B8: Lab-specific Sections (Practical / TCP)
@@ -1500,9 +1589,11 @@ export function validateCourse(course, existingProgrammeCodes = [], tolerance = 
         allResults.push(...validateLectureSchedule(course.courseType, course.modules || [], course.credits, course.L, course.lectureScheduleItems));
     }
     // B10: Learning Resources
-    allResults.push(...validateLearningResources(course.textBooks, course.referenceBooks, course.regulationYear, course.isAdvanced || course.categoryAbbr === 'PEC' || course.categoryAbbr === 'OEC'));
-    // B11: SDG Alignment
-    allResults.push(...validateSdgAlignment(course.courseOutcomes || [], course.sdgActivities || [], course.modules || []));
+    allResults.push(...validateLearningResources(course.textBooks, course.referenceBooks, course.regulationYear, course.isAdvanced || course.categoryAbbr === 'PEC' || course.categoryAbbr === 'OEC', course.courseType));
+    // B11: SDG Alignment (Theory and TCP only)
+    if (course.courseType === 'THEORY' || course.courseType === 'TCP') {
+        allResults.push(...validateSdgAlignment(course.courseOutcomes || [], course.sdgActivities || [], course.modules || []));
+    }
     // B12: Prerequisites and Designers
     allResults.push(...validatePrerequisitesAndDesigners(course.prerequisites, course.designers || []));
     const errors = allResults.filter(r => r.severity === 'error');
@@ -1518,40 +1609,30 @@ export function validateCourse(course, existingProgrammeCodes = [], tolerance = 
         checklist,
     };
 }
-// Helper: Suggest CO weightages proportioned by TPS level within 8-20 range summing to 100
+// Helper: Suggest CO weightages proportioned by TPS level summing to 100
 export function suggestCoWeightages(cos) {
     if (!cos || cos.length === 0)
         return [];
     const n = cos.length;
+    if (n === 1)
+        return [100];
     // Assign base score based on TPS level: TPS 2 -> 2, TPS 3 -> 3, TPS 4 -> 4, TPS 5 -> 5
     const tpsScores = cos.map(c => Math.max(2, c.tpsLevel || 3));
-    const totalScore = tpsScores.reduce((a, b) => a + b, 0);
-    // Initial proportioning
-    let weights = tpsScores.map(score => Math.round((score / totalScore) * 100));
-    // Ensure bounds [10, 20]
-    weights = weights.map(w => Math.min(20, Math.max(10, w)));
-    // Adjust sum to exactly 100
-    let diff = 100 - weights.reduce((a, b) => a + b, 0);
+    const totalScore = tpsScores.reduce((a, b) => a + b, 0) || 1;
+    // Initial proportioning using Math.floor to guarantee sum <= 100
+    let weights = tpsScores.map(score => Math.floor((score / totalScore) * 100));
+    // Distribute remainder so the sum is guaranteed to equal exactly 100
+    let remainder = 100 - weights.reduce((a, b) => a + b, 0);
     let idx = 0;
-    while (diff !== 0) {
-        if (diff > 0) {
-            if (weights[idx] < 20) {
-                weights[idx]++;
-                diff--;
-            }
-        }
-        else {
-            if (weights[idx] > 10) {
-                weights[idx]--;
-                diff++;
-            }
-        }
-        idx = (idx + 1) % n;
+    while (remainder > 0 && idx < 200) {
+        weights[idx % n]++;
+        remainder--;
+        idx++;
     }
-    // Ensure they are not all equal if n >= 2
+    // Differentiate slightly if all equal and n >= 2
     const allEqual = weights.every(w => w === weights[0]);
     if (allEqual && n >= 2) {
-        if (weights[0] < 20 && weights[weights.length - 1] > 10) {
+        if (weights[0] > 2) {
             weights[0] += 2;
             weights[weights.length - 1] -= 2;
         }

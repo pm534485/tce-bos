@@ -41,7 +41,7 @@ export const AppContent: React.FC = () => {
     <div className="min-h-screen bg-background flex flex-col font-sans text-text">
       {user && <Navbar />}
       <main className="flex-1 flex flex-col">
-        <ErrorBoundary fallbackTitle="Portal Workspace Encountered an Issue">
+        <ErrorBoundary fallbackTitle="Course Design Workspace Encountered an Issue">
           <Routes>
           <Route path="/login" element={<Login />} />
           <Route

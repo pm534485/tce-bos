@@ -30,7 +30,7 @@ export interface CourseHoursCriteria {
 }
 export declare function getExpectedHoursCriteria(credits: number): CourseHoursCriteria;
 export declare function validateLectureSchedule(courseType: CourseType, modules: SyllabusModule[], credits: number, L?: number, lectureScheduleItems?: LectureScheduleItem[]): ValidationRuleResult[];
-export declare function validateLearningResources(textBooks: LearningResource[], referenceBooks: LearningResource[], regulationYear?: number, isAdvanced?: boolean): ValidationRuleResult[];
+export declare function validateLearningResources(textBooks: LearningResource[], referenceBooks: LearningResource[], regulationYear?: number, isAdvanced?: boolean, courseType?: CourseType): ValidationRuleResult[];
 export declare function validateSdgAlignment(cos: CourseOutcome[], sdgActivities: SdgActivity[], modules: SyllabusModule[]): ValidationRuleResult[];
 export declare function validatePrerequisitesAndDesigners(prerequisites: any, designers: CourseDesigner[]): ValidationRuleResult[];
 export declare function evaluateTheoryChecklist(course: Course): Array<{

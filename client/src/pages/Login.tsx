@@ -265,10 +265,10 @@ export const Login: React.FC = () => {
           </div>
         </div>
 
-        {/* Middle: Page Title - Syllabus Automation Portal */}
+        {/* Middle: Page Title - Course Design Portal */}
         <div className="relative z-10 my-auto py-10 md:py-16">
           <h1 className="text-4xl sm:text-5xl lg:text-[clamp(2rem,3vw,3.75rem)] font-black text-white tracking-tight leading-[1.12] lg:whitespace-nowrap">
-            Syllabus Automation Portal
+            Course Design Portal
           </h1>
         </div>
 
@@ -283,7 +283,7 @@ export const Login: React.FC = () => {
             Welcome back
           </h2>
           <p className="text-sm sm:text-base text-slate-500 mt-1 mb-6 leading-relaxed">
-            Authenticate with your official institutional account to access your syllabus workspace.
+            Authenticate with your official institutional account to access your course design workspace.
           </p>
 
           {/* Error Message Box */}

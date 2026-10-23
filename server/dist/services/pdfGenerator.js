@@ -46,8 +46,8 @@ export async function generatePdfDocument(course) {
     catch (err) {
         // MongoDB not connected, proceed with institutional defaults
     }
-    const bosMeetingText = 'Passed in BoS Meeting 30.05.2026';
-    const acmMeetingText = 'Approved in 71st Academic council meeting 27.06.2026';
+    const bosMeetingText = `Passed in BoS Meeting ${course.bosMeetingDate || '30.05.2026'}`;
+    const acmMeetingText = `Approved in 71<sup>st</sup> Academic council meeting ${course.academicCouncilDate || '27.06.2026'}`;
     const headerText = getDegreeProgramHeader(course);
     const titleCaps = (course.courseName || '').toUpperCase();
     // 1. Prerequisites formatting
@@ -98,11 +98,56 @@ export async function generatePdfDocument(course) {
     // 3. Assessment Pattern Matrix
     const matrix = course.assessmentMatrix || [];
     const isTcp = course.courseType === 'TCP';
+    const isPractical = course.courseType === 'PRACTICAL';
     let totalCol1 = 0;
     let totalCol2 = 0;
     let totalCol3 = 0;
     let totalCol4 = 0;
     let totalCol5 = 0;
+    // Practical totals
+    let totalPracticalCat1 = 0;
+    let totalPracticalCat2 = 0;
+    let totalPracticalCa = 0;
+    let totalPracticalModel = 0;
+    let totalPracticalTerm = 0;
+    const terminalExamBracket = (course.courseType === 'PRACTICAL' || course.teExamType === 'TCP-P') ? '(Practical)' : '(Theory)';
+    const practicalRowsHtml = isPractical
+        ? coList.map((co, idx) => {
+            const row = matrix.find(m => m.coNo === co.coNo);
+            let cat1 = '';
+            let cat2 = '';
+            let ca = '';
+            let model = '';
+            let term = '';
+            if (row) {
+                cat1 = row.theoryCat1 && row.theoryCat1 > 0 ? row.theoryCat1 : (row.cat1 && row.cat1 > 0 ? row.cat1 : '');
+                cat2 = row.theoryCat2 && row.theoryCat2 > 0 ? row.theoryCat2 : (row.cat2 && row.cat2 > 0 ? row.cat2 : (row.assignment1 && row.assignment1 > 0 ? row.assignment1 : ''));
+                ca = row.practicalCa && row.practicalCa > 0 ? row.practicalCa : '';
+                model = row.practicalModel && row.practicalModel > 0 ? row.practicalModel : '';
+                term = row.terminalExam && row.terminalExam > 0 ? row.terminalExam : (row.tcpTerminal && row.tcpTerminal > 0 ? row.tcpTerminal : '');
+            }
+            if (typeof cat1 === 'number')
+                totalPracticalCat1 += cat1;
+            if (typeof cat2 === 'number')
+                totalPracticalCat2 += cat2;
+            if (typeof ca === 'number')
+                totalPracticalCa += ca;
+            if (typeof model === 'number')
+                totalPracticalModel += model;
+            if (typeof term === 'number')
+                totalPracticalTerm += term;
+            return `
+          <tr>
+            <td class="left" style="padding-left: 10px;">${co.coNo}</td>
+            <td class="center">${cat1 !== '' ? cat1 : ''}</td>
+            <td class="center">${cat2 !== '' ? cat2 : ''}</td>
+            <td class="center">${ca !== '' ? ca : ''}</td>
+            <td class="center">${model !== '' ? model : ''}</td>
+            <td class="center">${term !== '' ? term : ''}</td>
+          </tr>
+        `;
+        }).join('')
+        : '';
     const assessmentRowsHtml = coList.map((co, idx) => {
         const row = matrix.find(m => m.coNo === co.coNo);
         let v1 = '';
@@ -220,6 +265,22 @@ export async function generatePdfDocument(course) {
     </div>
     <div class="line-space"></div>
   `).join('');
+    // 4b. Laboratory Experiments formatting
+    const experimentsList = course.experiments || [];
+    const experimentsRowsHtml = experimentsList.length > 0
+        ? experimentsList.map((exp, idx) => `
+      <tr>
+        <td class="center">${exp.slNo || idx + 1}</td>
+        <td class="left">${exp.name || ''}</td>
+        <td class="center">Level ${exp.level || 1}</td>
+        <td class="center">${Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || '')}</td>
+      </tr>
+    `).join('')
+        : `
+      <tr>
+        <td colspan="4" class="center" style="font-style: italic; color: #64748b; padding: 10px;">No laboratory experiments entered yet</td>
+      </tr>
+    `;
     // 5. Learning Resources
     const formatCitation = (b) => {
         const parts = [];
@@ -505,6 +566,48 @@ export async function generatePdfDocument(course) {
   <div class="line-space"></div>
 
   <!-- Assessment Pattern -->
+  ${isPractical ? `
+  <div class="gray-banner">Assessment Pattern</div>
+  <div class="line-space-sm"></div>
+  <table style="table-layout: fixed; width: 100%; border-collapse: collapse;">
+    <thead>
+      <tr>
+        <th rowspan="3" class="center" style="width: 10%; vertical-align: middle;">CO</th>
+        <th colspan="2" class="center">Theory</th>
+        <th colspan="2" class="center">Practical</th>
+        <th rowspan="2" class="center" style="width: 18%; vertical-align: middle;">Terminal Exam<br>${terminalExamBracket}</th>
+      </tr>
+      <tr>
+        <th class="center" style="width: 18%;">CAT1</th>
+        <th class="center" style="width: 18%;">CAT2</th>
+        <th class="center" style="width: 18%;">OCR/Continuous Assessment</th>
+        <th class="center" style="width: 18%;">Model Test CO-wise</th>
+      </tr>
+      <tr>
+        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${practicalRowsHtml}
+      <tr>
+        <td class="left font-bold" style="padding-left: 10px;">Total</td>
+        <td class="center font-bold">${totalPracticalCat1 || 100}</td>
+        <td class="center font-bold">${totalPracticalCat2 || 100}</td>
+        <td class="center font-bold">${totalPracticalCa || 100}</td>
+        <td class="center font-bold">${totalPracticalModel || 100}</td>
+        <td class="center font-bold">${totalPracticalTerm || 100}</td>
+      </tr>
+    </tbody>
+  </table>
+  <div style="margin-top: 24px; padding-top: 8px; display: flex; justify-content: space-between; font-size: 8.5pt; font-family: Arial, Helvetica, sans-serif; color: #1e293b;">
+    <span>${bosMeetingText}</span>
+    <span>${acmMeetingText}</span>
+  </div>
+  ` : `
   <div class="gray-banner">Assessment Pattern</div>
   <div class="line-space-sm"></div>
   <table>
@@ -537,6 +640,11 @@ export async function generatePdfDocument(course) {
       </tr>
     </tbody>
   </table>
+  <div style="margin-top: 24px; padding-top: 8px; display: flex; justify-content: space-between; font-size: 8.5pt; font-family: Arial, Helvetica, sans-serif; color: #1e293b;">
+    <span>${bosMeetingText}</span>
+    <span>${acmMeetingText}</span>
+  </div>
+  `}
 
   <!-- Page Break to Page 2 -->
   <div class="page-break"></div>
@@ -552,11 +660,26 @@ export async function generatePdfDocument(course) {
 
   ${modulesHtml}
 
+  ${(isPractical || isTcp) && experimentsList.length > 0 ? `
+  <div style="margin-top: 10px;">
+    <div style="font-weight: bold; text-decoration: underline; font-size: 10pt; margin-bottom: 6px;">Practical:</div>
+    <ol style="margin: 0; padding-left: 22px; font-size: 10pt; line-height: 1.35;">
+      ${experimentsList.map(exp => `<li style="margin-bottom: 3px; text-align: justify;">${exp.name}</li>`).join('')}
+    </ol>
+  </div>
+  ` : ''}
+
+  ${(!modules || modules.length === 0) && (!experimentsList || experimentsList.length === 0) ? `
+  <div class="section-p" style="font-style: italic; color: #64748b;">No syllabus topics or laboratory experiments added yet.</div>
+  ` : ''}
+
   <!-- Learning Resources -->
-  <div class="gray-banner">6. Learning Resources</div>
+  <div class="line-space"></div>
+  <div class="gray-banner">${isPractical ? 'Learning Resources' : '6. Learning Resources'}</div>
   <div class="line-space"></div>
 
-  <div class="gray-banner">6.1 Text Book</div>
+  ${(!isPractical || (course.textBooks && course.textBooks.length > 0)) ? `
+  <div class="gray-banner">${isPractical ? 'Text Book(s)' : '6.1 Text Book'}</div>
   <div class="line-space"></div>
 
   <ul class="bullet-list">
@@ -564,8 +687,9 @@ export async function generatePdfDocument(course) {
   </ul>
 
   <div class="line-space"></div>
+  ` : ''}
 
-  <div class="gray-banner">6.2 Reference Books & Web resources</div>
+  <div class="gray-banner">${isPractical ? 'Reference Books and Web resources' : '6.2 Reference Books & Web resources'}</div>
   <div class="line-space"></div>
 
   <ul class="bullet-list">
@@ -589,8 +713,9 @@ export async function generatePdfDocument(course) {
     ${headerText}
   </div>
 
+  ${(scheduleItems.length > 0 || modules.length > 0) ? `
   <!-- Course Contents and Lecture Schedule -->
-  <div class="gray-banner">7. Course Contents and Lecture Schedule</div>
+  <div class="gray-banner">Course Contents and Lecture Schedule</div>
   <div class="line-space"></div>
 
   <table>
@@ -614,9 +739,33 @@ export async function generatePdfDocument(course) {
 
   <!-- Line space between each section -->
   <div class="line-space"></div>
+  ` : ''}
+
+  ${(isPractical || isTcp) && experimentsList.length > 0 ? `
+  <!-- List of Experiments with CO Mapping -->
+  <div class="gray-banner">List of Experiments with CO Mapping</div>
+  <div class="line-space"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 10%; text-align: center;">Sl. No.</th>
+        <th style="width: 55%; text-align: left;">Name of the Experiment</th>
+        <th style="width: 15%; text-align: center;">Level of Experiment</th>
+        <th style="width: 20%; text-align: center;">COs Addressed</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${experimentsRowsHtml}
+    </tbody>
+  </table>
+
+  <!-- Line space between each section -->
+  <div class="line-space"></div>
+  ` : ''}
 
   <!-- Course Designer(s) -->
-  <div class="gray-banner">8. Course Designer(s):</div>
+  <div class="gray-banner">Course Designer(s):</div>
   <div class="line-space"></div>
 
   <div class="section-p">
