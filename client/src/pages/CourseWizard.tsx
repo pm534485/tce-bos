@@ -2381,9 +2381,20 @@ export const CourseWizard: React.FC = () => {
                             </div>
 
                             <div className="md:col-span-2">
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                                TPS Level
-                              </label>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="block text-[11px] font-bold text-slate-600">
+                                  TPS Level
+                                </label>
+                                {((course.courseOutcomes || []).filter(c => c.tpsLevel === 2).length) > 0 && (
+                                  <span className={`text-[10px] font-bold px-1 rounded ${
+                                    (course.courseOutcomes || []).filter(c => c.tpsLevel === 2).length >= 2
+                                      ? 'text-amber-800 bg-amber-100'
+                                      : 'text-slate-500 bg-slate-100'
+                                  }`}>
+                                    {((course.courseOutcomes || []).filter(c => c.tpsLevel === 2).length)}/2 used
+                                  </span>
+                                )}
+                              </div>
                               <select
                                 value={co.tpsLevel}
                                 onChange={e => {
@@ -2395,7 +2406,15 @@ export const CourseWizard: React.FC = () => {
                                 className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white"
                               >
                                 <option value={1} disabled className="text-slate-400 bg-slate-100">TPS 1 (Remember)</option>
-                                <option value={2}>TPS 2 (Understand)</option>
+                                <option
+                                  value={2}
+                                  disabled={co.tpsLevel !== 2 && (course.courseOutcomes || []).filter(c => c.tpsLevel === 2).length >= 2}
+                                  className={co.tpsLevel !== 2 && (course.courseOutcomes || []).filter(c => c.tpsLevel === 2).length >= 2 ? "text-slate-400 bg-slate-100" : ""}
+                                >
+                                  {co.tpsLevel !== 2 && (course.courseOutcomes || []).filter(c => c.tpsLevel === 2).length >= 2
+                                    ? "TPS 2 (Understand) (Max 2 reached)"
+                                    : "TPS 2 (Understand)"}
+                                </option>
                                 <option value={3}>TPS 3 (Apply)</option>
                                 <option value={4}>TPS 4 (Analyze)</option>
                                 <option value={5}>TPS 5 (Evaluate)</option>
@@ -2409,10 +2428,12 @@ export const CourseWizard: React.FC = () => {
                                 coNo={co.coNo}
                                 onChange={(newPi, matchedTpsLevel) => {
                                   const updated = [...(course.courseOutcomes || [])];
+                                  const otherTps2 = (course.courseOutcomes || []).filter((c, i) => i !== idx && c.tpsLevel === 2).length;
+                                  const canApplyMatchedTps = matchedTpsLevel !== 2 || otherTps2 < 2;
                                   updated[idx] = {
                                     ...updated[idx],
                                     pi: newPi,
-                                    ...(matchedTpsLevel ? { tpsLevel: matchedTpsLevel } : {}),
+                                    ...(matchedTpsLevel && canApplyMatchedTps ? { tpsLevel: matchedTpsLevel } : {}),
                                   };
                                   updateField('courseOutcomes', updated);
                                 }}
@@ -2422,22 +2443,42 @@ export const CourseWizard: React.FC = () => {
 
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                                CO Weightage (%)
-                              </label>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="block text-[11px] font-bold text-slate-600">
+                                  CO Weightage (%)
+                                </label>
+                                <span className="text-[10px] text-slate-400 font-semibold">5%–25%</span>
+                              </div>
                               <input
                                 type="number"
-                                min={0}
-                                max={100}
+                                min={5}
+                                max={25}
                                 value={co.weightage !== undefined && co.weightage !== null ? co.weightage : ''}
                                 onChange={e => {
-                                  const val = e.target.value === '' ? ('' as any) : (parseInt(e.target.value) || 0);
+                                  let val = e.target.value === '' ? ('' as any) : parseInt(e.target.value);
+                                  if (typeof val === 'number') {
+                                    if (isNaN(val)) val = '' as any;
+                                    else if (val > 25) val = 25;
+                                    else if (val < 0) val = 0;
+                                  }
                                   const updated = [...(course.courseOutcomes || [])];
                                   updated[idx] = { ...updated[idx], weightage: val };
                                   updateField('courseOutcomes', updated);
                                 }}
-                                placeholder="0"
-                                className="w-full p-2 border border-slate-300 rounded-lg text-xs text-center font-bold"
+                                onBlur={e => {
+                                  const val = parseInt(e.target.value);
+                                  if (!isNaN(val) && val > 0 && val < 5) {
+                                    const updated = [...(course.courseOutcomes || [])];
+                                    updated[idx] = { ...updated[idx], weightage: 5 };
+                                    updateField('courseOutcomes', updated);
+                                  }
+                                }}
+                                placeholder="5-25"
+                                className={`w-full p-2 border rounded-lg text-xs text-center font-bold ${
+                                  co.weightage !== undefined && co.weightage !== null && (Number(co.weightage) < 5 || Number(co.weightage) > 25)
+                                    ? 'border-red-400 bg-red-50 text-red-700'
+                                    : 'border-slate-300'
+                                }`}
                               />
                             </div>
 

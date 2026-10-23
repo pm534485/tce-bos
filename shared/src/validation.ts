@@ -487,6 +487,7 @@ export function validateCourseOutcomes(
 
   // Check individual COs
   let tpsAtLeast3Count = 0;
+  let tps2Count = 0;
   const statements: string[] = [];
 
   cos.forEach((co, idx) => {
@@ -539,6 +540,10 @@ export function validateCourseOutcomes(
         message: `${coId}: TPS 1 (Remember level) is not permitted in course outcomes.`,
         fixHint: 'Upgrade outcome cognitive demand to TPS 2 (Understand) or TPS 3+ (Apply/Analyze/Evaluate).',
       });
+    }
+
+    if (co.tpsLevel === 2) {
+      tps2Count++;
     }
 
     if (co.tpsLevel >= 3) {
@@ -639,6 +644,17 @@ export function validateCourseOutcomes(
     }
   }
 
+  // Maximum 2 COs at TPS 2 rule: User cannot select TPS 2 more than twice
+  if (tps2Count > 2) {
+    results.push({
+      id: 'B5_TPS2_MAX_LIMIT',
+      field: 'courseOutcomes',
+      severity: 'error',
+      message: `At most 2 Course Outcomes can be at TPS 2 (Understand level) (found ${tps2Count}).`,
+      fixHint: 'Upgrade at least one TPS 2 outcome to TPS 3 (Apply) or higher so no more than 2 COs are at TPS 2.',
+    });
+  }
+
   // Weightage checks for Theory & TCP
   if (courseType === 'THEORY' || courseType === 'TCP') {
     let totalWeightage = 0;
@@ -650,13 +666,13 @@ export function validateCourseOutcomes(
       totalWeightage += w;
       weightages.push(w);
 
-      if (w < 8 || w > 20) {
+      if (w < 5 || w > 25) {
         results.push({
           id: `B5_WEIGHTAGE_RANGE_${coId}`,
           field: `courseOutcomes.${idx}.weightage`,
           severity: 'error',
-          message: `${coId}: Weightage must be between 8% and 20% (currently ${w}%).`,
-          fixHint: 'Adjust weightage to fall within the 8% to 20% institutional limit.',
+          message: `${coId}: Weightage must be between 5% and 25% (currently ${w}%).`,
+          fixHint: 'Adjust weightage to fall within the 5% to 25% institutional limit.',
         });
       }
     });
@@ -1602,18 +1618,18 @@ export function evaluateTheoryChecklist(course: Course): Array<{ id: number; tit
     },
     {
       id: 8,
-      title: 'CO Weightage values are unequal, sum to 100, and range 8–20% per CO.',
+      title: 'CO Weightage values are unequal, sum to 100, and range 5–25% per CO.',
       passed: (() => {
         const cos = course.courseOutcomes || [];
         if (cos.length === 0) return false;
         const sum = cos.reduce((acc, c) => acc + (c.weightage || 0), 0);
         if (Math.abs(sum - 100) > 0.01) return false;
-        const allInRange = cos.every(c => (c.weightage || 0) >= 8 && (c.weightage || 0) <= 20);
+        const allInRange = cos.every(c => (c.weightage || 0) >= 5 && (c.weightage || 0) <= 25);
         if (!allInRange) return false;
         const allSame = cos.every(c => Math.abs((c.weightage || 0) - (cos[0].weightage || 0)) < 0.01);
         return !allSame;
       })(),
-      reason: 'Weightage sum = 100%, 8-20% each, non-uniform.',
+      reason: 'Weightage sum = 100%, 5-25% each, non-uniform.',
     },
     {
       id: 9,
@@ -1872,7 +1888,7 @@ export function validateCourse(
 }
 
 // Helper: Suggest CO weightages proportioned by TPS level summing to 100
-export function suggestCoWeightages(cos: CourseOutcome[]): number[] {
+export function suggestCoWeightages(cos: CourseOutcome[], minWeight = 5, maxWeight = 25): number[] {
   if (!cos || cos.length === 0) return [];
   const n = cos.length;
   if (n === 1) return [100];
@@ -1881,25 +1897,38 @@ export function suggestCoWeightages(cos: CourseOutcome[]): number[] {
   const tpsScores = cos.map(c => Math.max(2, c.tpsLevel || 3));
   const totalScore = tpsScores.reduce((a, b) => a + b, 0) || 1;
 
-  // Initial proportioning using Math.floor to guarantee sum <= 100
-  let weights = tpsScores.map(score => Math.floor((score / totalScore) * 100));
+  // Initial proportioning clamped to [minWeight, maxWeight]
+  let weights = tpsScores.map(score => Math.max(minWeight, Math.min(maxWeight, Math.floor((score / totalScore) * 100))));
 
-  // Distribute remainder so the sum is guaranteed to equal exactly 100
+  // Adjust remainder to sum to exactly 100 while respecting minWeight and maxWeight
   let remainder = 100 - weights.reduce((a, b) => a + b, 0);
-  let idx = 0;
-  while (remainder > 0 && idx < 200) {
-    weights[idx % n]++;
-    remainder--;
-    idx++;
+  let iterations = 0;
+  while (remainder !== 0 && iterations < 300) {
+    iterations++;
+    if (remainder > 0) {
+      const candidates = weights
+        .map((w, i) => ({ w, i, tps: tpsScores[i] }))
+        .filter(x => x.w < maxWeight)
+        .sort((a, b) => b.tps - a.tps);
+      if (candidates.length === 0) break;
+      weights[candidates[0].i]++;
+      remainder--;
+    } else {
+      const candidates = weights
+        .map((w, i) => ({ w, i, tps: tpsScores[i] }))
+        .filter(x => x.w > minWeight)
+        .sort((a, b) => a.tps - b.tps);
+      if (candidates.length === 0) break;
+      weights[candidates[0].i]--;
+      remainder++;
+    }
   }
 
   // Differentiate slightly if all equal and n >= 2
   const allEqual = weights.every(w => w === weights[0]);
-  if (allEqual && n >= 2) {
-    if (weights[0] > 2) {
-      weights[0] += 2;
-      weights[weights.length - 1] -= 2;
-    }
+  if (allEqual && n >= 2 && weights[0] + 1 <= maxWeight && weights[n - 1] - 1 >= minWeight) {
+    weights[0] += 1;
+    weights[n - 1] -= 1;
   }
 
   return weights;

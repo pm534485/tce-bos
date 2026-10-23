@@ -46,5 +46,5 @@ export declare function validateCourse(course: Course, existingProgrammeCodes?: 
     assignment2: number;
     terminal: number;
 }, allowTps1?: boolean): CourseValidationReport;
-export declare function suggestCoWeightages(cos: CourseOutcome[]): number[];
+export declare function suggestCoWeightages(cos: CourseOutcome[], minWeight?: number, maxWeight?: number): number[];
 //# sourceMappingURL=validation.d.ts.map

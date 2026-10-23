@@ -303,13 +303,31 @@ describe('B5: Course Outcomes Validation', () => {
     expect(res.some(e => e.id === 'B5_WEIGHTAGE_ALL_EQUAL')).toBe(true);
   });
 
-  it('should suggest valid proportional CO weightages summing to 100', () => {
+  it('should suggest valid proportional CO weightages summing to 100 within 5% to 25%', () => {
     const suggested = suggestCoWeightages(validTheoryCos);
     expect(suggested).toHaveLength(validTheoryCos.length);
     const sum = suggested.reduce((a, b) => a + b, 0);
     expect(sum).toBe(100);
-    expect(suggested.every(w => w >= 8 && w <= 20)).toBe(true);
+    expect(suggested.every(w => w >= 5 && w <= 25)).toBe(true);
     expect(new Set(suggested).size).toBeGreaterThan(1);
+  });
+
+  it('should reject when TPS 2 (Understand) is selected more than twice', () => {
+    const cosThreeTps2 = [
+      ...validTheoryCos.slice(0, 2),
+      { ...validTheoryCos[2], tpsLevel: 2, statement: 'Interpret sorting and searching methods.' },
+      ...validTheoryCos.slice(3),
+    ];
+    const res = validateCourseOutcomes(cosThreeTps2, 'THEORY');
+    expect(res.some(e => e.id === 'B5_TPS2_MAX_LIMIT')).toBe(true);
+  });
+
+  it('should reject CO weightage less than 5% or greater than 25%', () => {
+    const cosBadWeight = validTheoryCos.map((c, i) =>
+      i === 0 ? { ...c, weightage: 4 } : i === 1 ? { ...c, weightage: 26 } : c
+    );
+    const res = validateCourseOutcomes(cosBadWeight, 'THEORY');
+    expect(res.some(e => e.id.includes('B5_WEIGHTAGE_RANGE'))).toBe(true);
   });
 
   it('should validate Practical CO domain requirements (Cognitive 2-4, Affective 2-3, Psychomotor 2-3)', () => {
