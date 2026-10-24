@@ -2385,13 +2385,13 @@ export const CourseWizard: React.FC = () => {
                                 <label className="block text-[11px] font-bold text-slate-600">
                                   TPS Level
                                 </label>
-                                {((course.courseOutcomes || []).filter(c => c.tpsLevel === 2).length) > 0 && (
+                                {(co.tpsLevel === 2 || co.tpsLevel === 1) && (
                                   <span className={`text-[10px] font-bold px-1 rounded ${
-                                    (course.courseOutcomes || []).filter(c => c.tpsLevel === 2).length >= 2
+                                    (course.courseOutcomes || []).filter(c => c.tpsLevel === 2 || c.tpsLevel === 1).length >= 2
                                       ? 'text-amber-800 bg-amber-100'
                                       : 'text-slate-500 bg-slate-100'
                                   }`}>
-                                    {((course.courseOutcomes || []).filter(c => c.tpsLevel === 2).length)}/2 used
+                                    {((course.courseOutcomes || []).filter(c => c.tpsLevel === 2 || c.tpsLevel === 1).length)}/2 used
                                   </span>
                                 )}
                               </div>
