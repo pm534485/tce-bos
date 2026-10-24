@@ -1887,20 +1887,20 @@ export const CourseWizard: React.FC = () => {
                           </span>
                         </div>
 
-                        {/* 4. U: Unique Letter (Narrower) */}
-                        <div className="col-span-3 sm:col-span-2 p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between group">
+                        {/* 4. U: Unique Letter (Sequence in Category) */}
+                        <div className="col-span-3 sm:col-span-2 p-2.5 bg-amber-50/50 rounded-xl border-2 border-amber-300 hover:border-amber-500 hover:shadow-xs transition-all flex flex-col justify-between group">
                           <div className="flex items-center justify-between">
-                            <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">U</span>
-                            <span className="text-[9px] text-sky-700 font-bold bg-sky-100 px-1 rounded">A-Z</span>
+                            <span className="text-[11px] text-amber-800 font-bold uppercase tracking-wider">U</span>
+                            <span className="text-[9px] text-amber-900 font-black bg-amber-200 px-1 rounded">Seq</span>
                           </div>
                           <div className="my-1">
                             <select
                               value={course.uniqueLetter || ''}
                               onChange={e => updateField('uniqueLetter', e.target.value.toUpperCase())}
-                              className="w-full text-center font-black text-base sm:text-lg text-[#0F2942] bg-transparent border-0 focus:ring-2 focus:ring-[#0F2942] rounded cursor-pointer p-0"
-                              title="Click to select Unique Letter"
+                              className="w-full text-center font-black text-base sm:text-lg text-[#0F2942] bg-transparent border-0 focus:ring-2 focus:ring-amber-500 rounded cursor-pointer p-0"
+                              title="Enter the sequence of the course in the category (e.g. A for 1st course, B for 2nd course)"
                             >
-                              <option value="" disabled>Letter</option>
+                              <option value="" disabled>Seq</option>
                               {VALID_UNIQUE_LETTERS.map(letter => (
                                 <option key={letter} value={letter}>
                                   {letter}
@@ -1908,7 +1908,7 @@ export const CourseWizard: React.FC = () => {
                               ))}
                             </select>
                           </div>
-                          <span className="text-[10px] text-slate-500 block font-medium">Letter</span>
+                          <span className="text-[10px] text-amber-900 block font-bold">Course Seq</span>
                         </div>
 
                         {/* 5. V: Version (Narrower) */}
@@ -1935,6 +1935,15 @@ export const CourseWizard: React.FC = () => {
                           <span className="text-[10px] text-slate-500 block font-medium">
                             {course.version !== undefined && course.version !== null && course.version !== ('' as any) ? `Version ${course.version}` : 'Version'}
                           </span>
+                        </div>
+                      </div>
+
+                      {/* Bright Sequence Guidance Banner */}
+                      <div className="mt-3 p-3 bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-xl flex items-center space-x-2.5 text-xs text-amber-950 font-bold shadow-xs">
+                        <span className="text-base flex-shrink-0">📌</span>
+                        <div className="leading-snug">
+                          <span className="text-amber-900 font-extrabold uppercase text-[11px] tracking-wide block">Course Code Guideline (Letter U):</span>
+                          <span>When choosing the letter, <strong>enter the sequence of the course in the category</strong> (e.g., <strong>A</strong> for 1st course, <strong>B</strong> for 2nd course, <strong>C</strong> for 3rd course).</span>
                         </div>
                       </div>
 
@@ -3635,13 +3644,42 @@ export const CourseWizard: React.FC = () => {
                                   </div>
                                 </div>
 
+                                {/* Bright Notice: Hours cannot be more than 2 for a topic */}
+                                <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-amber-950 shadow-xs">
+                                  <div className="flex items-center space-x-2.5">
+                                    <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-400 text-amber-950 font-black text-sm flex-shrink-0 shadow-xs">
+                                      ⚡
+                                    </span>
+                                    <div className="text-xs">
+                                      <span className="font-extrabold text-amber-950 text-sm tracking-tight block">
+                                        Topic Period Limit: Maximum 2 Hours per Topic
+                                      </span>
+                                      <span className="text-amber-800 font-medium">
+                                        In accordance with TCE guidelines, lecture periods for an individual topic or subtopic <strong>cannot be more than 2 hours</strong> (valid values: 0, 1, or 2 periods).
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center space-x-1.5 self-start sm:self-center">
+                                    <span className="px-2.5 py-1 bg-amber-200 border border-amber-400 text-amber-950 text-[11px] font-black rounded-lg uppercase tracking-wider shadow-xs whitespace-nowrap">
+                                      Limit: ≤ 2 Hrs / Topic
+                                    </span>
+                                  </div>
+                                </div>
+
                                 <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
                                   <table className="w-full text-xs text-left border-collapse">
                                     <thead className="bg-slate-100 text-slate-700 font-bold">
                                       <tr>
                                         <th className="p-2.5 border-b w-28 text-center">Module No.</th>
                                         <th className="p-2.5 border-b min-w-[280px]">Topics</th>
-                                        <th className="p-2.5 border-b w-28 text-center">No. of Periods</th>
+                                        <th className="p-2.5 border-b w-32 text-center">
+                                          <div className="flex flex-col items-center">
+                                            <span>No. of Periods</span>
+                                            <span className="mt-0.5 px-1.5 py-0.2 bg-amber-200 border border-amber-400 text-amber-950 text-[10px] font-black rounded uppercase tracking-wider">
+                                              Max 2 hrs
+                                            </span>
+                                          </div>
+                                        </th>
                                         <th className="p-2.5 border-b w-36 text-center">Course Outcomes</th>
                                         <th className="p-2.5 border-b w-14 text-center">Action</th>
                                       </tr>

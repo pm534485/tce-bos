@@ -6,6 +6,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
+  login: (email: string, password: string) => Promise<User>;
   googleLogin: (data: { email?: string; name?: string; credential?: string; accessToken?: string; avatar?: string; googleId?: string }) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
@@ -37,6 +38,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadUser();
   }, []);
 
+  const login = async (email: string, password: string): Promise<User> => {
+    const res = await api.login(email, password);
+    localStorage.setItem('syllabusforge_token', res.token);
+    setToken(res.token);
+    setUser(res.user);
+    return res.user;
+  };
+
   const googleLogin = async (data: { email?: string; name?: string; credential?: string; accessToken?: string; avatar?: string; googleId?: string }) => {
     const res = await api.googleLogin(data);
     localStorage.setItem('syllabusforge_token', res.token);
@@ -56,6 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         token,
         isLoading,
+        login,
         googleLogin,
         logout,
         isAuthenticated: !!user,
