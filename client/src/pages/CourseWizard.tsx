@@ -3614,18 +3614,6 @@ export const CourseWizard: React.FC = () => {
                                   </div>
 
                                   <div className="flex flex-wrap items-center gap-2">
-                                    {(course.modules && course.modules.length > 0) && (
-                                      <button
-                                        type="button"
-                                        onClick={handleSyncFromModules}
-                                        className="px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-sm"
-                                        title="Auto-fill schedule from modules and subtopics entered in Section 5"
-                                      >
-                                        <Sparkles className="w-3.5 h-3.5 text-sky-600" />
-                                        <span>Auto-fill from Syllabus Modules</span>
-                                      </button>
-                                    )}
-
                                     <button
                                       type="button"
                                       onClick={handleAddModule}
@@ -3664,19 +3652,9 @@ export const CourseWizard: React.FC = () => {
                                           <td colSpan={5} className="p-8 text-center text-slate-500 bg-slate-50/50">
                                             <p className="text-sm font-semibold text-slate-700 mb-2">No lecture schedule items entered yet.</p>
                                             <p className="text-xs text-slate-500 mb-4">
-                                              You can auto-generate the complete schedule from your syllabus modules above or create modules from scratch.
+                                              Create modules and topics to build your lecture schedule.
                                             </p>
                                             <div className="flex items-center justify-center space-x-3">
-                                              {(course.modules && course.modules.length > 0) && (
-                                                <button
-                                                  type="button"
-                                                  onClick={handleSyncFromModules}
-                                                  className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold flex items-center space-x-1.5 shadow"
-                                                >
-                                                  <Sparkles className="w-4 h-4" />
-                                                  <span>Auto-fill from Syllabus Modules</span>
-                                                </button>
-                                              )}
                                               <button
                                                 type="button"
                                                 onClick={handleAddModule}
@@ -3792,26 +3770,44 @@ export const CourseWizard: React.FC = () => {
                                                 </div>
                                               </td>
 
-                                              {/* Periods column: supports optional/blank */}
+                                              {/* Periods column: supports optional/blank, max 2 */}
                                               <td className="p-2 text-center align-middle">
                                                 <input
                                                   type="text"
                                                   inputMode="numeric"
-                                                  pattern="[0-9]*"
+                                                  pattern="[0-2]?"
+                                                  maxLength={1}
                                                   value={item.periods !== undefined && item.periods !== null ? String(item.periods) : ''}
                                                   onChange={e => {
                                                     const list = [...scheduleItems];
-                                                    const raw = e.target.value.trim();
-                                                    list[idx] = { ...list[idx], periods: raw === '' ? '' : (parseInt(raw) || 0) };
+                                                    const digits = e.target.value.replace(/[^0-9]/g, '');
+                                                    let val: number | '' = '';
+                                                    if (digits !== '') {
+                                                      const parsed = parseInt(digits, 10);
+                                                      val = Math.min(2, Math.max(0, parsed));
+                                                    }
+                                                    list[idx] = { ...list[idx], periods: val };
                                                     updateField('lectureScheduleItems', list);
+                                                  }}
+                                                  onBlur={() => {
+                                                    if (item.periods !== '' && item.periods !== undefined && item.periods !== null) {
+                                                      const p = Number(item.periods);
+                                                      if (p > 2) {
+                                                        const list = [...scheduleItems];
+                                                        list[idx] = { ...list[idx], periods: 2 };
+                                                        updateField('lectureScheduleItems', list);
+                                                      }
+                                                    }
                                                   }}
                                                   placeholder="-"
                                                   className={`w-16 p-1 border rounded text-center text-xs font-bold transition-colors ${
-                                                    isHeader
-                                                      ? 'bg-white border-slate-400 text-slate-900 shadow-sm'
-                                                      : 'border-slate-300 text-slate-800 bg-white'
+                                                    Number(item.periods) > 2
+                                                      ? 'border-red-400 bg-red-50 text-red-700'
+                                                      : isHeader
+                                                        ? 'bg-white border-slate-400 text-slate-900 shadow-sm'
+                                                        : 'border-slate-300 text-slate-800 bg-white'
                                                   }`}
-                                                  title="Enter periods for this topic or leave blank if combined across topics"
+                                                  title="Enter periods for this topic (maximum 2 periods)"
                                                 />
                                               </td>
 

@@ -1088,6 +1088,17 @@ export function validateLectureSchedule(courseType, modules, credits, L = 0, lec
                     fixHint: `Adjust periods across lecture schedule rows so the total satisfies ${criteria.description}.`,
                 });
             }
+            lectureScheduleItems.forEach((item, rIdx) => {
+                if (item.periods && Number(item.periods) > 2) {
+                    results.push({
+                        id: `B9_SCHEDULE_ROW_PERIODS_MAX_${rIdx}`,
+                        field: `lectureScheduleItems.${rIdx}.periods`,
+                        severity: 'error',
+                        message: `Topic ${item.moduleNo || rIdx + 1}: Number of periods cannot be more than 2 (found ${item.periods}).`,
+                        fixHint: 'Reduce periods for this topic to at most 2 periods.',
+                    });
+                }
+            });
         }
     }
     return results;
