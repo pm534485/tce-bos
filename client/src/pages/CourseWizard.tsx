@@ -3312,7 +3312,7 @@ export const CourseWizard: React.FC = () => {
 
                             <div>
                               <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                                Main Topic Title
+                                Module Title
                               </label>
                               <input
                                 type="text"
@@ -3322,14 +3322,14 @@ export const CourseWizard: React.FC = () => {
                                   updated[idx] = { ...updated[idx], mainTopic: e.target.value };
                                   updateField('modules', updated);
                                 }}
-                                placeholder={`Enter Module ${mod.moduleNo || idx + 1} topic`}
+                                placeholder={`Enter Module ${mod.moduleNo || idx + 1} title`}
                                 className="w-full p-2 border border-slate-300 rounded-lg text-xs"
                               />
                             </div>
 
                             <div>
                               <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                                Subtopics (comma-separated or dashed)
+                                Topics
                               </label>
                               <input
                                 type="text"
@@ -3353,7 +3353,7 @@ export const CourseWizard: React.FC = () => {
                                     return next;
                                   });
                                 }}
-                                placeholder="Enter subtopics (comma, dash or newline separated)"
+                                placeholder="Enter topics (comma, dash or newline separated)"
                                 className="w-full p-2 border border-slate-300 rounded-lg text-xs"
                               />
                             </div>
