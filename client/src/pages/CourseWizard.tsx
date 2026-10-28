@@ -4414,7 +4414,7 @@ export const CourseWizard: React.FC = () => {
                             };
                             updateField('textBooks', [...(course.textBooks || []), newBook]);
                           }}
-                          className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 hover:border-sky-500 bg-white hover:bg-sky-50/50 text-slate-600 hover:text-sky-700 text-xs font-semibold transition-colors cursor-pointer"
+                          className="w-full py-2.5 rounded-xl border-2 border-dashed border-[#7B1113]/40 hover:border-[#7B1113] bg-white hover:bg-[#7B1113]/5 text-[#7B1113] hover:text-[#5E0D0E] text-xs font-bold transition-all cursor-pointer flex items-center justify-center space-x-1.5"
                         >
                           + Add Text Book
                         </button>
@@ -4556,7 +4556,7 @@ export const CourseWizard: React.FC = () => {
                             };
                             updateField('referenceBooks', [...(course.referenceBooks || []), newBook]);
                           }}
-                          className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 hover:border-sky-500 bg-white hover:bg-sky-50/50 text-slate-600 hover:text-sky-700 text-xs font-semibold transition-colors cursor-pointer"
+                          className="w-full py-2.5 rounded-xl border-2 border-dashed border-[#7B1113]/40 hover:border-[#7B1113] bg-white hover:bg-[#7B1113]/5 text-[#7B1113] hover:text-[#5E0D0E] text-xs font-bold transition-all cursor-pointer flex items-center justify-center space-x-1.5"
                         >
                           + Add Reference Book
                         </button>
@@ -4656,7 +4656,7 @@ export const CourseWizard: React.FC = () => {
                           };
                           updateField('webResources', [...(course.webResources || []), newResource]);
                         }}
-                        className="w-full py-2 rounded-xl border border-dashed border-slate-300 text-slate-600 hover:text-sky-700 text-xs font-semibold"
+                        className="w-full py-2.5 rounded-xl border-2 border-dashed border-[#7B1113]/40 hover:border-[#7B1113] bg-white hover:bg-[#7B1113]/5 text-[#7B1113] hover:text-[#5E0D0E] text-xs font-bold transition-all cursor-pointer flex items-center justify-center space-x-1.5"
                       >
                         + Add NPTEL Course
                       </button>
