@@ -1712,7 +1712,7 @@ export const CourseWizard: React.FC = () => {
             </div>
 
             {/* Center Wizard Form Container */}
-            <div className="flex-1 w-full bg-white border border-slate-200 border-t-4 border-t-[#800020] rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+            <div className="flex-1 w-full bg-white border border-slate-200 border-t-4 border-t-[#800020] rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col justify-start">
               <div>
                 {/* ============================================================== */}
                 {/* PERSISTENT TCE INSTITUTIONAL COURSE HEADER (OFFICIAL TABLE)   */}
@@ -4841,7 +4841,7 @@ export const CourseWizard: React.FC = () => {
               </div>
 
               {/* Wizard Bottom Navigation Buttons */}
-              <div className="flex items-center justify-between pt-4 border-t border-slate-200 mt-4">
+              <div className="flex items-center justify-between pt-8 border-t border-slate-200 mt-8">
                 <button
                   onClick={() => setCurrentStep(prev => Math.max(0, prev - 1))}
                   disabled={currentStep === 0}
