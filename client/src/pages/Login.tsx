@@ -294,8 +294,8 @@ export const Login: React.FC = () => {
         </div>
 
         {/* Middle: Page Title - Course Design Portal */}
-        <div className="relative z-10 my-auto py-10 md:py-16">
-          <h1 className="text-4xl sm:text-5xl lg:text-[clamp(2rem,3vw,3.75rem)] font-black text-white tracking-tight leading-[1.12] lg:whitespace-nowrap">
+        <div className="relative z-10 my-auto py-10 md:py-16 text-center">
+          <h1 className="text-4xl sm:text-5xl lg:text-[clamp(2.2rem,3.2vw,4rem)] font-black text-white tracking-tight leading-[1.12] lg:whitespace-nowrap" style={{fontFamily: "'Georgia', 'Times New Roman', serif", letterSpacing: '-0.01em'}}>
             Course Design Portal
           </h1>
         </div>
@@ -332,14 +332,13 @@ export const Login: React.FC = () => {
                 setAuthMode('faculty');
                 setError(null);
               }}
-              className={`flex-1 py-2.5 rounded-xl flex items-center justify-center space-x-2 transition-all ${
+              className={`flex-1 py-2.5 rounded-xl flex items-center justify-center transition-all ${
                 authMode === 'faculty'
                   ? 'bg-white text-slate-900 shadow-sm'
                   : 'text-slate-500 hover:text-slate-900'
               }`}
             >
-              <GoogleIcon className="w-4 h-4" />
-              <span>Faculty SSO</span>
+              <span>Faculty Login</span>
             </button>
             <button
               type="button"
@@ -347,13 +346,12 @@ export const Login: React.FC = () => {
                 setAuthMode('admin');
                 setError(null);
               }}
-              className={`flex-1 py-2.5 rounded-xl flex items-center justify-center space-x-2 transition-all ${
+              className={`flex-1 py-2.5 rounded-xl flex items-center justify-center transition-all ${
                 authMode === 'admin'
                   ? 'bg-[#7B1113] text-white shadow-sm'
                   : 'text-slate-500 hover:text-slate-900'
               }`}
             >
-              <Shield className="w-4 h-4 text-[#E2BF53]" />
               <span>Admin Login</span>
             </button>
           </div>
@@ -393,16 +391,7 @@ export const Login: React.FC = () => {
           {/* ADMIN CREDENTIALS LOGIN */}
           {authMode === 'admin' && (
             <form onSubmit={handleAdminLogin} className="space-y-4">
-              {/* Informative Regulation Fix Highlight */}
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-950 space-y-1">
-                <div className="font-bold flex items-center space-x-1.5 text-amber-900">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                  <span>Institutional Regulation & Master Data Control</span>
-                </div>
-                <p className="text-[11px] text-amber-800 leading-relaxed">
-                  Log in here to fix permanent data such as the active Regulation year/code (e.g. <strong>RR 26 / Reg. 2026</strong>), update Course Categories, or manage curriculum master data.
-                </p>
-              </div>
+
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
