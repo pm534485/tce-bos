@@ -294,8 +294,8 @@ export const Login: React.FC = () => {
         </div>
 
         {/* Middle: Page Title - Course Design Portal */}
-        <div className="relative z-10 my-auto py-10 md:py-16 text-center">
-          <h1 className="text-4xl sm:text-5xl lg:text-[clamp(2.2rem,3.2vw,4rem)] font-black text-white tracking-tight leading-[1.12] lg:whitespace-nowrap" style={{fontFamily: "'Georgia', 'Times New Roman', serif", letterSpacing: '-0.01em'}}>
+        <div className="relative z-10 my-auto py-10 md:py-16">
+          <h1 className="text-5xl sm:text-6xl lg:text-[clamp(2.8rem,4.5vw,5rem)] font-black text-white leading-[1.05] tracking-tight" style={{fontFamily: "'Inter', 'Outfit', system-ui, sans-serif", fontWeight: 900}}>
             Course Design Portal
           </h1>
         </div>
