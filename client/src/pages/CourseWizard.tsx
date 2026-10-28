@@ -908,7 +908,8 @@ export const CourseWizard: React.FC = () => {
   const catPart = course.categoryLetter ? course.categoryLetter : '—';
   const uniquePart = course.uniqueLetter ? course.uniqueLetter : '—';
   const verPart = (course.version !== undefined && course.version !== null && course.version !== ('' as any)) ? String(course.version) : '—';
-  const displaySubjectCode = hasEnteredAnyCode ? `${regPart}${progPart}${catPart}${uniquePart}${verPart}` : '—';
+  // Always show reg code + hyphens for unfilled parts (never collapse to single dash)
+  const displaySubjectCode = `${regPart}${progPart}${catPart}${uniquePart}${verPart}`;
 
   // Step 0 validation: Next button enabled ONLY when all details in the first page are entered and valid
   const isStep0Complete = Boolean(
