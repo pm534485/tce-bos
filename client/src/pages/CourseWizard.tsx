@@ -2717,9 +2717,10 @@ export const CourseWizard: React.FC = () => {
                                             type="number"
                                             min={0}
                                             max={100}
-                                            value={rowData.cat1 || 0}
+                                            value={rowData.cat1 === 0 ? '' : rowData.cat1}
+                                            placeholder="0"
                                             onChange={e => updateCell('cat1', parseInt(e.target.value) || 0)}
-                                            className="w-16 p-1.5 border border-slate-300 rounded text-center text-xs font-semibold"
+                                            className="w-16 p-1.5 border border-slate-300 rounded text-center text-xs font-semibold placeholder:text-slate-300 placeholder:font-normal"
                                           />
                                         </td>
                                         <td className="p-2 text-center">
@@ -2727,9 +2728,10 @@ export const CourseWizard: React.FC = () => {
                                             type="number"
                                             min={0}
                                             max={100}
-                                            value={rowData.assignment1 || 0}
+                                            value={rowData.assignment1 === 0 ? '' : rowData.assignment1}
+                                            placeholder="0"
                                             onChange={e => updateCell('assignment1', parseInt(e.target.value) || 0)}
-                                            className="w-16 p-1.5 border border-slate-300 rounded text-center text-xs font-semibold"
+                                            className="w-16 p-1.5 border border-slate-300 rounded text-center text-xs font-semibold placeholder:text-slate-300 placeholder:font-normal"
                                           />
                                         </td>
                                         <td className="p-2 text-center">
@@ -2737,9 +2739,10 @@ export const CourseWizard: React.FC = () => {
                                             type="number"
                                             min={0}
                                             max={100}
-                                            value={rowData.cat2 || 0}
+                                            value={rowData.cat2 === 0 ? '' : rowData.cat2}
+                                            placeholder="0"
                                             onChange={e => updateCell('cat2', parseInt(e.target.value) || 0)}
-                                            className="w-16 p-1.5 border border-slate-300 rounded text-center text-xs font-semibold"
+                                            className="w-16 p-1.5 border border-slate-300 rounded text-center text-xs font-semibold placeholder:text-slate-300 placeholder:font-normal"
                                           />
                                         </td>
                                         <td className="p-2 text-center">
@@ -2747,9 +2750,10 @@ export const CourseWizard: React.FC = () => {
                                             type="number"
                                             min={0}
                                             max={100}
-                                            value={rowData.assignment2 || 0}
+                                            value={rowData.assignment2 === 0 ? '' : rowData.assignment2}
+                                            placeholder="0"
                                             onChange={e => updateCell('assignment2', parseInt(e.target.value) || 0)}
-                                            className="w-16 p-1.5 border border-slate-300 rounded text-center text-xs font-semibold"
+                                            className="w-16 p-1.5 border border-slate-300 rounded text-center text-xs font-semibold placeholder:text-slate-300 placeholder:font-normal"
                                           />
                                         </td>
                                         <td className="p-2 text-center bg-sky-50/30">
@@ -2757,9 +2761,10 @@ export const CourseWizard: React.FC = () => {
                                             type="number"
                                             min={0}
                                             max={100}
-                                            value={rowData.terminalExam || 0}
+                                            value={rowData.terminalExam === 0 ? '' : rowData.terminalExam}
+                                            placeholder="0"
                                             onChange={e => updateCell('terminalExam', parseInt(e.target.value) || 0)}
-                                            className="w-16 p-1.5 border border-sky-300 bg-white rounded text-center text-xs font-bold text-sky-900"
+                                            className="w-16 p-1.5 border border-sky-300 bg-white rounded text-center text-xs font-bold text-sky-900 placeholder:text-sky-200 placeholder:font-normal"
                                           />
                                         </td>
                                       </tr>
@@ -3245,7 +3250,8 @@ export const CourseWizard: React.FC = () => {
                                         type="number"
                                         min={0}
                                         max={100}
-                                        value={(cell as any)[colKey] || 0}
+                                        value={(cell as any)[colKey] === 0 ? '' : (cell as any)[colKey]}
+                                        placeholder="0"
                                         onChange={e => {
                                           const val = parseInt(e.target.value) || 0;
                                           const matrix = [...(course.assessmentMatrix || [])];
@@ -3257,7 +3263,7 @@ export const CourseWizard: React.FC = () => {
                                           }
                                           updateField('assessmentMatrix', matrix);
                                         }}
-                                        className="w-16 p-1.5 border border-slate-300 rounded text-center text-xs"
+                                        className="w-16 p-1.5 border border-slate-300 rounded text-center text-xs placeholder:text-slate-300 placeholder:font-normal"
                                       />
                                     </td>
                                   ))}
