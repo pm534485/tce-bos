@@ -39,6 +39,12 @@ export const Dashboard: React.FC = () => {
   });
 
   const [adminScope, setAdminScope] = useState<'all' | 'mine'>('all');
+  const [showTypeModal, setShowTypeModal] = useState(false);
+
+  const handleSelectType = (type: CourseType) => {
+    setShowTypeModal(false);
+    navigate(`/courses/new?type=${type}`);
+  };
 
   useEffect(() => {
     loadCourses();
@@ -261,7 +267,7 @@ export const Dashboard: React.FC = () => {
               : 'You have not saved or submitted any course syllabi yet.'}
           </p>
           <button
-            onClick={() => navigate('/courses/new')}
+            onClick={() => setShowTypeModal(true)}
             className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-[#7B1113] hover:bg-[#5E0D0E] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
           >
             <PlusCircle className="w-4 h-4" />
@@ -364,6 +370,85 @@ export const Dashboard: React.FC = () => {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Course Type Chooser Modal */}
+      {showTypeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full border-t-4 border-[#800020] overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-[#F8F9FB] p-5 border-b border-slate-200">
+              <div className="flex items-center space-x-2 text-[#800020] mb-1">
+                <BookOpen className="w-5 h-5 text-[#800020]" />
+                <h3 className="text-lg font-bold">Create New University Course</h3>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Select the course delivery category for <strong>Regulation 2026</strong>. The wizard will automatically configure institutional guidelines, contact hours, TPS outcomes and assessment schemes.
+              </p>
+            </div>
+
+            {/* Modal Options */}
+            <div className="p-5 space-y-3 max-h-[65vh] overflow-y-auto">
+              {/* 1. Theory */}
+              <button
+                onClick={() => handleSelectType('THEORY')}
+                className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-[#800020] hover:bg-slate-50 transition-all flex items-start space-x-3.5 group"
+              >
+                <div className="w-10 h-10 rounded-lg bg-[#800020]/10 text-[#800020] flex items-center justify-center font-bold text-sm group-hover:bg-[#800020] group-hover:text-white transition-all flex-shrink-0">TH</div>
+                <div>
+                  <div className="font-bold text-slate-900 group-hover:text-[#800020] text-sm">1. Theory Course</div>
+                  <div className="text-xs text-slate-500 mt-0.5 leading-relaxed">Classroom lecture &amp; tutorial format (e.g., 3-1-0 or 3-0-0). 6–8 Course Outcomes, CATs + Assignments + Terminal Exam, modules and book recency checks.</div>
+                </div>
+              </button>
+
+              {/* 2. Practical */}
+              <button
+                onClick={() => handleSelectType('PRACTICAL')}
+                className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all flex items-start space-x-3.5 group"
+              >
+                <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm group-hover:bg-slate-200 group-hover:text-slate-900 transition-all flex-shrink-0">PR</div>
+                <div>
+                  <div className="font-bold text-slate-900 text-sm">2. Practical (Laboratory) Course</div>
+                  <div className="text-xs text-slate-500 mt-0.5 leading-relaxed">L=0, T=0, credits = P/2. General CO Pool (Cognitive, Affective, Psychomotor), 13 lab objectives, Schwab/Herron openness levels, Annexure 1 course plan.</div>
+                </div>
+              </button>
+
+              {/* 3. TCP */}
+              <button
+                onClick={() => handleSelectType('TCP')}
+                className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-[#C59B27] hover:bg-slate-50 transition-all flex items-start space-x-3.5 group"
+              >
+                <div className="w-10 h-10 rounded-lg bg-[#C59B27]/15 text-[#9C7A1D] flex items-center justify-center font-bold text-sm group-hover:bg-[#C59B27] group-hover:text-white transition-all flex-shrink-0">TCP</div>
+                <div>
+                  <div className="font-bold text-slate-900 group-hover:text-[#9C7A1D] text-sm">3. Theory cum Practical (TCP)</div>
+                  <div className="text-xs text-slate-500 mt-0.5 leading-relaxed">Integrated lecture &amp; laboratory contact hours. TCP-T or TCP-P examination type, split continuous assessment matrix, combined PO6–PO11 mapping.</div>
+                </div>
+              </button>
+
+              {/* 4. Audit */}
+              <button
+                onClick={() => handleSelectType('AUDIT')}
+                className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-amber-600 hover:bg-amber-50/50 transition-all flex items-start space-x-3.5 group"
+              >
+                <div className="w-10 h-10 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-sm group-hover:bg-amber-700 group-hover:text-white transition-all flex-shrink-0">AU</div>
+                <div>
+                  <div className="font-bold text-slate-900 group-hover:text-amber-800 text-sm">4. Audit Course (Zero Credit)</div>
+                  <div className="text-xs text-slate-500 mt-0.5 leading-relaxed">No academic credits assigned (Credits: 0). Mandatory institutional non-CGPA courses evaluated exclusively via Continuous Assessment (CA).</div>
+                </div>
+              </button>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+              <button
+                onClick={() => setShowTypeModal(false)}
+                className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-200 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

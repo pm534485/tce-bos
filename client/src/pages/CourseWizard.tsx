@@ -768,6 +768,13 @@ export const CourseWizard: React.FC = () => {
   // Admin configured active regulation state
   const [adminRegulation, setAdminRegulation] = useState<{ year: number; code: string }>({ year: 2026, code: '26' });
 
+  // Track which fields the user has interacted with (to show errors only after interaction)
+  const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
+
+  const touchField = (field: string) => {
+    setTouchedFields(prev => new Set(prev).add(field));
+  };
+
   // Safe back handler: steps to previous wizard section when step > 0, otherwise goes to previous browser page
   const handleBack = () => {
     if (currentStep > 0) {
@@ -876,12 +883,16 @@ export const CourseWizard: React.FC = () => {
     : existingCodes;
   const validationReport = validateCourse(course, otherCodes);
 
-  // Real-time field-level validation helpers
+  // Real-time field-level validation helpers (only show errors for touched fields)
   const getFieldErrors = (fieldName: string) => {
+    const isTouched = touchedFields.has(fieldName) || [...touchedFields].some(f => f === fieldName || f.startsWith(`${fieldName}.`));
+    if (!isTouched) return [];
     return validationReport.errors.filter(e => e.field === fieldName || e.field.startsWith(`${fieldName}.`));
   };
 
   const hasFieldError = (fieldName: string) => {
+    const isTouched = touchedFields.has(fieldName) || [...touchedFields].some(f => f === fieldName || f.startsWith(`${fieldName}.`));
+    if (!isTouched) return false;
     return validationReport.errors.some(e => e.field === fieldName || e.field.startsWith(`${fieldName}.`));
   };
 
@@ -1187,6 +1198,8 @@ export const CourseWizard: React.FC = () => {
 
   // Update field helpers
   const updateField = (field: keyof Course, value: any) => {
+    // Mark field as touched when user changes it
+    setTouchedFields(prev => new Set(prev).add(field as string));
     setCourse(prev => {
       const updated = { ...prev, [field]: value };
 
@@ -1925,7 +1938,7 @@ export const CourseWizard: React.FC = () => {
                               title="Click to select Version"
                             >
                               <option value="" disabled>Ver</option>
-                              {[0, 1, 2, 3, 4, 5].map(v => (
+                              {[0, 1, 2].map(v => (
                                 <option key={v} value={v}>
                                   {v}
                                 </option>
@@ -2010,8 +2023,10 @@ export const CourseWizard: React.FC = () => {
                           <input
                             type="number"
                             min={0}
+                            max={5}
                             value={course.L === ('' as any) ? '' : (course.L ?? '')}
-                            onChange={e => updateField('L', e.target.value === '' ? ('' as any) : parseInt(e.target.value) || 0)}
+                            onChange={e => updateField('L', e.target.value === '' ? ('' as any) : Math.min(5, parseInt(e.target.value) || 0))}
+                            onBlur={() => touchField('L')}
                             placeholder="0"
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500"
                           />
@@ -2024,8 +2039,10 @@ export const CourseWizard: React.FC = () => {
                           <input
                             type="number"
                             min={0}
+                            max={5}
                             value={course.T === ('' as any) ? '' : (course.T ?? '')}
-                            onChange={e => updateField('T', e.target.value === '' ? ('' as any) : parseInt(e.target.value) || 0)}
+                            onChange={e => updateField('T', e.target.value === '' ? ('' as any) : Math.min(5, parseInt(e.target.value) || 0))}
+                            onBlur={() => touchField('T')}
                             placeholder="0"
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500"
                           />
@@ -2038,9 +2055,11 @@ export const CourseWizard: React.FC = () => {
                           <input
                             type="number"
                             min={0}
+                            max={5}
                             value={course.courseType === 'THEORY' ? 0 : (course.P === ('' as any) ? '' : (course.P ?? ''))}
                             disabled={course.courseType === 'THEORY'}
-                            onChange={e => updateField('P', e.target.value === '' ? ('' as any) : parseInt(e.target.value) || 0)}
+                            onChange={e => updateField('P', e.target.value === '' ? ('' as any) : Math.min(5, parseInt(e.target.value) || 0))}
+                            onBlur={() => touchField('P')}
                             placeholder="0"
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                             title={course.courseType === 'THEORY' ? 'Practical is disabled for theory courses' : 'Practical contact hours'}
