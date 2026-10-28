@@ -4414,9 +4414,9 @@ export const CourseWizard: React.FC = () => {
                             };
                             updateField('textBooks', [...(course.textBooks || []), newBook]);
                           }}
-                          className="w-full py-2.5 rounded-xl border-2 border-dashed border-[#7B1113]/40 hover:border-[#7B1113] bg-white hover:bg-[#7B1113]/5 text-[#7B1113] hover:text-[#5E0D0E] text-xs font-bold transition-all cursor-pointer flex items-center justify-center space-x-1.5"
+                          className="inline-flex items-center space-x-2 px-5 py-2 rounded-lg bg-[#7B1113] hover:bg-[#5E0D0E] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
                         >
-                          + Add Text Book
+                          <span>+</span><span>Add Text Book</span>
                         </button>
                       )}
                     </div>
@@ -4556,9 +4556,9 @@ export const CourseWizard: React.FC = () => {
                             };
                             updateField('referenceBooks', [...(course.referenceBooks || []), newBook]);
                           }}
-                          className="w-full py-2.5 rounded-xl border-2 border-dashed border-[#7B1113]/40 hover:border-[#7B1113] bg-white hover:bg-[#7B1113]/5 text-[#7B1113] hover:text-[#5E0D0E] text-xs font-bold transition-all cursor-pointer flex items-center justify-center space-x-1.5"
+                          className="inline-flex items-center space-x-2 px-5 py-2 rounded-lg bg-[#7B1113] hover:bg-[#5E0D0E] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
                         >
-                          + Add Reference Book
+                          <span>+</span><span>Add Reference Book</span>
                         </button>
                       )}
                     </div>
@@ -4656,9 +4656,9 @@ export const CourseWizard: React.FC = () => {
                           };
                           updateField('webResources', [...(course.webResources || []), newResource]);
                         }}
-                        className="w-full py-2.5 rounded-xl border-2 border-dashed border-[#7B1113]/40 hover:border-[#7B1113] bg-white hover:bg-[#7B1113]/5 text-[#7B1113] hover:text-[#5E0D0E] text-xs font-bold transition-all cursor-pointer flex items-center justify-center space-x-1.5"
+                        className="inline-flex items-center space-x-2 px-5 py-2 rounded-lg bg-[#7B1113] hover:bg-[#5E0D0E] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
                       >
-                        + Add NPTEL Course
+                        <span>+</span><span>Add NPTEL Course</span>
                       </button>
                       <InlineFieldError field="textBooks" />
                       <InlineFieldError field="referenceBooks" />
