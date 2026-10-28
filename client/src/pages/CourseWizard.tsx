@@ -4841,7 +4841,7 @@ export const CourseWizard: React.FC = () => {
               </div>
 
               {/* Wizard Bottom Navigation Buttons */}
-              <div className="flex items-center justify-between pt-8 border-t border-slate-200 mt-8">
+              <div className="flex items-center justify-between pt-4 border-t border-slate-200 mt-4">
                 <button
                   onClick={() => setCurrentStep(prev => Math.max(0, prev - 1))}
                   disabled={currentStep === 0}
