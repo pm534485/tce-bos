@@ -4,6 +4,10 @@ export interface ProgrammeCode {
     department: string;
 }
 export declare const PROGRAMME_CODES: ProgrammeCode[];
+export declare const DEPARTMENT_OPTIONS: readonly ["Civil Engineering", "Mechanical Engineering", "Electrical and Electronics Engineering", "Electronics and Communication Engineering", "Computer Science and Engineering", "Information Technology", "Computer Science and Business Systems", "Computer Applications", "Artificial Intelligence", "Mechatronics", "Fashion Technology", "Applied Mathematics and Computational Science", "Mathematics", "Physics", "Chemistry", "English", "First Year / Interdisciplinary"];
+export type DepartmentName = typeof DEPARTMENT_OPTIONS[number];
+export declare function getProgrammesForDepartment(dept?: string): ProgrammeCode[];
+export declare function getDepartmentForProgramme(code?: string): string;
 export interface CategoryCode {
     code: string;
     name: string;

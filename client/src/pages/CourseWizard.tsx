@@ -20,6 +20,9 @@ import {
   suggestCoWeightages,
   countWords,
   PROGRAMME_CODES,
+  DEPARTMENT_OPTIONS,
+  getProgrammesForDepartment,
+  getDepartmentForProgramme,
   CATEGORY_CODES,
   CATEGORY_ABBREVIATIONS,
   CATEGORY_OPTIONS,
@@ -916,6 +919,35 @@ export const CourseWizard: React.FC = () => {
   // Always show reg code + hyphens for unfilled parts (never collapse to single dash)
   const displaySubjectCode = `${regPart}${progPart}${catPart}${uniquePart}${verPart}`;
 
+  // Filter designated programme codes based on the chosen department
+  const availableProgrammeCodes = useMemo(() => {
+    const currentDept = course.department || getDepartmentForProgramme(course.programmeCode);
+    return getProgrammesForDepartment(currentDept);
+  }, [course.department, course.programmeCode]);
+
+  // Handler for selecting department
+  const handleDepartmentChange = (dept: string) => {
+    const progs = getProgrammesForDepartment(dept);
+    const isCurrentValid = progs.some(p => p.code === course.programmeCode);
+    const nextProg = isCurrentValid ? course.programmeCode : (progs[0]?.code || '');
+    setCourse(prev => {
+      const updated = {
+        ...prev,
+        department: dept,
+        programmeCode: nextProg,
+      };
+      updated.courseCode = computeCourseCode({
+        regulationCode: updated.regulationCode,
+        programmeCode: updated.programmeCode,
+        categoryLetter: updated.categoryLetter,
+        uniqueLetter: updated.uniqueLetter,
+        version: updated.version,
+      });
+      return updated;
+    });
+    touchField('programmeCode');
+  };
+
   // Filter designated category codes based on the chosen category abbreviation
   const availableCategoryCodes = useMemo(() => {
     if (!course.categoryAbbr) return CATEGORY_CODES;
@@ -1263,6 +1295,12 @@ export const CourseWizard: React.FC = () => {
 
       // Recalculate courseCode
       if (['regulationCode', 'programmeCode', 'categoryLetter', 'uniqueLetter', 'version'].includes(field)) {
+        if (field === 'programmeCode') {
+          const matchedDept = getDepartmentForProgramme(value);
+          if (matchedDept) {
+            updated.department = matchedDept;
+          }
+        }
         updated.courseCode = computeCourseCode({
           regulationCode: updated.regulationCode,
           programmeCode: updated.programmeCode,
@@ -1888,9 +1926,9 @@ export const CourseWizard: React.FC = () => {
                       <h2 className="text-xl font-bold text-slate-900">Course Code & Credits</h2>
                     </div>
 
-                    {/* Course Code 6-Component Direct Selector: Category first, then Designated Letter */}
+                    {/* Course Code 7-Component Direct Selector: Department first, then Programme Code */}
                     <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 text-center text-xs">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2.5 text-center text-xs">
                         {/* 1. RR: Regulation (Admin Configured, Read-Only) */}
                         <div className="p-2.5 bg-slate-100/90 rounded-xl border-2 border-slate-200 flex flex-col justify-between min-h-[96px]">
                           <div className="flex items-center justify-between">
@@ -1908,8 +1946,45 @@ export const CourseWizard: React.FC = () => {
                           <span className="text-[10px] text-slate-500 block font-medium">Reg. {course.regulationYear || adminRegulation.year}</span>
                         </div>
 
-                        {/* 2. AA: Programme Code */}
-                        <div className="p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between min-h-[96px] group">
+                        {/* 2. Dept: Department Selector */}
+                        <div className={`p-2.5 bg-white rounded-xl border-2 transition-all flex flex-col justify-between min-h-[96px] group ${
+                          !(course.department || getDepartmentForProgramme(course.programmeCode))
+                            ? 'border-amber-300 ring-2 ring-amber-200/50'
+                            : 'border-slate-200 hover:border-[#0F2942] hover:shadow-xs'
+                        }`}>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Dept</span>
+                            <span className="text-[9px] text-[#0F2942] font-bold bg-[#0F2942]/10 px-1 rounded">Department</span>
+                          </div>
+                          <div className="my-1">
+                            <select
+                              value={course.department || getDepartmentForProgramme(course.programmeCode) || ''}
+                              onChange={e => handleDepartmentChange(e.target.value)}
+                              className="w-full text-center font-black text-xs sm:text-sm text-[#0F2942] bg-transparent border-0 focus:ring-2 focus:ring-[#0F2942] rounded cursor-pointer p-0"
+                              title="Step 1: Select Department"
+                            >
+                              <option value="" disabled>Select department</option>
+                              {DEPARTMENT_OPTIONS.map(d => (
+                                <option key={d} value={d}>
+                                  {d}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <span
+                            className="text-[10px] text-slate-600 block font-medium truncate"
+                            title={course.department || getDepartmentForProgramme(course.programmeCode) || 'Select department'}
+                          >
+                            {course.department || getDepartmentForProgramme(course.programmeCode) || 'Select department'}
+                          </span>
+                        </div>
+
+                        {/* 3. AA: Programme Code (Filtered for Selected Department) */}
+                        <div className={`p-2.5 rounded-xl border-2 transition-all flex flex-col justify-between min-h-[96px] group ${
+                          !(course.department || course.programmeCode)
+                            ? 'bg-slate-50 border-slate-200 opacity-60'
+                            : 'bg-white border-slate-200 hover:border-[#0F2942] hover:shadow-xs'
+                        }`}>
                           <div className="flex items-center justify-between">
                             <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">AA</span>
                             <span className="text-[9px] text-[#0F2942] font-bold bg-[#0F2942]/10 px-1 rounded">Prog</span>
@@ -1918,11 +1993,12 @@ export const CourseWizard: React.FC = () => {
                             <select
                               value={course.programmeCode || ''}
                               onChange={e => updateField('programmeCode', e.target.value)}
-                              className="w-full text-center font-black text-sm sm:text-base text-[#0F2942] bg-transparent border-0 focus:ring-2 focus:ring-[#0F2942] rounded cursor-pointer p-0"
-                              title="Click to select Programme"
+                              disabled={!(course.department || course.programmeCode)}
+                              className="w-full text-center font-black text-sm sm:text-base text-[#0F2942] bg-transparent border-0 focus:ring-2 focus:ring-[#0F2942] rounded cursor-pointer p-0 disabled:cursor-not-allowed"
+                              title={(course.department || course.programmeCode) ? "Step 2: Choose designated programme code" : "Please select department first"}
                             >
-                              <option value="" disabled>Select prog</option>
-                              {PROGRAMME_CODES.map(p => (
+                              <option value="" disabled>{(course.department || course.programmeCode) ? 'Select prog' : 'Pick dept first'}</option>
+                              {availableProgrammeCodes.map(p => (
                                 <option key={p.code} value={p.code}>
                                   {p.code} — {p.name}
                                 </option>
@@ -1933,7 +2009,7 @@ export const CourseWizard: React.FC = () => {
                             className="text-[10px] text-slate-600 block font-medium truncate"
                             title={PROGRAMME_CODES.find(p => p.code === course.programmeCode)?.name || 'Select programme'}
                           >
-                            {PROGRAMME_CODES.find(p => p.code === course.programmeCode)?.name || 'Select programme'}
+                            {PROGRAMME_CODES.find(p => p.code === course.programmeCode)?.name || ((course.department || course.programmeCode) ? 'Choose programme' : 'Pick dept first')}
                           </span>
                         </div>
 

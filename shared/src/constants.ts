@@ -19,7 +19,7 @@ export const PROGRAMME_CODES: ProgrammeCode[] = [
   { code: 'DS', name: 'Data Science', department: 'Computer Applications' },
   { code: 'CA', name: 'Computer Applications', department: 'Computer Applications' },
   { code: 'PA', name: 'Structural Engineering', department: 'Civil Engineering' },
-  { code: 'PB', name: 'Construction Engineering', department: 'Civil Engineering' },
+  { code: 'PB', name: 'Construction Engineering and Management', department: 'Civil Engineering' },
   { code: 'PC', name: 'Communication Systems', department: 'Electronics and Communication Engineering' },
   { code: 'PD', name: 'Computer Science Engineering (PG)', department: 'Computer Science Engineering' },
   { code: 'EL', name: 'ECE VLSI', department: 'Electronics and Communication Engineering' },
@@ -31,6 +31,51 @@ export const PROGRAMME_CODES: ProgrammeCode[] = [
   { code: 'EG', name: 'English Department', department: 'English' },
   { code: 'CC', name: 'Common Course Code', department: 'First Year / Interdisciplinary' },
 ];
+
+export const DEPARTMENT_OPTIONS = [
+  'Civil Engineering',
+  'Mechanical Engineering',
+  'Electrical and Electronics Engineering',
+  'Electronics and Communication Engineering',
+  'Computer Science and Engineering',
+  'Information Technology',
+  'Computer Science and Business Systems',
+  'Computer Applications',
+  'Artificial Intelligence',
+  'Mechatronics',
+  'Fashion Technology',
+  'Applied Mathematics and Computational Science',
+  'Mathematics',
+  'Physics',
+  'Chemistry',
+  'English',
+  'First Year / Interdisciplinary',
+] as const;
+
+export type DepartmentName = typeof DEPARTMENT_OPTIONS[number];
+
+export function getProgrammesForDepartment(dept?: string): ProgrammeCode[] {
+  if (!dept) return PROGRAMME_CODES;
+  return PROGRAMME_CODES.filter(p => {
+    if (p.department.toLowerCase() === dept.toLowerCase()) return true;
+    if (dept === 'Artificial Intelligence' && p.code === 'AM') return true;
+    if (dept === 'Mechatronics' && p.code === 'MT') return true;
+    if (dept === 'Applied Mathematics and Computational Science' && (p.code === 'DS' || p.code === 'MA')) return true;
+    if (dept === 'Computer Science and Engineering' && (p.code === 'AM' || p.code === 'PD' || p.code === 'CS')) return true;
+    if (dept === 'Mechanical Engineering' && (p.code === 'ME' || p.code === 'MT')) return true;
+    if (dept === 'Civil Engineering' && (p.code === 'CE' || p.code === 'PA' || p.code === 'PB')) return true;
+    if (dept === 'Electronics and Communication Engineering' && (p.code === 'EC' || p.code === 'PC' || p.code === 'EL')) return true;
+    if (dept === 'Electrical and Electronics Engineering' && (p.code === 'EE' || p.code === 'ER')) return true;
+    if (dept === 'Computer Applications' && (p.code === 'CA' || p.code === 'DS')) return true;
+    return false;
+  });
+}
+
+export function getDepartmentForProgramme(code?: string): string {
+  if (!code) return '';
+  const prog = PROGRAMME_CODES.find(p => p.code === code);
+  return prog?.department || '';
+}
 
 export interface CategoryCode {
   code: string;

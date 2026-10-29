@@ -295,7 +295,7 @@ export const Login: React.FC = () => {
 
         {/* Middle: Page Title - Course Design Portal */}
         <div className="relative z-10 my-auto py-10 md:py-16">
-          <h1 className="text-5xl sm:text-6xl lg:text-[clamp(2.8rem,4.5vw,5rem)] font-black text-white leading-[1.05] tracking-tight" style={{fontFamily: "'Inter', 'Outfit', system-ui, sans-serif", fontWeight: 900}}>
+          <h1 className="text-5xl sm:text-6xl lg:text-[clamp(2.8rem,4.5vw,5rem)] font-black text-white leading-[1.05] tracking-tight" style={{ fontFamily: "'Inter', 'Outfit', system-ui, sans-serif", fontWeight: 900 }}>
             Course Design Portal
           </h1>
         </div>
@@ -332,11 +332,10 @@ export const Login: React.FC = () => {
                 setAuthMode('faculty');
                 setError(null);
               }}
-              className={`flex-1 py-2.5 rounded-xl flex items-center justify-center transition-all ${
-                authMode === 'faculty'
+              className={`flex-1 py-2.5 rounded-xl flex items-center justify-center transition-all ${authMode === 'faculty'
                   ? 'bg-[#7B1113] text-white shadow-sm'
                   : 'text-slate-500 hover:text-slate-900'
-              }`}
+                }`}
             >
               <span>Faculty</span>
             </button>
@@ -346,11 +345,10 @@ export const Login: React.FC = () => {
                 setAuthMode('admin');
                 setError(null);
               }}
-              className={`flex-1 py-2.5 rounded-xl flex items-center justify-center transition-all ${
-                authMode === 'admin'
+              className={`flex-1 py-2.5 rounded-xl flex items-center justify-center transition-all ${authMode === 'admin'
                   ? 'bg-[#7B1113] text-white shadow-sm'
                   : 'text-slate-500 hover:text-slate-900'
-              }`}
+                }`}
             >
               <span>Admin</span>
             </button>
