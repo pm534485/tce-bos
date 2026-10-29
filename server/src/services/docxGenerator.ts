@@ -713,7 +713,7 @@ export async function generateDocxDocument(course: Course): Promise<Buffer> {
     });
   }
 
-  const hasSchedule = scheduleItems.length > 0 || (course.modules || []).length > 0;
+  const hasSchedule = !isPractical && (scheduleItems.length > 0 || (course.modules || []).length > 0);
   let page3HasContent = false;
 
   if (hasSchedule) {

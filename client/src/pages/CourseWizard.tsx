@@ -858,6 +858,12 @@ export const CourseWizard: React.FC = () => {
           if (fetched.courseType === 'THEORY') {
             fetched.P = 0;
           }
+          if (fetched.courseType === 'PRACTICAL') {
+            fetched.L = 0;
+            fetched.T = 0;
+            fetched.modules = [];
+            fetched.lectureScheduleItems = [];
+          }
           if (!fetched.categoryAbbr && fetched.categoryLetter) {
             const cat = CATEGORY_CODES.find(c => c.code === fetched.categoryLetter);
             if (cat) fetched.categoryAbbr = cat.defaultAbbr as any;
@@ -874,6 +880,8 @@ export const CourseWizard: React.FC = () => {
               ...prev,
               regulationYear: regRes.regulationYear,
               regulationCode: regRes.regulationCode,
+              L: prev.courseType === 'PRACTICAL' ? 0 : prev.L,
+              T: prev.courseType === 'PRACTICAL' ? 0 : prev.T,
               P: prev.courseType === 'THEORY' ? 0 : prev.P,
             }));
           }
@@ -1064,8 +1072,7 @@ export const CourseWizard: React.FC = () => {
     course.courseType === 'PRACTICAL'
       ? (course.experiments || []).length > 0 &&
         (course.experiments || []).every(exp => (exp.name || '').trim().length > 0) &&
-        ((course.modules || []).length === 0 || (course.modules || []).every(m => (m.mainTopic || '').trim().length > 0)) &&
-        !validationReport.errors.some(e => e.field.startsWith('experiments') || e.field.startsWith('coursePlan'))
+        !validationReport.errors.some(e => e.field.startsWith('experiments'))
       : (course.modules || []).length > 0 &&
         (course.modules || []).every(m => (m.mainTopic || '').trim().length > 0 && (m.subtopics || []).length > 0) &&
         !validationReport.errors.some(e => e.field.startsWith('modules'))
@@ -1345,7 +1352,19 @@ export const CourseWizard: React.FC = () => {
 
       // Recalculate credits
       if (['L', 'T', 'P'].includes(field)) {
-        updated.credits = computeCredits(Number(updated.L) || 0, Number(updated.T) || 0, Number(updated.P) || 0, updated.courseType);
+        if (updated.courseType === 'PRACTICAL') {
+          updated.L = 0;
+          updated.T = 0;
+          updated.modules = [];
+          updated.lectureScheduleItems = [];
+        }
+        if (updated.courseType === 'THEORY') {
+          updated.P = 0;
+        }
+        const effL = Number(updated.L) || 0;
+        const effT = Number(updated.T) || 0;
+        const effP = Number(updated.P) || 0;
+        updated.credits = computeCredits(effL, effT, effP, updated.courseType);
       }
 
       // Auto-sync semesterType
@@ -1569,8 +1588,8 @@ export const CourseWizard: React.FC = () => {
     { id: 'assessment', title: '4. Assessment Pattern', desc: 'Continuous & Terminal exam' },
     {
       id: 'syllabus',
-      title: course.courseType === 'PRACTICAL' ? '5. Syllabus & Experiments' : '5. Syllabus & Content',
-      desc: course.courseType === 'PRACTICAL' ? 'Modules, Schedule & Experiments' : 'Modules & Schedule',
+      title: course.courseType === 'PRACTICAL' ? '5. Laboratory Experiments' : (course.courseType === 'TCP' ? '5. Syllabus & Experiments' : '5. Syllabus & Content'),
+      desc: course.courseType === 'PRACTICAL' ? 'List of Laboratory Experiments' : (course.courseType === 'TCP' ? 'Modules, Schedule & Experiments' : 'Modules & Schedule'),
     },
     { id: 'resources', title: '6. Learning Resources', desc: 'Text & reference books' },
     { id: 'designers', title: '7. Course Designers', desc: 'Faculty details & emails' },
@@ -2187,11 +2206,13 @@ export const CourseWizard: React.FC = () => {
                             type="number"
                             min={0}
                             max={5}
-                            value={course.L === ('' as any) ? '' : (course.L ?? '')}
+                            value={course.courseType === 'PRACTICAL' ? 0 : (course.L === ('' as any) ? '' : (course.L ?? ''))}
+                            disabled={course.courseType === 'PRACTICAL'}
                             onChange={e => updateField('L', e.target.value === '' ? ('' as any) : Math.min(5, parseInt(e.target.value) || 0))}
                             onBlur={() => touchField('L')}
                             placeholder="0"
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                            title={course.courseType === 'PRACTICAL' ? 'Lecture (L) is fixed at 0 for practical courses' : 'Lecture contact hours'}
                           />
                         </div>
 
@@ -2203,11 +2224,13 @@ export const CourseWizard: React.FC = () => {
                             type="number"
                             min={0}
                             max={5}
-                            value={course.T === ('' as any) ? '' : (course.T ?? '')}
+                            value={course.courseType === 'PRACTICAL' ? 0 : (course.T === ('' as any) ? '' : (course.T ?? ''))}
+                            disabled={course.courseType === 'PRACTICAL'}
                             onChange={e => updateField('T', e.target.value === '' ? ('' as any) : Math.min(5, parseInt(e.target.value) || 0))}
                             onBlur={() => touchField('T')}
                             placeholder="0"
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                            title={course.courseType === 'PRACTICAL' ? 'Tutorial (T) is fixed at 0 for practical courses' : 'Tutorial contact hours'}
                           />
                         </div>
 
@@ -3476,18 +3499,18 @@ export const CourseWizard: React.FC = () => {
                     <div>
                       <h2 className="text-xl font-bold text-slate-900">
                         {course.courseType === 'PRACTICAL'
-                          ? '5. Syllabus, Schedule & Laboratory Experiments'
+                          ? '5. Laboratory Experiments'
                           : (course.courseType === 'TCP' ? '5. Syllabus, Schedule & Experiments' : '5. Syllabus Modules & Lecture Schedule')}
                       </h2>
                       <p className="text-sm text-slate-500 mt-1">
                         {course.courseType === 'PRACTICAL'
-                          ? 'Configure syllabus modules, lecture/contact schedule, and laboratory experiments with inquiry openness levels (1/2/3).'
+                          ? 'Configure laboratory experiments with inquiry openness levels (1/2/3) and Course Outcome mappings.'
                           : 'Modules must contain main topic and ordered subtopics.'}
                       </p>
                     </div>
 
-                    {/* Syllabus Modules & Lecture Schedule (Theory, TCP, and Laboratory courses) */}
-                    {(course.courseType === 'THEORY' || course.courseType === 'TCP' || course.courseType === 'PRACTICAL') && (
+                    {/* Syllabus Modules & Lecture Schedule (Theory and TCP courses only; Practical courses only have experiments) */}
+                    {(course.courseType === 'THEORY' || course.courseType === 'TCP') && (
                       <div className="space-y-4">
                         {(course.modules || []).map((mod, idx) => (
                           <div key={idx} className="p-4 border border-slate-200 rounded-xl bg-slate-50/50 space-y-3">
@@ -3577,7 +3600,7 @@ export const CourseWizard: React.FC = () => {
                         {/* Hierarchical Course Contents and Lecture Schedule */}
                         <div className="pt-6 border-t border-slate-200 space-y-4">
                           {(() => {
-                            const effectiveLectureCredits = ((course.courseType === 'TCP' || course.courseType === 'PRACTICAL') && (course.L || 0) > 0) ? course.L : course.credits;
+                            const effectiveLectureCredits = ((course.courseType === 'TCP') && (course.L || 0) > 0) ? course.L : course.credits;
                             const lectureCriteria = getExpectedHoursCriteria(effectiveLectureCredits);
 
                             const handleSyncFromModules = () => {

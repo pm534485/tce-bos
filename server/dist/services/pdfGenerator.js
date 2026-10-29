@@ -713,7 +713,7 @@ export async function generatePdfDocument(course) {
     ${headerText}
   </div>
 
-  ${(scheduleItems.length > 0 || modules.length > 0) ? `
+  ${(!isPractical && (scheduleItems.length > 0 || modules.length > 0)) ? `
   <!-- Course Contents and Lecture Schedule -->
   <div class="gray-banner">Course Contents and Lecture Schedule</div>
   <div class="line-space"></div>

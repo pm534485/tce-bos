@@ -661,8 +661,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
 
             {/* Practical Experiments under Syllabus (matching official TCE format) */}
             {(isPractical || isTcp) && (course.experiments && course.experiments.length > 0) && (
-              <div className={course.modules && course.modules.length > 0 ? "mt-4" : ""}>
-                <div className="font-bold underline text-xs text-black mb-1.5">Practical:</div>
+              <div className={!isPractical && course.modules && course.modules.length > 0 ? "mt-4" : ""}>
+                {!isPractical && <div className="font-bold underline text-xs text-black mb-1.5">Practical:</div>}
                 <ol className="list-decimal pl-5 space-y-1 text-xs text-black">
                   {course.experiments.map((exp, idx) => (
                     <li key={idx} className="text-justify">
@@ -746,7 +746,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
           </div>
 
           {/* Course Contents and Lecture Schedule */}
-          {(scheduleItems.length > 0 || (course.modules && course.modules.length > 0)) && (
+          {!isPractical && (scheduleItems.length > 0 || (course.modules && course.modules.length > 0)) && (
             <>
               <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
                 Course Contents and Lecture Schedule
