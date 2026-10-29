@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -22,6 +22,7 @@ import {
   PROGRAMME_CODES,
   CATEGORY_CODES,
   CATEGORY_ABBREVIATIONS,
+  CATEGORY_OPTIONS,
   TPS_VERBS,
   LAB_OBJECTIVES,
   GENERAL_CO_POOL,
@@ -854,6 +855,10 @@ export const CourseWizard: React.FC = () => {
           if (fetched.courseType === 'THEORY') {
             fetched.P = 0;
           }
+          if (!fetched.categoryAbbr && fetched.categoryLetter) {
+            const cat = CATEGORY_CODES.find(c => c.code === fetched.categoryLetter);
+            if (cat) fetched.categoryAbbr = cat.defaultAbbr as any;
+          }
           setCourse(fetched);
           setLastSaved(new Date());
           if (fetched.experiments && fetched.experiments.length > 0) {
@@ -910,6 +915,13 @@ export const CourseWizard: React.FC = () => {
   const verPart = (course.version !== undefined && course.version !== null && course.version !== ('' as any)) ? String(course.version) : '—';
   // Always show reg code + hyphens for unfilled parts (never collapse to single dash)
   const displaySubjectCode = `${regPart}${progPart}${catPart}${uniquePart}${verPart}`;
+
+  // Filter designated category codes based on the chosen category abbreviation
+  const availableCategoryCodes = useMemo(() => {
+    if (!course.categoryAbbr) return CATEGORY_CODES;
+    const filtered = CATEGORY_CODES.filter(c => c.defaultAbbr === course.categoryAbbr);
+    return filtered.length > 0 ? filtered : CATEGORY_CODES;
+  }, [course.categoryAbbr]);
 
   // Step 0 validation: Next button enabled ONLY when all details in the first page are entered and valid
   const isStep0Complete = Boolean(
@@ -1223,12 +1235,37 @@ export const CourseWizard: React.FC = () => {
         });
       }
 
+      // Handle category selection: when category abbreviation changes (e.g. PCC, PEC, BSC, etc.)
+      if (field === 'categoryAbbr') {
+        updated.categoryAbbr = value as any;
+        const matchingCodes = CATEGORY_CODES.filter(c => c.defaultAbbr === value);
+        // If current categoryLetter doesn't belong to this newly selected category, default to its first designated letter
+        if (matchingCodes.length > 0 && !matchingCodes.some(c => c.code === updated.categoryLetter)) {
+          updated.categoryLetter = matchingCodes[0].code;
+        }
+        updated.courseCode = computeCourseCode({
+          regulationCode: updated.regulationCode,
+          programmeCode: updated.programmeCode,
+          categoryLetter: updated.categoryLetter,
+          uniqueLetter: updated.uniqueLetter,
+          version: updated.version,
+        });
+      }
+
       // Auto-suggest category abbreviation when category letter changes
       if (field === 'categoryLetter') {
+        updated.categoryLetter = value;
         const cat = CATEGORY_CODES.find(c => c.code === value);
         if (cat) {
           updated.categoryAbbr = cat.defaultAbbr as any;
         }
+        updated.courseCode = computeCourseCode({
+          regulationCode: updated.regulationCode,
+          programmeCode: updated.programmeCode,
+          categoryLetter: updated.categoryLetter,
+          uniqueLetter: updated.uniqueLetter,
+          version: updated.version,
+        });
       }
 
       // Recalculate credits
@@ -1821,11 +1858,11 @@ export const CourseWizard: React.FC = () => {
                       <h2 className="text-xl font-bold text-slate-900">Course Code & Credits</h2>
                     </div>
 
-                    {/* Course Code 5-Component Direct Selector */}
+                    {/* Course Code 6-Component Direct Selector: Category first, then Designated Letter */}
                     <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                      <div className="grid grid-cols-12 gap-2.5 text-center text-xs">
-                        {/* 1. RR: Regulation (Admin Configured, Read-Only, Narrower) */}
-                        <div className="col-span-4 sm:col-span-2 p-2.5 bg-slate-100/90 rounded-xl border-2 border-slate-200 flex flex-col justify-between">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 text-center text-xs">
+                        {/* 1. RR: Regulation (Admin Configured, Read-Only) */}
+                        <div className="p-2.5 bg-slate-100/90 rounded-xl border-2 border-slate-200 flex flex-col justify-between min-h-[96px]">
                           <div className="flex items-center justify-between">
                             <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">RR</span>
                             <span className="text-[9px] text-slate-600 font-bold bg-slate-200/90 px-1 py-0.5 rounded flex items-center space-x-0.5" title="Regulation is set by Administrator and cannot be changed by staff">
@@ -1841,8 +1878,8 @@ export const CourseWizard: React.FC = () => {
                           <span className="text-[10px] text-slate-500 block font-medium">Reg. {course.regulationYear || adminRegulation.year}</span>
                         </div>
 
-                        {/* 2. AA: Programme Code (Wider / Longer) */}
-                        <div className="col-span-8 sm:col-span-3 p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between group">
+                        {/* 2. AA: Programme Code */}
+                        <div className="p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between min-h-[96px] group">
                           <div className="flex items-center justify-between">
                             <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">AA</span>
                             <span className="text-[9px] text-[#0F2942] font-bold bg-[#0F2942]/10 px-1 rounded">Prog</span>
@@ -1854,7 +1891,7 @@ export const CourseWizard: React.FC = () => {
                               className="w-full text-center font-black text-sm sm:text-base text-[#0F2942] bg-transparent border-0 focus:ring-2 focus:ring-[#0F2942] rounded cursor-pointer p-0"
                               title="Click to select Programme"
                             >
-                              <option value="" disabled>Select programme</option>
+                              <option value="" disabled>Select prog</option>
                               {PROGRAMME_CODES.map(p => (
                                 <option key={p.code} value={p.code}>
                                   {p.code} — {p.name}
@@ -1870,39 +1907,79 @@ export const CourseWizard: React.FC = () => {
                           </span>
                         </div>
 
-                        {/* 3. C: Category Code (Wider / Longer) */}
-                        <div className="col-span-6 sm:col-span-3 p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between group">
+                        {/* 3. Category: Select Category First (PCC, PEC, BSC, etc.) */}
+                        <div className={`p-2.5 bg-white rounded-xl border-2 transition-all flex flex-col justify-between min-h-[96px] group ${
+                          !course.categoryAbbr
+                            ? 'border-amber-300 ring-2 ring-amber-200/50'
+                            : 'border-slate-200 hover:border-[#7B1113] hover:shadow-xs'
+                        }`}>
                           <div className="flex items-center justify-between">
-                            <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">C</span>
-                            <span className="text-[9px] text-[#7B1113] font-bold bg-[#7B1113]/10 px-1 rounded">Cat</span>
+                            <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Cat</span>
+                            <span className="text-[9px] text-sky-800 font-bold bg-sky-100 px-1 rounded">Category</span>
                           </div>
                           <div className="my-1">
                             <select
-                              value={course.categoryLetter || ''}
-                              onChange={e => updateField('categoryLetter', e.target.value)}
-                              className="w-full text-center font-black text-sm sm:text-base text-[#7B1113] bg-transparent border-0 focus:ring-2 focus:ring-[#7B1113] rounded cursor-pointer p-0"
-                              title="Click to select Category"
+                              value={course.categoryAbbr || ''}
+                              onChange={e => updateField('categoryAbbr', e.target.value)}
+                              className="w-full text-center font-black text-sm sm:text-base text-[#0F2942] bg-transparent border-0 focus:ring-2 focus:ring-[#7B1113] rounded cursor-pointer p-0"
+                              title="Step 1: Select Category (PCC, PEC, BSC, etc.)"
                             >
                               <option value="" disabled>Select category</option>
-                              {CATEGORY_CODES.map(c => (
-                                <option key={c.code} value={c.code}>
-                                  {c.code} — {c.name} ({c.defaultAbbr})
+                              {CATEGORY_OPTIONS.map(cat => (
+                                <option key={cat.abbr} value={cat.abbr}>
+                                  {cat.fullName}
                                 </option>
                               ))}
                             </select>
                           </div>
                           <span
                             className="text-[10px] text-slate-600 block font-medium truncate"
-                            title={CATEGORY_CODES.find(c => c.code === course.categoryLetter)?.name || 'Select category'}
+                            title={CATEGORY_OPTIONS.find(c => c.abbr === course.categoryAbbr)?.name || 'Select category first'}
                           >
-                            {course.categoryLetter
-                              ? `${course.categoryAbbr || 'Cat'} (${CATEGORY_CODES.find(c => c.code === course.categoryLetter)?.name?.split(' ')[0] || 'Core'})`
-                              : 'Select category'}
+                            {course.categoryAbbr
+                              ? (CATEGORY_OPTIONS.find(c => c.abbr === course.categoryAbbr)?.name || course.categoryAbbr)
+                              : 'Select category first'}
                           </span>
                         </div>
 
-                        {/* 4. U: Unique Letter (Sequence in Category) */}
-                        <div className="col-span-3 sm:col-span-2 p-2.5 bg-amber-50/50 rounded-xl border-2 border-amber-300 hover:border-amber-500 hover:shadow-xs transition-all flex flex-col justify-between group">
+                        {/* 4. C: Designated Letter for Selected Category */}
+                        <div className={`p-2.5 rounded-xl border-2 transition-all flex flex-col justify-between min-h-[96px] group ${
+                          !course.categoryAbbr
+                            ? 'bg-slate-50 border-slate-200 opacity-60'
+                            : 'bg-white border-slate-200 hover:border-[#7B1113] hover:shadow-xs'
+                        }`}>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">C</span>
+                            <span className="text-[9px] text-[#7B1113] font-bold bg-[#7B1113]/10 px-1 rounded">Letter</span>
+                          </div>
+                          <div className="my-1">
+                            <select
+                              value={course.categoryLetter || ''}
+                              onChange={e => updateField('categoryLetter', e.target.value)}
+                              disabled={!course.categoryAbbr}
+                              className="w-full text-center font-black text-sm sm:text-base text-[#7B1113] bg-transparent border-0 focus:ring-2 focus:ring-[#7B1113] rounded cursor-pointer p-0 disabled:cursor-not-allowed"
+                              title={course.categoryAbbr ? "Step 2: Choose designated letter for this category" : "Please select category first"}
+                            >
+                              <option value="" disabled>{course.categoryAbbr ? 'Select letter' : 'Pick category first'}</option>
+                              {availableCategoryCodes.map(c => (
+                                <option key={c.code} value={c.code}>
+                                  {c.code} — {c.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <span
+                            className="text-[10px] text-slate-600 block font-medium truncate"
+                            title={availableCategoryCodes.find(c => c.code === course.categoryLetter)?.name || 'Select letter'}
+                          >
+                            {course.categoryLetter
+                              ? (availableCategoryCodes.find(c => c.code === course.categoryLetter)?.name || `Letter ${course.categoryLetter}`)
+                              : (course.categoryAbbr ? 'Choose letter' : 'Select category first')}
+                          </span>
+                        </div>
+
+                        {/* 5. U: Unique Letter (Sequence in Category) */}
+                        <div className="p-2.5 bg-amber-50/50 rounded-xl border-2 border-amber-300 hover:border-amber-500 hover:shadow-xs transition-all flex flex-col justify-between min-h-[96px] group">
                           <div className="flex items-center justify-between">
                             <span className="text-[11px] text-amber-800 font-bold uppercase tracking-wider">U</span>
                             <span className="text-[9px] text-amber-900 font-black bg-amber-200 px-1 rounded">Seq</span>
@@ -1925,8 +2002,8 @@ export const CourseWizard: React.FC = () => {
                           <span className="text-[10px] text-amber-900 block font-bold">Course Seq</span>
                         </div>
 
-                        {/* 5. V: Version (Narrower) */}
-                        <div className="col-span-3 sm:col-span-2 p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between group">
+                        {/* 6. V: Version */}
+                        <div className="p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between min-h-[96px] group">
                           <div className="flex items-center justify-between">
                             <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">V</span>
                             <span className="text-[9px] text-slate-600 font-bold bg-slate-100 px-1 rounded">Ver</span>
@@ -2004,9 +2081,9 @@ export const CourseWizard: React.FC = () => {
                           className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-sky-500 font-medium"
                         >
                           <option value="" disabled>Select abbreviation</option>
-                          {CATEGORY_ABBREVIATIONS.map(abbr => (
-                            <option key={abbr} value={abbr}>
-                              {abbr}
+                          {CATEGORY_OPTIONS.map(cat => (
+                            <option key={cat.abbr} value={cat.abbr}>
+                              {cat.fullName}
                             </option>
                           ))}
                         </select>

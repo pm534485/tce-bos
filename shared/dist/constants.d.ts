@@ -13,6 +13,12 @@ export interface CategoryCode {
 export declare const CATEGORY_CODES: CategoryCode[];
 export declare const CATEGORY_ABBREVIATIONS: readonly ["HSMC", "BSC", "ESC", "PCC", "PEC", "OEC", "EEC", "AC"];
 export type CategoryAbbreviation = typeof CATEGORY_ABBREVIATIONS[number];
+export interface CategoryOption {
+    abbr: CategoryAbbreviation;
+    name: string;
+    fullName: string;
+}
+export declare const CATEGORY_OPTIONS: CategoryOption[];
 export declare const TPS_VERBS: Record<number, string[]>;
 export interface LabObjective {
     no: number;

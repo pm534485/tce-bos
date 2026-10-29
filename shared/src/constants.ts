@@ -54,8 +54,8 @@ export const CATEGORY_CODES: CategoryCode[] = [
   { code: 'K', name: 'Foundation Courses', defaultAbbr: 'ESC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
   { code: '1', name: 'Industry-Supported Course', defaultAbbr: 'PEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
   { code: '2', name: 'Industry-Supported Course', defaultAbbr: 'PEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
-  { code: 'V', name: 'Value-Added Course', defaultAbbr: 'AC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
   { code: 'A', name: 'Audit Courses', defaultAbbr: 'AC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
+  { code: 'V', name: 'Value-Added Course', defaultAbbr: 'AC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
   { code: 'N', name: 'NPTEL Courses', defaultAbbr: 'OEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
   { code: 'M', name: 'TCE MOOCS Courses', defaultAbbr: 'OEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
   { code: 'T', name: 'Internship', defaultAbbr: 'EEC', allowedTypes: ['PRACTICAL'] },
@@ -73,6 +73,23 @@ export const CATEGORY_ABBREVIATIONS = [
 ] as const;
 
 export type CategoryAbbreviation = typeof CATEGORY_ABBREVIATIONS[number];
+
+export interface CategoryOption {
+  abbr: CategoryAbbreviation;
+  name: string;
+  fullName: string;
+}
+
+export const CATEGORY_OPTIONS: CategoryOption[] = [
+  { abbr: 'PCC', name: 'Programme Core Courses', fullName: 'PCC — Programme Core Courses' },
+  { abbr: 'PEC', name: 'Programme Elective Courses', fullName: 'PEC — Programme Elective Courses' },
+  { abbr: 'BSC', name: 'Basic Science Courses', fullName: 'BSC — Basic Science Courses' },
+  { abbr: 'ESC', name: 'Engineering Science Courses', fullName: 'ESC — Engineering Science Courses' },
+  { abbr: 'EEC', name: 'Employability Enhancement Courses', fullName: 'EEC — Employability Enhancement Courses' },
+  { abbr: 'HSMC', name: 'Humanities, Social Sciences & Management', fullName: 'HSMC — Humanities & Management' },
+  { abbr: 'OEC', name: 'Open Elective Courses', fullName: 'OEC — Open Elective Courses' },
+  { abbr: 'AC', name: 'Audit Courses', fullName: 'AC — Audit Courses' },
+];
 
 export const TPS_VERBS: Record<number, string[]> = {
   1: ['Define', 'Identify', 'List', 'Name', 'Recall', 'Recognize', 'Record', 'Relate', 'Repeat', 'Underline'],
