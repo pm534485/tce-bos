@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { AlertCircle, Shield, KeyRound, Lock, Mail, Sparkles } from 'lucide-react';
+import { AlertCircle, Shield, KeyRound, Lock, Mail } from 'lucide-react';
 
 // Authorized Google Email Validation Regex: Strictly *.tce.edu accounts (permits @tce.edu and @student.tce.edu)
 export const ALLOWED_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@(?:(?:[a-zA-Z0-9-]+\.)*tce\.edu)$/i;
@@ -334,11 +334,11 @@ export const Login: React.FC = () => {
               }}
               className={`flex-1 py-2.5 rounded-xl flex items-center justify-center transition-all ${
                 authMode === 'faculty'
-                  ? 'bg-white text-slate-900 shadow-sm'
+                  ? 'bg-[#7B1113] text-white shadow-sm'
                   : 'text-slate-500 hover:text-slate-900'
               }`}
             >
-              <span>Faculty Login</span>
+              <span>Faculty</span>
             </button>
             <button
               type="button"
@@ -352,7 +352,7 @@ export const Login: React.FC = () => {
                   : 'text-slate-500 hover:text-slate-900'
               }`}
             >
-              <span>Admin Login</span>
+              <span>Admin</span>
             </button>
           </div>
 
@@ -444,9 +444,9 @@ export const Login: React.FC = () => {
               <button
                 type="submit"
                 disabled={adminLoading}
-                className="w-full py-3 px-6 rounded-xl bg-[#7B1113] hover:bg-[#600D0F] text-white font-bold text-xs shadow-md flex items-center justify-center space-x-2 transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                className="w-full py-3 px-6 rounded-xl bg-[#7B1113] hover:bg-[#600D0F] text-white font-bold text-xs shadow-md flex items-center justify-center transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
               >
-                <Shield className="w-4 h-4 text-[#E2BF53]" />
+
                 <span>{adminLoading ? 'Signing In...' : 'Sign In to Admin Workspace'}</span>
               </button>
             </form>
