@@ -43,6 +43,8 @@ import { DocumentPreview } from '../components/DocumentPreview';
 import {
   CheckCircle,
   AlertCircle,
+  Loader2,
+  FileText,
   Save,
   Send,
   Eye,
@@ -793,6 +795,10 @@ export const CourseWizard: React.FC = () => {
     }
   };
 
+  // Loading state when opening an existing course document
+  const [isLoadingCourse, setIsLoadingCourse] = useState<boolean>(Boolean(id));
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   // Course Form State - Starts empty with no pre-selected values for new courses
   const [course, setCourse] = useState<Course>({
     courseType: courseTypeParam,
@@ -841,6 +847,10 @@ export const CourseWizard: React.FC = () => {
   // Load existing course or catalog codes, and active regulation
   useEffect(() => {
     async function loadData() {
+      if (id) {
+        setIsLoadingCourse(true);
+        setLoadError(null);
+      }
       try {
         const [allCourses, regRes] = await Promise.all([
           api.getCourses({ scope: 'all' }),
@@ -886,8 +896,13 @@ export const CourseWizard: React.FC = () => {
             }));
           }
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to load course or regulation:', err);
+        if (id) {
+          setLoadError(err?.response?.data?.message || err?.message || 'Unable to open course document. Please check the course ID or your connection.');
+        }
+      } finally {
+        setIsLoadingCourse(false);
       }
     }
     loadData();
@@ -1624,6 +1639,65 @@ export const CourseWizard: React.FC = () => {
       <span>{message}</span>
     </div>
   );
+
+  // 1. Loading State when accessing or opening an existing document
+  if (isLoadingCourse) {
+    return (
+      <div className="min-h-screen bg-slate-50/80 flex flex-col items-center justify-center p-4">
+        <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-200/50 p-8 max-w-md w-full text-center space-y-5 animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative mx-auto w-16 h-16 flex items-center justify-center">
+            {/* Dual institutional spinning rings */}
+            <div className="absolute inset-0 rounded-full border-4 border-slate-100 border-t-[#7B1113] border-r-[#C59B27] animate-spin" />
+            <Loader2 className="w-8 h-8 text-[#7B1113] animate-spin" />
+          </div>
+
+          <div className="space-y-1.5">
+            <span className="inline-flex items-center space-x-1.5 px-3 py-0.5 rounded-full text-[11px] font-bold bg-[#7B1113]/10 text-[#7B1113] border border-[#7B1113]/20 tracking-wider uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#7B1113] animate-ping" />
+              <span>In Progress</span>
+            </span>
+            <h2 className="text-xl font-bold text-slate-900">Loading Course Document</h2>
+            <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
+              Please wait while we retrieve the syllabus content, regulation rules, and compliance criteria...
+            </p>
+          </div>
+
+          {/* Animated institutional progress track */}
+          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-[#7B1113] via-[#C59B27] to-[#7B1113] w-2/3 rounded-full animate-pulse mx-auto" />
+          </div>
+
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-center space-x-2 text-[11px] text-slate-400">
+            <FileText className="w-3.5 h-3.5 text-[#C59B27]" />
+            <span>Thiagarajar College of Engineering • Course Design Portal</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Load Error State if document failed to retrieve
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+        <div className="bg-white border border-rose-200 rounded-2xl shadow-xl p-8 max-w-md w-full text-center space-y-4">
+          <div className="w-14 h-14 mx-auto rounded-full bg-rose-50 flex items-center justify-center text-[#7B1113]">
+            <AlertCircle className="w-8 h-8" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Unable to Open Course</h2>
+            <p className="text-xs text-rose-600 mt-1 leading-relaxed">{loadError}</p>
+          </div>
+          <button
+            onClick={() => navigate('/')}
+            className="w-full py-2.5 px-4 bg-[#7B1113] hover:bg-[#5E0D0E] text-white text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer"
+          >
+            Return to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">

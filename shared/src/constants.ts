@@ -86,7 +86,6 @@ export interface CategoryCode {
 
 export const CATEGORY_CODES: CategoryCode[] = [
   { code: 'C', name: 'Programme Core Courses', defaultAbbr: 'PCC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
-  { code: 'D', name: 'Programme Core Courses', defaultAbbr: 'PCC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
   { code: 'S', name: 'Basic Science Courses', defaultAbbr: 'BSC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
   { code: 'E', name: 'Engineering Science Courses', defaultAbbr: 'ESC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
   { code: 'L', name: 'Employment Enhancement Courses', defaultAbbr: 'EEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
