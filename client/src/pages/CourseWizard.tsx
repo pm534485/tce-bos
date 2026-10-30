@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+﻿import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -2754,39 +2754,120 @@ export const CourseWizard: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Practical General CO Pool Picker */}
-                    {course.courseType === 'PRACTICAL' && (
-                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                        <span className="text-xs font-bold text-slate-800 block mb-2">
-                          Add from Institutional General CO Pool:
-                        </span>
-                        <div className="flex flex-wrap gap-2">
-                          {GENERAL_CO_POOL.map(g => (
-                            <button
-                              key={g.code}
-                              onClick={() => {
-                                const newCo: CourseOutcome = {
-                                  coNo: `CO${(course.courseOutcomes || []).length + 1}`,
-                                  statement: g.statement,
-                                  tpsLevel: g.tpsLevel,
-                                  pi: g.pi,
-                                  objectiveNo: g.objectiveNo,
-                                  objectiveName: g.objectiveName,
-                                  domain: g.domain,
-                                  generalCoRef: g.code,
-                                  sdgNo: 'NC',
-                                  sdgLevel: 0,
-                                };
-                                updateField('courseOutcomes', [...(course.courseOutcomes || []), newCo]);
-                              }}
-                              className="px-2.5 py-1 rounded-lg text-xs font-medium border bg-white hover:bg-sky-50 border-slate-300 text-slate-700 hover:text-sky-700 transition-colors"
-                            >
-                              + {g.code} ({g.domain}, TPS {g.tpsLevel})
-                            </button>
-                          ))}
+                    {/* Practical General CO Pool Picker — 3 domain buttons */}
+                    {course.courseType === 'PRACTICAL' && (() => {
+                      // Data embedded from doc Tables 7.1, 7.2.1, 7.2.2
+                      const cogPool = GENERAL_CO_POOL.filter(g => g.domain === 'Cognitive');
+                      const affPool = GENERAL_CO_POOL.filter(g => g.domain === 'Affective');
+                      const psyPool = GENERAL_CO_POOL.filter(g => g.domain === 'Psychomotor');
+                      const addedRefs = (course.courseOutcomes || []).map(c => c.generalCoRef).filter(Boolean);
+                      const cogCount = (course.courseOutcomes || []).filter(c => c.domain === 'Cognitive').length;
+
+                      const addCo = (g: typeof GENERAL_CO_POOL[0]) => {
+                        if (addedRefs.includes(g.code)) return;
+                        if (g.domain === 'Cognitive' && cogCount >= 2) return;
+                        const newCo: CourseOutcome = {
+                          coNo: `CO${(course.courseOutcomes || []).length + 1}`,
+                          statement: g.statement,
+                          tpsLevel: g.tpsLevel,
+                          pi: g.pi,
+                          objectiveNo: g.objectiveNo,
+                          objectiveName: g.objectiveName,
+                          domain: g.domain,
+                          generalCoRef: g.code,
+                          sdgNo: 'NC',
+                          sdgLevel: 0,
+                        };
+                        updateField('courseOutcomes', [...(course.courseOutcomes || []), newCo]);
+                      };
+
+                      const domainColors: Record<string, { btn: string; active: string; row: string; badge: string }> = {
+                        Cognitive:   { btn: 'border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-400',   active: 'bg-blue-600 text-white border-blue-600',   row: 'hover:bg-blue-50',   badge: 'bg-blue-100 text-blue-800' },
+                        Affective:   { btn: 'border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-400', active: 'bg-emerald-600 text-white border-emerald-600', row: 'hover:bg-emerald-50', badge: 'bg-emerald-100 text-emerald-800' },
+                        Psychomotor: { btn: 'border-violet-200 text-violet-700 hover:bg-violet-50 hover:border-violet-400', active: 'bg-violet-600 text-white border-violet-600', row: 'hover:bg-violet-50', badge: 'bg-violet-100 text-violet-800' },
+                      };
+
+                      const [openDomain, setOpenDomain] = React.useState<'Cognitive'|'Affective'|'Psychomotor'|null>(null);
+                      const poolMap: Record<string, typeof cogPool> = { Cognitive: cogPool, Affective: affPool, Psychomotor: psyPool };
+                      const tableTitle: Record<string, string> = {
+                        Cognitive:   'Table 7.1 — Suggested General COs: Cognitive Domain',
+                        Affective:   'Table 7.2.1 — Suggested General COs: Affective Domain',
+                        Psychomotor: 'Table 7.2.2 — Suggested General COs: Psychomotor Domain',
+                      };
+                      const maxAllowed: Record<string, number> = { Cognitive: 2, Affective: 99, Psychomotor: 99 };
+
+                      return (
+                        <div className="space-y-3">
+                          {/* 3 domain buttons */}
+                          <div className="flex flex-wrap gap-2 items-center">
+                            <span className="text-xs font-bold text-slate-700">Add CO from:</span>
+                            {(['Cognitive', 'Affective', 'Psychomotor'] as const).map(domain => {
+                              const count = (course.courseOutcomes || []).filter(c => c.domain === domain).length;
+                              const isOpen = openDomain === domain;
+                              const col = domainColors[domain];
+                              return (
+                                <button
+                                  key={domain}
+                                  type="button"
+                                  onClick={() => setOpenDomain(isOpen ? null : domain)}
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${isOpen ? col.active : col.btn}`}
+                                >
+                                  {domain}
+                                  {count > 0 && <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${isOpen ? 'bg-white/30' : col.badge}`}>{count}</span>}
+                                  {domain === 'Cognitive' && <span className={`text-[10px] ${isOpen ? 'opacity-70' : 'text-slate-400'}`}>(max 2)</span>}
+                                  <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Domain table panel */}
+                          {openDomain && (
+                            <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+                              <div className={`px-4 py-2 text-xs font-bold flex items-center justify-between ${openDomain === 'Cognitive' ? 'bg-blue-50 text-blue-800' : openDomain === 'Affective' ? 'bg-emerald-50 text-emerald-800' : 'bg-violet-50 text-violet-800'}`}>
+                                <span>{tableTitle[openDomain]}</span>
+                                {openDomain === 'Cognitive' && <span className="font-normal">Select up to 2 — {cogCount}/2 selected</span>}
+                              </div>
+                              <table className="w-full text-xs">
+                                <thead className="bg-slate-50 border-b border-slate-200">
+                                  <tr>
+                                    <th className="px-3 py-2 text-left font-bold text-slate-600 w-16">CO</th>
+                                    <th className="px-3 py-2 text-left font-bold text-slate-600">Outcome Statement</th>
+                                    <th className="px-3 py-2 text-center font-bold text-slate-600 w-16">TPS</th>
+                                    <th className="px-3 py-2 text-left font-bold text-slate-600 w-32 hidden sm:table-cell">Objective</th>
+                                    <th className="px-3 py-2 w-16"></th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                  {poolMap[openDomain].map(g => {
+                                    const alreadyAdded = addedRefs.includes(g.code);
+                                    const blocked = openDomain === 'Cognitive' && cogCount >= 2 && !alreadyAdded;
+                                    const col = domainColors[openDomain];
+                                    return (
+                                      <tr key={g.code} className={`transition-colors ${alreadyAdded ? 'bg-slate-50 opacity-60' : blocked ? 'opacity-40 cursor-not-allowed' : col.row + ' cursor-pointer'}`}
+                                        onClick={() => { if (!alreadyAdded && !blocked) addCo(g); }}
+                                      >
+                                        <td className="px-3 py-2.5 font-black text-slate-800">{g.code}</td>
+                                        <td className="px-3 py-2.5 text-slate-700 leading-snug">{g.statement}</td>
+                                        <td className="px-3 py-2.5 text-center font-bold text-slate-600">{g.tpsLevel}</td>
+                                        <td className="px-3 py-2.5 text-slate-500 hidden sm:table-cell">{g.objectiveName}</td>
+                                        <td className="px-3 py-2.5 text-center">
+                                          {alreadyAdded
+                                            ? <Check className="w-4 h-4 text-emerald-500 mx-auto" />
+                                            : blocked
+                                            ? <span className="text-[10px] text-slate-400">max</span>
+                                            : <Plus className="w-4 h-4 text-slate-400 mx-auto" />}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     {/* CO Table Rows */}
                     <div className="space-y-4">
