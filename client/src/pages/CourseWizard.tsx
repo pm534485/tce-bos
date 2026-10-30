@@ -68,6 +68,7 @@ import {
   CheckSquare,
   Menu,
   Lock,
+  ExternalLink,
 } from 'lucide-react';
 
 export const VALID_UNIQUE_LETTERS = [
@@ -806,6 +807,9 @@ export const CourseWizard: React.FC = () => {
   const [prevCodeError, setPrevCodeError] = useState<string>('');
   // Version resolved from intent: locked once confirmed
   const [versionLocked, setVersionLocked] = useState<boolean>(Boolean(id));
+
+  // Guidelines doc viewer modal state (null = closed, string = docx public path to view)
+  const [guidelinesDocOpen, setGuidelinesDocOpen] = useState<boolean>(false);
 
   // Handler: user chose "New Course" → version = 0, locked
   const handleIntentNew = () => {
@@ -2146,6 +2150,101 @@ export const CourseWizard: React.FC = () => {
                     <div>
                       <h2 className="text-xl font-bold text-slate-900">Course Code & Credits</h2>
                     </div>
+
+                    {/* ── Guidelines Banner — type-specific, pinned to top of Step 1 ── */}
+                    {course.courseType === 'THEORY' && (
+                      <a
+                        href="https://www.tce.edu/sites/default/files/PDF/ACADEMIC-REGULATIONS-2026-BE-BTech-Programmes-Full-Time.pdf"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl bg-sky-50 border border-sky-200 hover:bg-sky-100 hover:border-sky-400 transition-all group shadow-xs"
+                      >
+                        <span className="text-xl flex-shrink-0">📄</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-sky-900 group-hover:text-sky-700">Academic Regulations 2026 — B.E / B.Tech Programmes (Full-Time)</p>
+                          <p className="text-[11px] text-sky-600 mt-0.5 truncate">
+                            tce.edu › ACADEMIC-REGULATIONS-2026-BE-BTech-Programmes-Full-Time.pdf
+                          </p>
+                        </div>
+                        <ExternalLink className="w-4 h-4 text-sky-400 group-hover:text-sky-600 flex-shrink-0" />
+                      </a>
+                    )}
+
+                    {(course.courseType === 'PRACTICAL' || course.courseType === 'TCP') && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setGuidelinesDocOpen(true)}
+                          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 hover:bg-amber-100 hover:border-amber-400 transition-all group shadow-xs cursor-pointer text-left"
+                        >
+                          <span className="text-xl flex-shrink-0">📋</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-amber-900 group-hover:text-amber-700">
+                              {course.courseType === 'PRACTICAL'
+                                ? '002 — Guidelines for Lab Course Design'
+                                : '003 — Guidelines for Theory cum Practical Course Design'}
+                            </p>
+                            <p className="text-[11px] text-amber-600 mt-0.5">
+                              Click to open the guideline document in a viewer
+                            </p>
+                          </div>
+                          <FileText className="w-4 h-4 text-amber-400 group-hover:text-amber-600 flex-shrink-0" />
+                        </button>
+
+                        {/* Guidelines Doc Viewer Modal */}
+                        {guidelinesDocOpen && (
+                          <div
+                            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                            onClick={e => { if (e.target === e.currentTarget) setGuidelinesDocOpen(false); }}
+                          >
+                            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
+                              {/* Modal Header */}
+                              <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 bg-slate-50 flex-shrink-0">
+                                <div className="flex items-center gap-2.5">
+                                  <span className="text-base">📋</span>
+                                  <div>
+                                    <p className="text-sm font-bold text-slate-900">
+                                      {course.courseType === 'PRACTICAL'
+                                        ? '002 — Guidelines for Lab Course Design'
+                                        : '003 — Guidelines for Theory cum Practical Course Design'}
+                                    </p>
+                                    <p className="text-[11px] text-slate-500">Thiagarajar College of Engineering — Reference Document</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <a
+                                    href={course.courseType === 'PRACTICAL'
+                                      ? '/docs/002_Guidelines_for_Lab_Course_design.docx'
+                                      : '/docs/003_Guidelines_for_TCP_Course_Design.docx'}
+                                    download
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold bg-sky-600 hover:bg-sky-700 text-white rounded-lg transition-colors"
+                                  >
+                                    <Save className="w-3 h-3" /> Download
+                                  </a>
+                                  <button
+                                    type="button"
+                                    onClick={() => setGuidelinesDocOpen(false)}
+                                    className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors cursor-pointer"
+                                    title="Close"
+                                  >
+                                    <X className="w-5 h-5" />
+                                  </button>
+                                </div>
+                              </div>
+                              {/* Iframe: Microsoft Office Online viewer for the .docx file */}
+                              <iframe
+                                src={`https://view.officeapps.live.com/op/embed.aspx?src=https://tce-bos.vercel.app${course.courseType === 'PRACTICAL'
+                                  ? '/docs/002_Guidelines_for_Lab_Course_design.docx'
+                                  : '/docs/003_Guidelines_for_TCP_Course_Design.docx'}`}
+                                className="flex-1 w-full border-0"
+                                title="Guidelines Document Viewer"
+                                allow="fullscreen"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
 
                     {/* Course Code 7-Component Direct Selector: Department first, then Programme Code */}
                     <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
