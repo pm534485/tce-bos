@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+﻿import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -4722,35 +4722,63 @@ export const CourseWizard: React.FC = () => {
                                 </div>
                               </div>
 
-                              {/* Course Outcomes Mapping Pills */}
-                              <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-slate-200/60">
-                                <span className="text-[11px] font-semibold text-slate-500 mr-1">Mapped COs:</span>
-                                {(course.courseOutcomes || []).map(co => {
-                                  const isSelected = (exp.coNos || []).includes(co.coNo);
-                                  return (
-                                    <button
-                                      key={co.coNo}
-                                      type="button"
-                                      onClick={() => {
-                                        const updated = [...(course.experiments || [])];
-                                        const current = updated[idx].coNos || [];
-                                        const next = isSelected
-                                          ? current.filter(c => c !== co.coNo)
-                                          : [...current, co.coNo];
-                                        updated[idx] = { ...updated[idx], coNos: next };
-                                        updateField('experiments', updated);
-                                      }}
-                                      className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
-                                        isSelected
-                                          ? 'bg-sky-600 text-white shadow-xs'
-                                          : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 hover:border-slate-400'
-                                      }`}
-                                      title={`Toggle ${co.coNo} for Experiment ${exp.slNo || idx + 1}`}
-                                    >
-                                      {co.coNo}
-                                    </button>
-                                  );
-                                })}
+                              {/* CO Reference + Mapping */}
+                              <div className="pt-1.5 border-t border-slate-200/60 space-y-2">
+                                {/* CO reference table — always visible so user knows what each CO means */}
+                                {(course.courseOutcomes || []).length > 0 && (
+                                  <div className="rounded-lg border border-slate-200 overflow-hidden">
+                                    <div className="px-3 py-1.5 bg-slate-100 text-[10px] font-bold text-slate-500 uppercase tracking-wide">
+                                      Course Outcomes — click a row to map / unmap for this experiment
+                                    </div>
+                                    <table className="w-full text-[11px]">
+                                      <tbody className="divide-y divide-slate-100">
+                                        {(course.courseOutcomes || []).map(co => {
+                                          const isSelected = (exp.coNos || []).includes(co.coNo);
+                                          return (
+                                            <tr
+                                              key={co.coNo}
+                                              onClick={() => {
+                                                const updated = [...(course.experiments || [])];
+                                                const current = updated[idx].coNos || [];
+                                                const next = isSelected
+                                                  ? current.filter(c => c !== co.coNo)
+                                                  : [...current, co.coNo];
+                                                updated[idx] = { ...updated[idx], coNos: next };
+                                                updateField('experiments', updated);
+                                              }}
+                                              className={`cursor-pointer transition-colors ${isSelected ? 'bg-sky-50' : 'hover:bg-slate-50'}`}
+                                            >
+                                              <td className="px-3 py-2 w-12 align-top">
+                                                <span className={`inline-block px-2 py-0.5 rounded font-black text-[10px] ${isSelected ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                                                  {co.coNo}
+                                                </span>
+                                              </td>
+                                              <td className="px-3 py-2 text-slate-700 leading-snug">{co.statement}</td>
+                                              <td className="px-3 py-2 w-10 text-center align-top">
+                                                {isSelected
+                                                  ? <Check className="w-3.5 h-3.5 text-sky-600 mx-auto" />
+                                                  : <Plus className="w-3.5 h-3.5 text-slate-300 mx-auto" />}
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
+
+                                {/* Mapped COs summary pills */}
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <span className="text-[11px] font-semibold text-slate-500 mr-1">Mapped COs:</span>
+                                  {(exp.coNos || []).length === 0
+                                    ? <span className="text-[11px] text-slate-400 italic">None selected — click rows above to map</span>
+                                    : (exp.coNos || []).map(coNo => (
+                                      <span key={coNo} className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-sky-600 text-white">
+                                        {coNo}
+                                      </span>
+                                    ))
+                                  }
+                                </div>
                               </div>
                             </div>
                           ))}
