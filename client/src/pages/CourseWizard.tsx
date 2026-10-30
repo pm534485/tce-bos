@@ -816,6 +816,9 @@ export const CourseWizard: React.FC = () => {
   const handleIntentNew = () => {
     setCourseIntent('new');
     setVersionLocked(true);
+    setShowRevisionInput(false);
+    setPrevCodeInput('');
+    setPrevCodeError('');
     setCourse(prev => ({ ...prev, version: 0 }));
   };
 
@@ -2085,31 +2088,39 @@ export const CourseWizard: React.FC = () => {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <h2 className="text-xl font-bold text-slate-900">Course Code &amp; Credits</h2>
-                      {/* Inline version intent — only for new courses, collapses once chosen */}
+                      {/* Inline version intent — always switchable for new courses */}
                       {!id && (
-                        <div className="flex items-center gap-2">
-                          {courseIntent === 'pending' ? (
-                            <>
-                              <span className="text-[11px] text-slate-500 font-medium hidden sm:block">Version:</span>
-                              <button
-                                type="button"
-                                onClick={handleIntentNew}
-                                className="px-3 py-1 text-[11px] font-bold rounded-lg border-2 border-slate-200 hover:border-[#7B1113] hover:bg-[#7B1113]/5 text-slate-700 transition-all cursor-pointer"
-                              >
-                                New (v0)
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => { setShowRevisionInput(true); setPrevCodeError(''); }}
-                                className={`px-3 py-1 text-[11px] font-bold rounded-lg border-2 transition-all cursor-pointer ${showRevisionInput ? 'border-[#C59B27] bg-amber-50 text-amber-800' : 'border-slate-200 hover:border-[#C59B27] hover:bg-amber-50/50 text-slate-700'}`}
-                              >
-                                Existing
-                              </button>
-                            </>
-                          ) : (
-                            <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${courseIntent === 'revision' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
-                              {courseIntent === 'revision' ? `Revision → v${course.version}` : `New → v${course.version}`}
-                            </span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[11px] text-slate-500 font-medium hidden sm:block">Version:</span>
+                          {/* New (v0) button — always visible, highlighted when active */}
+                          <button
+                            type="button"
+                            onClick={handleIntentNew}
+                            className={`px-3 py-1 text-[11px] font-bold rounded-lg border-2 transition-all cursor-pointer ${courseIntent === 'new' ? 'border-[#7B1113] bg-[#7B1113]/10 text-[#7B1113]' : 'border-slate-200 hover:border-[#7B1113] hover:bg-[#7B1113]/5 text-slate-600'}`}
+                          >
+                            New (v0)
+                          </button>
+                          {/* Existing button — always visible, highlighted when active */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCourseIntent('pending');
+                              setVersionLocked(false);
+                              setShowRevisionInput(true);
+                              setPrevCodeInput('');
+                              setPrevCodeError('');
+                              setCourse(prev => ({ ...prev, version: '' as any }));
+                            }}
+                            className={`px-3 py-1 text-[11px] font-bold rounded-lg border-2 transition-all cursor-pointer ${(courseIntent === 'revision' || showRevisionInput) ? 'border-[#C59B27] bg-amber-50 text-amber-800' : 'border-slate-200 hover:border-[#C59B27] hover:bg-amber-50/50 text-slate-600'}`}
+                          >
+                            Existing
+                          </button>
+                          {/* Confirmed badge */}
+                          {courseIntent === 'new' && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">v0</span>
+                          )}
+                          {courseIntent === 'revision' && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">v{course.version}</span>
                           )}
                         </div>
                       )}
