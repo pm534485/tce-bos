@@ -1681,132 +1681,8 @@ export const CourseWizard: React.FC = () => {
     </div>
   );
 
-  // 0. Intent Selection Modal — shown only for new (non-edit) courses before anything else
-  if (!id && courseIntent === 'pending') {
-    return (
-      <div className="min-h-screen bg-slate-50/80 flex flex-col items-center justify-center p-4">
-        <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-200/50 p-8 max-w-lg w-full space-y-6 animate-in fade-in zoom-in-95 duration-200">
-          {/* Header */}
-          <div className="text-center space-y-1.5">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#7B1113]/10 text-[#7B1113] mx-auto mb-1">
-              <FileText className="w-6 h-6" />
-            </div>
-            <h2 className="text-xl font-bold text-slate-900">Course Version</h2>
-            <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
-              Is this a <strong>brand-new</strong> course or a <strong>revised version</strong> of an existing one?
-            </p>
-          </div>
+  // 1. Load Error State if document failed to retrieve
 
-          {/* Choice cards */}
-          <div className="grid grid-cols-2 gap-3">
-            {/* New Course */}
-            <button
-              onClick={handleIntentNew}
-              className={`flex flex-col items-center justify-center gap-2 p-5 rounded-xl border-2 transition-all cursor-pointer ${!showRevisionInput ? 'border-slate-200 hover:border-[#7B1113] hover:bg-[#7B1113]/5' : 'border-slate-200'}`}
-            >
-              <div>
-                <p className="text-sm font-bold text-slate-900 text-center">New Course</p>
-                <p className="text-[11px] text-slate-500 text-center mt-0.5">Version will be set to <strong>0</strong></p>
-              </div>
-            </button>
-
-            {/* Existing Revision */}
-            <button
-              onClick={() => { setShowRevisionInput(true); setPrevCodeError(''); }}
-              className={`flex flex-col items-center justify-center gap-2 p-5 rounded-xl border-2 transition-all cursor-pointer ${showRevisionInput ? 'border-[#C59B27] bg-amber-50' : 'border-slate-200 hover:border-[#C59B27] hover:bg-amber-50/50'}`}
-            >
-              <div>
-                <p className="text-sm font-bold text-slate-900 text-center">Existing Course</p>
-                <p className="text-[11px] text-slate-500 text-center mt-0.5">Revision of a previous version</p>
-              </div>
-            </button>
-          </div>
-
-          {/* Revision: enter previous code */}
-          {showRevisionInput && (
-            <div className="border-t border-slate-100 pt-4 space-y-2">
-              <label className="block text-xs font-bold text-slate-700">
-                Enter the <span className="text-[#7B1113]">previous course code</span>
-                <span className="font-normal text-slate-500 ml-1">(e.g. 26CECA0 or 26CECA1)</span>
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={prevCodeInput}
-                  onChange={e => { setPrevCodeInput(e.target.value.toUpperCase()); setPrevCodeError(''); }}
-                  onKeyDown={e => e.key === 'Enter' && handleIntentRevisionConfirm()}
-                  placeholder="e.g. 26CECA0"
-                  maxLength={12}
-                  className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C59B27] focus:border-[#C59B27] font-mono uppercase tracking-wider"
-                  autoFocus
-                />
-                <button
-                  onClick={handleIntentRevisionConfirm}
-                  className="px-4 py-2 bg-[#7B1113] hover:bg-[#5E0D0E] text-white text-xs font-bold rounded-lg transition-all shadow-sm cursor-pointer"
-                >
-                  Confirm
-                </button>
-              </div>
-              {prevCodeError && (
-                <p className="text-xs text-rose-600 flex items-start gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                  {prevCodeError}
-                </p>
-              )}
-              <p className="text-[11px] text-slate-400 leading-snug">
-                The last digit of the previous code determines the new version:<br />
-                Previous version <strong>0</strong> → New version <strong>1</strong> &nbsp;|&nbsp; Previous version <strong>1</strong> → New version <strong>2</strong>
-              </p>
-            </div>
-          )}
-
-          {/* Footer */}
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-center space-x-2 text-[11px] text-slate-400">
-            <FileText className="w-3.5 h-3.5 text-[#C59B27]" />
-            <span>Thiagarajar College of Engineering • Course Design Portal</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // 1. Loading State when accessing or opening an existing document
-  if (isLoadingCourse) {
-    return (
-      <div className="min-h-screen bg-slate-50/80 flex flex-col items-center justify-center p-4">
-        <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-200/50 p-8 max-w-md w-full text-center space-y-5 animate-in fade-in zoom-in-95 duration-200">
-          <div className="relative mx-auto w-16 h-16 flex items-center justify-center">
-            {/* Dual institutional spinning rings */}
-            <div className="absolute inset-0 rounded-full border-4 border-slate-100 border-t-[#7B1113] border-r-[#C59B27] animate-spin" />
-            <Loader2 className="w-8 h-8 text-[#7B1113] animate-spin" />
-          </div>
-
-          <div className="space-y-1.5">
-            <span className="inline-flex items-center space-x-1.5 px-3 py-0.5 rounded-full text-[11px] font-bold bg-[#7B1113]/10 text-[#7B1113] border border-[#7B1113]/20 tracking-wider uppercase">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#7B1113] animate-ping" />
-              <span>In Progress</span>
-            </span>
-            <h2 className="text-xl font-bold text-slate-900">Loading Course Document</h2>
-            <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
-              Please wait while we retrieve the syllabus content, regulation rules, and compliance criteria...
-            </p>
-          </div>
-
-          {/* Animated institutional progress track */}
-          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-[#7B1113] via-[#C59B27] to-[#7B1113] w-2/3 rounded-full animate-pulse mx-auto" />
-          </div>
-
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-center space-x-2 text-[11px] text-slate-400">
-            <FileText className="w-3.5 h-3.5 text-[#C59B27]" />
-            <span>Thiagarajar College of Engineering • Course Design Portal</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // 2. Load Error State if document failed to retrieve
   if (loadError) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
@@ -1872,27 +1748,18 @@ export const CourseWizard: React.FC = () => {
             >
               {course.status}
             </span>
+            {/* Circular loading spinner shown while fetching existing course */}
+            {isLoadingCourse && (
+              <span title="Loading course...">
+                <Loader2 className="w-4 h-4 text-[#7B1113] animate-spin flex-shrink-0" />
+              </span>
+            )}
           </div>
         </div>
 
         {/* Tab & Action Bar */}
         <div className="flex items-center space-x-2.5 flex-shrink-0">
 
-
-          {/* Autosave Status */}
-          <div className="text-xs text-slate-500 hidden md:flex items-center space-x-1">
-            {isSaving ? (
-              <>
-                <RefreshCw className="w-3 h-3 animate-spin text-sky-600" />
-                <span>Saving...</span>
-              </>
-            ) : lastSaved ? (
-              <>
-                <Check className="w-3 h-3 text-emerald-600" />
-                <span>Saved</span>
-              </>
-            ) : null}
-          </div>
 
           {/* Guidelines Reference Button — type-specific, shown in header */}
           {course.courseType === 'THEORY' && (
@@ -1968,15 +1835,6 @@ export const CourseWizard: React.FC = () => {
               </span>
             )}
           </label>
-
-          <button
-            onClick={handleSaveDraft}
-            disabled={isSaving}
-            className="px-3 py-1 rounded-md border border-[#C59B27]/40 bg-white hover:bg-[#FAF7F2] text-[#7B1113] text-xs font-bold shadow-xs flex items-center space-x-1 transition-colors"
-          >
-            <Save className="w-3 h-3 text-[#C59B27]" />
-            <span>Save Draft</span>
-          </button>
 
           {(course.status === 'APPROVED' || course.status === 'FINALIZED') && (
             <button
@@ -2225,9 +2083,72 @@ export const CourseWizard: React.FC = () => {
                 {/* Step 1: Course Code & Credits */}
                 {currentStep === 0 && (
                   <div className="space-y-4">
-                    <div>
-                      <h2 className="text-xl font-bold text-slate-900">Course Code & Credits</h2>
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <h2 className="text-xl font-bold text-slate-900">Course Code &amp; Credits</h2>
+                      {/* Inline version intent — only for new courses, collapses once chosen */}
+                      {!id && (
+                        <div className="flex items-center gap-2">
+                          {courseIntent === 'pending' ? (
+                            <>
+                              <span className="text-[11px] text-slate-500 font-medium hidden sm:block">Version:</span>
+                              <button
+                                type="button"
+                                onClick={handleIntentNew}
+                                className="px-3 py-1 text-[11px] font-bold rounded-lg border-2 border-slate-200 hover:border-[#7B1113] hover:bg-[#7B1113]/5 text-slate-700 transition-all cursor-pointer"
+                              >
+                                New (v0)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => { setShowRevisionInput(true); setPrevCodeError(''); }}
+                                className={`px-3 py-1 text-[11px] font-bold rounded-lg border-2 transition-all cursor-pointer ${showRevisionInput ? 'border-[#C59B27] bg-amber-50 text-amber-800' : 'border-slate-200 hover:border-[#C59B27] hover:bg-amber-50/50 text-slate-700'}`}
+                              >
+                                Existing
+                              </button>
+                            </>
+                          ) : (
+                            <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${courseIntent === 'revision' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
+                              {courseIntent === 'revision' ? `Revision → v${course.version}` : `New → v${course.version}`}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
+
+                    {/* Inline revision previous-code input */}
+                    {!id && showRevisionInput && courseIntent === 'pending' && (
+                      <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                        <div className="flex-1 space-y-1.5">
+                          <label className="block text-[11px] font-bold text-amber-900">
+                            Previous course code <span className="font-normal text-amber-700">(e.g. 26CECA0 or 26CECA1)</span>
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={prevCodeInput}
+                              onChange={e => { setPrevCodeInput(e.target.value.toUpperCase()); setPrevCodeError(''); }}
+                              onKeyDown={e => e.key === 'Enter' && handleIntentRevisionConfirm()}
+                              placeholder="e.g. 26CECA0"
+                              maxLength={12}
+                              autoFocus
+                              className="flex-1 px-3 py-1.5 text-xs border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C59B27] font-mono uppercase tracking-wider bg-white"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleIntentRevisionConfirm}
+                              className="px-3 py-1.5 bg-[#7B1113] hover:bg-[#5E0D0E] text-white text-xs font-bold rounded-lg transition-all cursor-pointer"
+                            >
+                              Confirm
+                            </button>
+                          </div>
+                          {prevCodeError && (
+                            <p className="text-[11px] text-rose-600 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3 flex-shrink-0" />{prevCodeError}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Course Code 7-Component Direct Selector: Department first, then Programme Code */}
                     <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
