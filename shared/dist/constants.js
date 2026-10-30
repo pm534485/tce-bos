@@ -1,39 +1,39 @@
 // Institutional constants for SyllabusForge (Regulation 2026)
 export const PROGRAMME_CODES = [
     // Civil Engineering
-    { code: 'CE', name: 'B.E Civil Engineering', department: 'Civil Engineering' },
-    { code: 'PA', name: 'M.E Structural Engineering', department: 'Civil Engineering' },
-    { code: 'PB', name: 'M.E Construction Engineering and Management', department: 'Civil Engineering' },
+    { code: 'CE', name: 'Civil Engineering', department: 'Civil Engineering' },
+    { code: 'PA', name: 'Structural Engineering', department: 'Civil Engineering' },
+    { code: 'PB', name: 'Construction Engineering and Management', department: 'Civil Engineering' },
     // Mechanical Engineering
-    { code: 'ME', name: 'B.E Mechanical Engineering', department: 'Mechanical Engineering' },
+    { code: 'ME', name: 'Mechanical Engineering', department: 'Mechanical Engineering' },
     // Mechatronics
-    { code: 'MT', name: 'B.E Mechatronics', department: 'Mechatronics' },
+    { code: 'MT', name: 'Mechatronics', department: 'Mechatronics' },
     // Electrical and Electronics Engineering
-    { code: 'EE', name: 'B.E Electrical and Electronics Engineering', department: 'Electrical and Electronics Engineering' },
-    { code: 'ER', name: 'B.E Electrical and Computer Engineering', department: 'Electrical and Electronics Engineering' },
+    { code: 'EE', name: 'Electrical and Electronics Engineering', department: 'Electrical and Electronics Engineering' },
+    { code: 'ER', name: 'Electrical and Computer Engineering', department: 'Electrical and Electronics Engineering' },
     // Electronics and Communication Engineering
-    { code: 'EC', name: 'B.E Electronics and Communication Engineering', department: 'Electronics and Communication Engineering' },
-    { code: 'EL', name: 'B.Tech Electronics Engineering (VLSI Design)', department: 'Electronics and Communication Engineering' },
-    { code: 'PC', name: 'M.E Communication Systems', department: 'Electronics and Communication Engineering' },
+    { code: 'EC', name: 'Electronics and Communication Engineering', department: 'Electronics and Communication Engineering' },
+    { code: 'EL', name: 'Electronics Engineering (VLSI Design)', department: 'Electronics and Communication Engineering' },
+    { code: 'PC', name: 'Communication Systems', department: 'Electronics and Communication Engineering' },
     // Computer Science and Engineering
-    { code: 'CS', name: 'B.E Computer Science and Engineering', department: 'Computer Science and Engineering' },
-    { code: 'AM', name: 'B.E CSE (Artificial Intelligence & Machine Learning)', department: 'Computer Science and Engineering' },
-    { code: 'PD', name: 'M.E Computer Science and Engineering', department: 'Computer Science and Engineering' },
+    { code: 'CS', name: 'Computer Science and Engineering', department: 'Computer Science and Engineering' },
+    { code: 'AM', name: 'CSE (Artificial Intelligence & Machine Learning)', department: 'Computer Science and Engineering' },
+    { code: 'PD', name: 'Computer Science and Engineering (PG)', department: 'Computer Science and Engineering' },
     // Information Technology
-    { code: 'IT', name: 'B.Tech Information Technology', department: 'Information Technology' },
+    { code: 'IT', name: 'Information Technology', department: 'Information Technology' },
     // Computer Science and Business Systems
-    { code: 'CB', name: 'B.Tech Computer Science and Business Systems', department: 'Computer Science and Business Systems' },
+    { code: 'CB', name: 'Computer Science and Business Systems', department: 'Computer Science and Business Systems' },
     // Computer Applications
-    { code: 'CA', name: 'MCA — Master of Computer Applications', department: 'Computer Applications' },
+    { code: 'CA', name: 'Computer Applications (MCA)', department: 'Computer Applications' },
     // Data Science
-    { code: 'DS', name: 'M.Sc Data Science (Five Years)', department: 'Data Science' },
+    { code: 'DS', name: 'Data Science (Five Years)', department: 'Data Science' },
     // Fashion Technology
-    { code: 'FT', name: 'B.Tech Fashion Technology', department: 'Fashion Technology' },
+    { code: 'FT', name: 'Fashion Technology', department: 'Fashion Technology' },
     // Service Departments
-    { code: 'MA', name: 'Mathematics (Service Dept)', department: 'Mathematics' },
-    { code: 'PH', name: 'Physics (Service Dept)', department: 'Physics' },
-    { code: 'CH', name: 'Chemistry (Service Dept)', department: 'Chemistry' },
-    { code: 'EG', name: 'English (Service Dept)', department: 'English' },
+    { code: 'MA', name: 'Mathematics', department: 'Mathematics' },
+    { code: 'PH', name: 'Physics', department: 'Physics' },
+    { code: 'CH', name: 'Chemistry', department: 'Chemistry' },
+    { code: 'EG', name: 'English', department: 'English' },
     // Common / First Year
     { code: 'CC', name: 'Common Course Code', department: 'First Year / Interdisciplinary' },
 ];
