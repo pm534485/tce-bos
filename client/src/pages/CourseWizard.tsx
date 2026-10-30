@@ -799,6 +799,42 @@ export const CourseWizard: React.FC = () => {
   const [isLoadingCourse, setIsLoadingCourse] = useState<boolean>(Boolean(id));
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  // "New or Existing revision?" intent modal (only for new courses, i.e. no id in URL)
+  // 'pending' = not yet chosen, 'new' = brand-new course (ver 0, locked), 'revision' = revision of existing
+  const [courseIntent, setCourseIntent] = useState<'pending' | 'new' | 'revision'>(id ? 'new' : 'pending');
+  const [prevCodeInput, setPrevCodeInput] = useState<string>('');
+  const [prevCodeError, setPrevCodeError] = useState<string>('');
+  // Version resolved from intent: locked once confirmed
+  const [versionLocked, setVersionLocked] = useState<boolean>(Boolean(id));
+
+  // Handler: user chose "New Course" → version = 0, locked
+  const handleIntentNew = () => {
+    setCourseIntent('new');
+    setVersionLocked(true);
+    setCourse(prev => ({ ...prev, version: 0 }));
+  };
+
+  // Handler: user confirmed the previous code for a revision
+  const handleIntentRevisionConfirm = () => {
+    const code = prevCodeInput.trim().toUpperCase();
+    if (!code) {
+      setPrevCodeError('Please enter the previous course code.');
+      return;
+    }
+    // The last character of a course code is the version digit (0, 1, 2)
+    const lastChar = code.slice(-1);
+    const prevVer = parseInt(lastChar, 10);
+    if (isNaN(prevVer) || prevVer < 0 || prevVer > 1) {
+      setPrevCodeError('Previous code must end with 0 or 1 (e.g. 26CECA0 or 26CECA1). Only versions 0 and 1 can be revised.');
+      return;
+    }
+    const newVer = prevVer + 1; // 0 → 1, 1 → 2
+    setPrevCodeError('');
+    setCourseIntent('revision');
+    setVersionLocked(true);
+    setCourse(prev => ({ ...prev, version: newVer }));
+  };
+
   // Course Form State - Starts empty with no pre-selected values for new courses
   const [course, setCourse] = useState<Course>({
     courseType: courseTypeParam,
@@ -1640,6 +1676,98 @@ export const CourseWizard: React.FC = () => {
     </div>
   );
 
+  // 0. Intent Selection Modal — shown only for new (non-edit) courses before anything else
+  if (!id && courseIntent === 'pending') {
+    const isRevisionStep = prevCodeInput !== '' || prevCodeError !== '';
+    return (
+      <div className="min-h-screen bg-slate-50/80 flex flex-col items-center justify-center p-4">
+        <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-200/50 p-8 max-w-lg w-full space-y-6 animate-in fade-in zoom-in-95 duration-200">
+          {/* Header */}
+          <div className="text-center space-y-1.5">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#7B1113]/10 text-[#7B1113] mx-auto mb-1">
+              <FileText className="w-6 h-6" />
+            </div>
+            <h2 className="text-xl font-bold text-slate-900">Course Version</h2>
+            <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
+              Is this a <strong>brand-new</strong> course or a <strong>revised version</strong> of an existing one?
+            </p>
+          </div>
+
+          {/* Choice cards */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* New Course */}
+            <button
+              onClick={handleIntentNew}
+              className="flex flex-col items-center justify-center gap-2 p-5 rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:bg-[#7B1113]/5 transition-all group cursor-pointer text-left"
+            >
+              <span className="text-2xl">🆕</span>
+              <div>
+                <p className="text-sm font-bold text-slate-900 group-hover:text-[#7B1113] text-center">New Course</p>
+                <p className="text-[11px] text-slate-500 text-center mt-0.5">Version will be set to <strong>0</strong></p>
+              </div>
+            </button>
+
+            {/* Existing Revision */}
+            <button
+              onClick={() => { setPrevCodeInput(prev => prev || ' '); setPrevCodeInput(''); }}
+              className={`flex flex-col items-center justify-center gap-2 p-5 rounded-xl border-2 transition-all group cursor-pointer text-left ${isRevisionStep ? 'border-[#C59B27] bg-amber-50' : 'border-slate-200 hover:border-[#C59B27] hover:bg-amber-50/50'}`}
+            >
+              <span className="text-2xl">📝</span>
+              <div>
+                <p className="text-sm font-bold text-slate-900 group-hover:text-[#C59B27] text-center">Existing Course</p>
+                <p className="text-[11px] text-slate-500 text-center mt-0.5">Revision of a previous version</p>
+              </div>
+            </button>
+          </div>
+
+          {/* Revision: enter previous code */}
+          <div className={`space-y-3 transition-all duration-200 ${isRevisionStep || prevCodeError ? 'opacity-100' : 'opacity-0 pointer-events-none h-0 overflow-hidden'}`}>
+            <div className="border-t border-slate-100 pt-4 space-y-2">
+              <label className="block text-xs font-bold text-slate-700">
+                Enter the <span className="text-[#7B1113]">previous course code</span>
+                <span className="font-normal text-slate-500 ml-1">(e.g. 26CECA0 or 26CECA1)</span>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={prevCodeInput}
+                  onChange={e => { setPrevCodeInput(e.target.value.toUpperCase()); setPrevCodeError(''); }}
+                  onKeyDown={e => e.key === 'Enter' && handleIntentRevisionConfirm()}
+                  placeholder="e.g. 26CECA0"
+                  maxLength={12}
+                  className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C59B27] focus:border-[#C59B27] font-mono uppercase tracking-wider"
+                  autoFocus
+                />
+                <button
+                  onClick={handleIntentRevisionConfirm}
+                  className="px-4 py-2 bg-[#7B1113] hover:bg-[#5E0D0E] text-white text-xs font-bold rounded-lg transition-all shadow-sm cursor-pointer"
+                >
+                  Confirm
+                </button>
+              </div>
+              {prevCodeError && (
+                <p className="text-xs text-rose-600 flex items-start gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                  {prevCodeError}
+                </p>
+              )}
+              <p className="text-[11px] text-slate-400 leading-snug">
+                The last digit of the previous code determines the new version:<br />
+                Previous version <strong>0</strong> → New version <strong>1</strong> &nbsp;|&nbsp; Previous version <strong>1</strong> → New version <strong>2</strong>
+              </p>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-center space-x-2 text-[11px] text-slate-400">
+            <FileText className="w-3.5 h-3.5 text-[#C59B27]" />
+            <span>Thiagarajar College of Engineering • Course Design Portal</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // 1. Loading State when accessing or opening an existing document
   if (isLoadingCourse) {
     return (
@@ -2201,29 +2329,40 @@ export const CourseWizard: React.FC = () => {
                           <span className="text-[10px] text-amber-900 block font-bold">Course Seq</span>
                         </div>
 
-                        {/* 6. V: Version */}
-                        <div className="p-2.5 bg-white rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:shadow-xs transition-all flex flex-col justify-between min-h-[96px] group">
+                        {/* 6. V: Version — locked after intent selection */}
+                        <div className={`p-2.5 rounded-xl border-2 flex flex-col justify-between min-h-[96px] transition-all ${versionLocked ? 'bg-slate-50 border-slate-200 cursor-default' : 'bg-white border-slate-200 hover:border-[#7B1113] hover:shadow-xs group'}`}>
                           <div className="flex items-center justify-between">
                             <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">V</span>
-                            <span className="text-[9px] text-slate-600 font-bold bg-slate-100 px-1 rounded">Ver</span>
+                            <span className={`text-[9px] font-bold px-1 rounded ${versionLocked ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                              {versionLocked ? 'Fixed' : 'Ver'}
+                            </span>
                           </div>
                           <div className="my-1">
-                            <select
-                              value={course.version !== undefined && course.version !== null && course.version !== ('' as any) ? course.version : ''}
-                              onChange={e => updateField('version', e.target.value === '' ? ('' as any) : Number(e.target.value))}
-                              className="w-full text-center font-black text-base sm:text-lg text-slate-900 bg-transparent border-0 focus:ring-2 focus:ring-slate-600 rounded cursor-pointer p-0"
-                              title="Click to select Version"
-                            >
-                              <option value="" disabled>Ver</option>
-                              {[0, 1, 2].map(v => (
-                                <option key={v} value={v}>
-                                  {v}
-                                </option>
-                              ))}
-                            </select>
+                            {versionLocked ? (
+                              /* Locked display — read-only */
+                              <p className="w-full text-center font-black text-base sm:text-lg text-slate-900 select-none" title="Version is locked based on your course intent">
+                                {course.version !== undefined && course.version !== null && course.version !== ('' as any) ? course.version : '—'}
+                              </p>
+                            ) : (
+                              <select
+                                value={course.version !== undefined && course.version !== null && course.version !== ('' as any) ? course.version : ''}
+                                onChange={e => updateField('version', e.target.value === '' ? ('' as any) : Number(e.target.value))}
+                                className="w-full text-center font-black text-base sm:text-lg text-slate-900 bg-transparent border-0 focus:ring-2 focus:ring-slate-600 rounded cursor-pointer p-0"
+                                title="Click to select Version"
+                              >
+                                <option value="" disabled>Ver</option>
+                                {[0, 1, 2].map(v => (
+                                  <option key={v} value={v}>
+                                    {v}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
                           </div>
-                          <span className="text-[10px] text-slate-500 block font-medium">
-                            {course.version !== undefined && course.version !== null && course.version !== ('' as any) ? `Version ${course.version}` : 'Version'}
+                          <span className={`text-[10px] block font-medium ${versionLocked ? 'text-emerald-700 font-bold' : 'text-slate-500'}`}>
+                            {versionLocked
+                              ? (courseIntent === 'revision' ? `Revision → v${course.version}` : `New → v${course.version}`)
+                              : (course.version !== undefined && course.version !== null && course.version !== ('' as any) ? `Version ${course.version}` : 'Version')}
                           </span>
                         </div>
                       </div>
