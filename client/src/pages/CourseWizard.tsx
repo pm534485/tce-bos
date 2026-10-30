@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -803,6 +803,7 @@ export const CourseWizard: React.FC = () => {
   // "New or Existing revision?" intent modal (only for new courses, i.e. no id in URL)
   // 'pending' = not yet chosen, 'new' = brand-new course (ver 0, locked), 'revision' = revision of existing
   const [courseIntent, setCourseIntent] = useState<'pending' | 'new' | 'revision'>(id ? 'new' : 'pending');
+  const [showRevisionInput, setShowRevisionInput] = useState<boolean>(false);
   const [prevCodeInput, setPrevCodeInput] = useState<string>('');
   const [prevCodeError, setPrevCodeError] = useState<string>('');
   // Version resolved from intent: locked once confirmed
@@ -1682,7 +1683,6 @@ export const CourseWizard: React.FC = () => {
 
   // 0. Intent Selection Modal — shown only for new (non-edit) courses before anything else
   if (!id && courseIntent === 'pending') {
-    const isRevisionStep = prevCodeInput !== '' || prevCodeError !== '';
     return (
       <div className="min-h-screen bg-slate-50/80 flex flex-col items-center justify-center p-4">
         <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-200/50 p-8 max-w-lg w-full space-y-6 animate-in fade-in zoom-in-95 duration-200">
@@ -1702,30 +1702,28 @@ export const CourseWizard: React.FC = () => {
             {/* New Course */}
             <button
               onClick={handleIntentNew}
-              className="flex flex-col items-center justify-center gap-2 p-5 rounded-xl border-2 border-slate-200 hover:border-[#7B1113] hover:bg-[#7B1113]/5 transition-all group cursor-pointer text-left"
+              className={`flex flex-col items-center justify-center gap-2 p-5 rounded-xl border-2 transition-all cursor-pointer ${!showRevisionInput ? 'border-slate-200 hover:border-[#7B1113] hover:bg-[#7B1113]/5' : 'border-slate-200'}`}
             >
-              <span className="text-2xl">🆕</span>
               <div>
-                <p className="text-sm font-bold text-slate-900 group-hover:text-[#7B1113] text-center">New Course</p>
+                <p className="text-sm font-bold text-slate-900 text-center">New Course</p>
                 <p className="text-[11px] text-slate-500 text-center mt-0.5">Version will be set to <strong>0</strong></p>
               </div>
             </button>
 
             {/* Existing Revision */}
             <button
-              onClick={() => { setPrevCodeInput(prev => prev || ' '); setPrevCodeInput(''); }}
-              className={`flex flex-col items-center justify-center gap-2 p-5 rounded-xl border-2 transition-all group cursor-pointer text-left ${isRevisionStep ? 'border-[#C59B27] bg-amber-50' : 'border-slate-200 hover:border-[#C59B27] hover:bg-amber-50/50'}`}
+              onClick={() => { setShowRevisionInput(true); setPrevCodeError(''); }}
+              className={`flex flex-col items-center justify-center gap-2 p-5 rounded-xl border-2 transition-all cursor-pointer ${showRevisionInput ? 'border-[#C59B27] bg-amber-50' : 'border-slate-200 hover:border-[#C59B27] hover:bg-amber-50/50'}`}
             >
-              <span className="text-2xl">📝</span>
               <div>
-                <p className="text-sm font-bold text-slate-900 group-hover:text-[#C59B27] text-center">Existing Course</p>
+                <p className="text-sm font-bold text-slate-900 text-center">Existing Course</p>
                 <p className="text-[11px] text-slate-500 text-center mt-0.5">Revision of a previous version</p>
               </div>
             </button>
           </div>
 
           {/* Revision: enter previous code */}
-          <div className={`space-y-3 transition-all duration-200 ${isRevisionStep || prevCodeError ? 'opacity-100' : 'opacity-0 pointer-events-none h-0 overflow-hidden'}`}>
+          {showRevisionInput && (
             <div className="border-t border-slate-100 pt-4 space-y-2">
               <label className="block text-xs font-bold text-slate-700">
                 Enter the <span className="text-[#7B1113]">previous course code</span>
@@ -1760,7 +1758,7 @@ export const CourseWizard: React.FC = () => {
                 Previous version <strong>0</strong> → New version <strong>1</strong> &nbsp;|&nbsp; Previous version <strong>1</strong> → New version <strong>2</strong>
               </p>
             </div>
-          </div>
+          )}
 
           {/* Footer */}
           <div className="pt-2 border-t border-slate-100 flex items-center justify-center space-x-2 text-[11px] text-slate-400">
