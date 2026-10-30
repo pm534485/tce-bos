@@ -310,13 +310,13 @@ export function validateLtpCredits(
         fixHint: 'Set L = 0 and T = 0 for laboratory courses.',
       });
     }
-    if (P <= 0) {
+    if (P < 2 || P > 4) {
       results.push({
         id: 'B3_PRACTICAL_P_POSITIVE',
         field: 'P',
         severity: 'error',
-        message: 'Practical courses must have practical hours P > 0.',
-        fixHint: 'Set practical contact hours (e.g. P = 2, 3, or 4).',
+        message: 'Practical courses must have practical hours P = 2, 3, or 4.',
+        fixHint: 'Set practical contact hours to 2, 3, or 4.',
       });
     }
   }

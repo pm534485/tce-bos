@@ -2259,7 +2259,7 @@ export const CourseWizard: React.FC = () => {
                         type="text"
                         value={course.courseName || ''}
                         onChange={e => updateField('courseName', e.target.value)}
-                        placeholder="Enter course title"
+                        placeholder="Course Name"
                         className={`w-full px-3.5 py-2.5 border rounded-lg text-sm font-medium transition-all ${
                           hasFieldError('courseName')
                             ? 'border-red-400 bg-red-50/20 text-slate-900 focus:ring-2 focus:ring-red-200 focus:border-red-500'
@@ -2314,15 +2314,34 @@ export const CourseWizard: React.FC = () => {
                           </label>
                           <input
                             type="number"
-                            min={0}
-                            max={5}
+                            min={course.courseType === 'PRACTICAL' ? 2 : 0}
+                            max={course.courseType === 'PRACTICAL' ? 4 : 5}
                             value={course.courseType === 'THEORY' ? 0 : (course.P === ('' as any) ? '' : (course.P ?? ''))}
                             disabled={course.courseType === 'THEORY'}
-                            onChange={e => updateField('P', e.target.value === '' ? ('' as any) : Math.min(5, parseInt(e.target.value) || 0))}
+                            onChange={e => {
+                              if (e.target.value === '') {
+                                updateField('P', '' as any);
+                                return;
+                              }
+                              const raw = parseInt(e.target.value, 10);
+                              if (isNaN(raw)) return;
+                              if (course.courseType === 'PRACTICAL') {
+                                const clamped = Math.min(4, Math.max(2, raw));
+                                updateField('P', clamped);
+                              } else {
+                                updateField('P', Math.min(5, Math.max(0, raw)));
+                              }
+                            }}
                             onBlur={() => touchField('P')}
-                            placeholder="0"
+                            placeholder={course.courseType === 'PRACTICAL' ? '2–4' : '0'}
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-sky-500 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
-                            title={course.courseType === 'THEORY' ? 'Practical is disabled for theory courses' : 'Practical contact hours'}
+                            title={
+                              course.courseType === 'THEORY'
+                                ? 'Practical is disabled for theory courses'
+                                : course.courseType === 'PRACTICAL'
+                                ? 'Practical contact hours must be 2, 3, or 4'
+                                : 'Practical contact hours'
+                            }
                           />
                         </div>
 
@@ -2437,7 +2456,7 @@ export const CourseWizard: React.FC = () => {
                           rows={6}
                           value={course.preamble}
                           onChange={e => updateField('preamble', e.target.value)}
-                          placeholder="Enter course preamble (strictly maximum 90 words, single coherent paragraph)..."
+                          placeholder="Course preamble (strictly maximum 90 words, single coherent paragraph)..."
                           className={`w-full p-3.5 border rounded-xl text-sm leading-relaxed transition-all ${
                             hasFieldError('preamble')
                               ? 'border-red-400 bg-red-50/20 focus:ring-2 focus:ring-red-200 focus:border-red-500'
@@ -2479,7 +2498,7 @@ export const CourseWizard: React.FC = () => {
                                     updated[pIdx] = { ...updated[pIdx], courseCode: e.target.value.toUpperCase() };
                                     updateField('prerequisites', updated);
                                   }}
-                                  placeholder="Enter course code"
+                                  placeholder="Course Code"
                                   className="w-1/3 p-2 border border-slate-300 rounded-lg text-xs font-mono font-semibold uppercase bg-white focus:ring-2 focus:ring-sky-500"
                                 />
                                 <input
@@ -2490,7 +2509,7 @@ export const CourseWizard: React.FC = () => {
                                     updated[pIdx] = { ...updated[pIdx], courseName: e.target.value };
                                     updateField('prerequisites', updated);
                                   }}
-                                  placeholder="Enter course title"
+                                  placeholder="Course Name"
                                   className="flex-1 p-2 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-sky-500"
                                 />
                                 <button
@@ -2663,7 +2682,7 @@ export const CourseWizard: React.FC = () => {
                                   updated[idx] = { ...updated[idx], statement: e.target.value };
                                   updateField('courseOutcomes', updated);
                                 }}
-                                placeholder="Enter course outcome statement"
+                                placeholder="Course Outcome statement"
                                 className="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-sky-500"
                               />
                             </div>
@@ -3616,7 +3635,7 @@ export const CourseWizard: React.FC = () => {
                                   updated[idx] = { ...updated[idx], mainTopic: e.target.value };
                                   updateField('modules', updated);
                                 }}
-                                placeholder={`Enter Module ${mod.moduleNo || idx + 1} title`}
+                                placeholder={`Module ${mod.moduleNo || idx + 1} Title`}
                                 className="w-full p-2 border border-slate-300 rounded-lg text-xs"
                               />
                             </div>
@@ -3647,7 +3666,7 @@ export const CourseWizard: React.FC = () => {
                                     return next;
                                   });
                                 }}
-                                placeholder="Enter topics (comma, dash or newline separated)"
+                                placeholder="Topics (comma, dash or newline separated)"
                                 className="w-full p-2 border border-slate-300 rounded-lg text-xs"
                               />
                             </div>
@@ -4144,7 +4163,7 @@ export const CourseWizard: React.FC = () => {
                                                     list[idx] = { ...list[idx], coMapping: e.target.value };
                                                     updateField('lectureScheduleItems', list);
                                                   }}
-                                                  placeholder="Enter mapped COs"
+                                                  placeholder="Mapped COs"
                                                   className="w-full p-1 border border-slate-300 rounded text-xs text-center font-semibold text-slate-800 bg-white"
                                                   title="Mapped Course Outcomes (e.g. CO1, CO6)"
                                                 />
@@ -4435,7 +4454,7 @@ export const CourseWizard: React.FC = () => {
                                       updateField('experiments', updated);
                                       setBulkExperimentsText(updated.map((expItem, i) => `${expItem.slNo || i + 1}. ${expItem.name}`).join('\n'));
                                     }}
-                                    placeholder={`Enter Experiment ${exp.slNo || idx + 1} title`}
+                                    placeholder={`Experiment ${exp.slNo || idx + 1} Title`}
                                     className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white focus:outline-sky-500"
                                   />
                                 </div>
@@ -4862,7 +4881,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], title: e.target.value };
                                 updateField('webResources', updated);
                               }}
-                              placeholder="Enter course title / resource name"
+                              placeholder="Course Title / Resource Name"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -4873,7 +4892,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], authors: e.target.value };
                                 updateField('webResources', updated);
                               }}
-                              placeholder="Enter instructor name"
+                              placeholder="Instructor Name"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -4884,7 +4903,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], publisher: e.target.value };
                                 updateField('webResources', updated);
                               }}
-                              placeholder="Enter institute name"
+                              placeholder="Institute Name"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -4895,7 +4914,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], url: e.target.value };
                                 updateField('webResources', updated);
                               }}
-                              placeholder="Enter URL / web link"
+                              placeholder="URL / Web Link"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                           </div>
@@ -4965,7 +4984,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], name: e.target.value };
                                 updateField('designers', updated);
                               }}
-                              placeholder="Enter faculty name"
+                              placeholder="Faculty Name"
                               className="p-2 border border-slate-300 rounded text-xs font-semibold"
                             />
                             <select
@@ -5010,7 +5029,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], department: e.target.value };
                                 updateField('designers', updated);
                               }}
-                              placeholder="Enter department"
+                              placeholder="Department"
                               className="p-2 border border-slate-300 rounded text-xs"
                             />
                             <input
@@ -5021,7 +5040,7 @@ export const CourseWizard: React.FC = () => {
                                 updated[idx] = { ...updated[idx], email: e.target.value };
                                 updateField('designers', updated);
                               }}
-                              placeholder="Enter email ID"
+                              placeholder="Email ID"
                               className="p-2 border border-slate-300 rounded text-xs font-mono text-[#0000FF] underline font-medium"
                             />
                           </div>
