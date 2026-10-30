@@ -1,4 +1,4 @@
-// Institutional constants for SyllabusForge (Regulation 2026)
+﻿// Institutional constants for SyllabusForge (Regulation 2026)
 
 export interface ProgrammeCode {
   code: string;
@@ -7,48 +7,61 @@ export interface ProgrammeCode {
 }
 
 export const PROGRAMME_CODES: ProgrammeCode[] = [
-  { code: 'CE', name: 'Civil Engineering', department: 'Civil Engineering' },
-  { code: 'ME', name: 'Mechanical Engineering', department: 'Mechanical Engineering' },
-  { code: 'EE', name: 'Electrical and Electronics Engineering', department: 'Electrical and Electronics Engineering' },
-  { code: 'EC', name: 'Electronics and Communication Engineering', department: 'Electronics and Communication Engineering' },
-  { code: 'CS', name: 'Computer Science Engineering', department: 'Computer Science Engineering' },
-  { code: 'IT', name: 'Information Technology', department: 'Information Technology' },
-  { code: 'CB', name: 'Computer Science and Business Systems', department: 'Computer Science and Business Systems' },
-  { code: 'AM', name: 'Computer Science Engineering (Artificial Intelligence and Machine Learning)', department: 'Computer Science Engineering' },
-  { code: 'MT', name: 'Mechatronics Engineering', department: 'Mechanical Engineering' },
-  { code: 'DS', name: 'Data Science', department: 'Computer Applications' },
-  { code: 'CA', name: 'Computer Applications', department: 'Computer Applications' },
-  { code: 'PA', name: 'Structural Engineering', department: 'Civil Engineering' },
-  { code: 'PB', name: 'Construction Engineering and Management', department: 'Civil Engineering' },
-  { code: 'PC', name: 'Communication Systems', department: 'Electronics and Communication Engineering' },
-  { code: 'PD', name: 'Computer Science Engineering (PG)', department: 'Computer Science Engineering' },
-  { code: 'EL', name: 'ECE VLSI', department: 'Electronics and Communication Engineering' },
-  { code: 'FT', name: 'Fashion Technology', department: 'Fashion Technology' },
-  { code: 'ER', name: 'Electrical and Computer Engineering', department: 'Electrical and Electronics Engineering' },
-  { code: 'MA', name: 'Mathematics Department', department: 'Mathematics' },
-  { code: 'PH', name: 'Physics Department', department: 'Physics' },
-  { code: 'CH', name: 'Chemistry Department', department: 'Chemistry' },
-  { code: 'EG', name: 'English Department', department: 'English' },
-  { code: 'CC', name: 'Common Course Code', department: 'First Year / Interdisciplinary' },
+  // Civil Engineering
+  { code: 'CE', name: 'B.E Civil Engineering',                                department: 'Civil Engineering' },
+  { code: 'PA', name: 'M.E Structural Engineering',                           department: 'Civil Engineering' },
+  { code: 'PB', name: 'M.E Construction Engineering and Management',          department: 'Civil Engineering' },
+  // Mechanical Engineering
+  { code: 'ME', name: 'B.E Mechanical Engineering',                           department: 'Mechanical Engineering' },
+  // Mechatronics
+  { code: 'MT', name: 'B.E Mechatronics',                                     department: 'Mechatronics' },
+  // Electrical and Electronics Engineering
+  { code: 'EE', name: 'B.E Electrical and Electronics Engineering',           department: 'Electrical and Electronics Engineering' },
+  { code: 'ER', name: 'B.E Electrical and Computer Engineering',              department: 'Electrical and Electronics Engineering' },
+  // Electronics and Communication Engineering
+  { code: 'EC', name: 'B.E Electronics and Communication Engineering',        department: 'Electronics and Communication Engineering' },
+  { code: 'EL', name: 'B.Tech Electronics Engineering (VLSI Design)',         department: 'Electronics and Communication Engineering' },
+  { code: 'PC', name: 'M.E Communication Systems',                            department: 'Electronics and Communication Engineering' },
+  // Computer Science and Engineering
+  { code: 'CS', name: 'B.E Computer Science and Engineering',                 department: 'Computer Science and Engineering' },
+  { code: 'AM', name: 'B.E CSE (Artificial Intelligence & Machine Learning)', department: 'Computer Science and Engineering' },
+  { code: 'PD', name: 'M.E Computer Science and Engineering',                 department: 'Computer Science and Engineering' },
+  // Information Technology
+  { code: 'IT', name: 'B.Tech Information Technology',                        department: 'Information Technology' },
+  // Computer Science and Business Systems
+  { code: 'CB', name: 'B.Tech Computer Science and Business Systems',         department: 'Computer Science and Business Systems' },
+  // Computer Applications
+  { code: 'CA', name: 'MCA — Master of Computer Applications',                department: 'Computer Applications' },
+  // Data Science
+  { code: 'DS', name: 'M.Sc Data Science (Five Years)',                       department: 'Data Science' },
+  // Fashion Technology
+  { code: 'FT', name: 'B.Tech Fashion Technology',                            department: 'Fashion Technology' },
+  // Service Departments
+  { code: 'MA', name: 'Mathematics (Service Dept)',                           department: 'Mathematics' },
+  { code: 'PH', name: 'Physics (Service Dept)',                               department: 'Physics' },
+  { code: 'CH', name: 'Chemistry (Service Dept)',                             department: 'Chemistry' },
+  { code: 'EG', name: 'English (Service Dept)',                               department: 'English' },
+  // Common / First Year
+  { code: 'CC', name: 'Common Course Code',                                   department: 'First Year / Interdisciplinary' },
 ];
 
 export const DEPARTMENT_OPTIONS = [
   'Civil Engineering',
-  'Mechanical Engineering',
-  'Electrical and Electronics Engineering',
-  'Electronics and Communication Engineering',
+  'Chemistry',
   'Computer Science and Engineering',
-  'Information Technology',
   'Computer Science and Business Systems',
   'Computer Applications',
+  'Data Science',
   'Artificial Intelligence',
-  'Mechatronics',
-  'Fashion Technology',
-  'Applied Mathematics and Computational Science',
-  'Mathematics',
-  'Physics',
-  'Chemistry',
+  'Electronics and Communication Engineering',
+  'Electrical and Electronics Engineering',
   'English',
+  'Fashion Technology',
+  'Information Technology',
+  'Mathematics',
+  'Mechanical Engineering',
+  'Mechatronics',
+  'Physics',
   'First Year / Interdisciplinary',
 ] as const;
 
@@ -56,19 +69,27 @@ export type DepartmentName = typeof DEPARTMENT_OPTIONS[number];
 
 export function getProgrammesForDepartment(dept?: string): ProgrammeCode[] {
   if (!dept) return PROGRAMME_CODES;
-  return PROGRAMME_CODES.filter(p => {
-    if (p.department.toLowerCase() === dept.toLowerCase()) return true;
-    if (dept === 'Artificial Intelligence' && p.code === 'AM') return true;
-    if (dept === 'Mechatronics' && p.code === 'MT') return true;
-    if (dept === 'Applied Mathematics and Computational Science' && (p.code === 'DS' || p.code === 'MA')) return true;
-    if (dept === 'Computer Science and Engineering' && (p.code === 'AM' || p.code === 'PD' || p.code === 'CS')) return true;
-    if (dept === 'Mechanical Engineering' && (p.code === 'ME' || p.code === 'MT')) return true;
-    if (dept === 'Civil Engineering' && (p.code === 'CE' || p.code === 'PA' || p.code === 'PB')) return true;
-    if (dept === 'Electronics and Communication Engineering' && (p.code === 'EC' || p.code === 'PC' || p.code === 'EL')) return true;
-    if (dept === 'Electrical and Electronics Engineering' && (p.code === 'EE' || p.code === 'ER')) return true;
-    if (dept === 'Computer Applications' && (p.code === 'CA' || p.code === 'DS')) return true;
-    return false;
-  });
+  const map: Record<string, string[]> = {
+    'Civil Engineering':                          ['CE', 'PA', 'PB'],
+    'Chemistry':                                  ['CH'],
+    'Computer Science and Engineering':           ['CS', 'AM', 'PD'],
+    'Computer Science and Business Systems':      ['CB'],
+    'Computer Applications':                      ['CA'],
+    'Data Science':                               ['DS'],
+    'Artificial Intelligence':                    ['AM'],
+    'Electronics and Communication Engineering':  ['EC', 'EL', 'PC'],
+    'Electrical and Electronics Engineering':     ['EE', 'ER'],
+    'English':                                    ['EG'],
+    'Fashion Technology':                         ['FT'],
+    'Information Technology':                     ['IT'],
+    'Mathematics':                                ['MA'],
+    'Mechanical Engineering':                     ['ME'],
+    'Mechatronics':                               ['MT'],
+    'Physics':                                    ['PH'],
+    'First Year / Interdisciplinary':             ['CC'],
+  };
+  const codes = map[dept] ?? [];
+  return PROGRAMME_CODES.filter(p => codes.includes(p.code));
 }
 
 export function getDepartmentForProgramme(code?: string): string {
