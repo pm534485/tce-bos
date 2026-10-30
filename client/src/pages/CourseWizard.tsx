@@ -730,6 +730,123 @@ const SdgCheckboxSelector: React.FC<SdgCheckboxSelectorProps> = ({ sdgNo, onChan
   );
 };
 
+// ── CO Mapping Popup — full document-preview-style CO table in a modal ──
+interface CoMappingPopupProps {
+  expLabel: string;
+  courseOutcomes: CourseOutcome[];
+  selectedCoNos: string[];
+  onToggle: (coNo: string) => void;
+}
+const CoMappingPopup: React.FC<CoMappingPopupProps> = ({ expLabel, courseOutcomes, selectedCoNos, onToggle }) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      {/* Trigger button */}
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-300 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 hover:border-slate-400 transition-all cursor-pointer"
+      >
+        <Plus className="w-3 h-3" />
+        Select COs
+      </button>
+
+      {/* Modal overlay */}
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setOpen(false)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div
+            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 bg-slate-50">
+              <div>
+                <h3 className="font-bold text-sm text-slate-800">Course Outcomes — {expLabel}</h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">Click a row to map or unmap it to this experiment</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-auto flex-1">
+              <table className="w-full text-xs border-collapse">
+                <thead className="sticky top-0 bg-slate-100 z-10">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-bold text-slate-600 border-b border-slate-200 w-16">No.</th>
+                    <th className="px-4 py-3 text-left font-bold text-slate-600 border-b border-slate-200">Course Outcome</th>
+                    <th className="px-4 py-3 text-center font-bold text-slate-600 border-b border-slate-200 w-20">TPS Level</th>
+                    <th className="px-4 py-3 text-center font-bold text-slate-600 border-b border-slate-200 w-28">Performance Indicator</th>
+                    <th className="px-4 py-3 text-center font-bold text-slate-600 border-b border-slate-200 w-24">CO Weightage</th>
+                    <th className="px-4 py-3 text-center font-bold text-slate-600 border-b border-slate-200 w-24">SDG addressed</th>
+                    <th className="px-4 py-3 text-center font-bold text-slate-600 border-b border-slate-200 w-20">SDG Level</th>
+                    <th className="px-4 py-3 w-10 border-b border-slate-200"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {courseOutcomes.map(co => {
+                    const isSelected = selectedCoNos.includes(co.coNo);
+                    return (
+                      <tr
+                        key={co.coNo}
+                        onClick={() => onToggle(co.coNo)}
+                        className={`cursor-pointer transition-colors ${isSelected ? 'bg-sky-50 hover:bg-sky-100' : 'hover:bg-slate-50'}`}
+                      >
+                        <td className="px-4 py-3 align-top">
+                          <span className={`inline-block px-2 py-0.5 rounded font-black text-[10px] ${isSelected ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                            {co.coNo}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-slate-700 leading-snug align-top">{co.statement}</td>
+                        <td className="px-4 py-3 text-center font-semibold text-slate-600 align-top">TPS{co.tpsLevel}</td>
+                        <td className="px-4 py-3 text-center text-slate-500 align-top">{co.pi || '—'}</td>
+                        <td className="px-4 py-3 text-center text-slate-500 align-top">{(co as any).weightage ?? ''}</td>
+                        <td className="px-4 py-3 text-center text-slate-500 align-top">{co.sdgNo || 'NC'}</td>
+                        <td className="px-4 py-3 text-center text-slate-500 align-top">{co.sdgLevel ?? 0}</td>
+                        <td className="px-4 py-3 text-center align-top">
+                          {isSelected
+                            ? <Check className="w-4 h-4 text-sky-600 mx-auto" />
+                            : <Plus className="w-4 h-4 text-slate-300 mx-auto" />}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Modal footer — selected summary + Done */}
+            <div className="flex items-center justify-between px-5 py-3 border-t border-slate-200 bg-slate-50">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-slate-500">Mapped:</span>
+                {selectedCoNos.length === 0
+                  ? <span className="text-[11px] text-slate-400 italic">None</span>
+                  : selectedCoNos.map(c => (
+                    <span key={c} className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-sky-600 text-white">{c}</span>
+                  ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="px-4 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-bold hover:bg-slate-700 transition-all cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
 // ── CO Domain Picker sub-component (must be a real component to use useState) ──
 interface CoDomainPickerProps {
   courseOutcomes: CourseOutcome[];
@@ -4722,62 +4839,28 @@ export const CourseWizard: React.FC = () => {
                                 </div>
                               </div>
 
-                              {/* CO Reference + Mapping */}
-                              <div className="pt-1.5 border-t border-slate-200/60 space-y-2">
-                                {/* CO reference table — always visible so user knows what each CO means */}
-                                {(course.courseOutcomes || []).length > 0 && (
-                                  <div className="rounded-lg border border-slate-200 overflow-hidden">
-                                    <div className="px-3 py-1.5 bg-slate-100 text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-                                      Course Outcomes — click a row to map / unmap for this experiment
-                                    </div>
-                                    <table className="w-full text-[11px]">
-                                      <tbody className="divide-y divide-slate-100">
-                                        {(course.courseOutcomes || []).map(co => {
-                                          const isSelected = (exp.coNos || []).includes(co.coNo);
-                                          return (
-                                            <tr
-                                              key={co.coNo}
-                                              onClick={() => {
-                                                const updated = [...(course.experiments || [])];
-                                                const current = updated[idx].coNos || [];
-                                                const next = isSelected
-                                                  ? current.filter(c => c !== co.coNo)
-                                                  : [...current, co.coNo];
-                                                updated[idx] = { ...updated[idx], coNos: next };
-                                                updateField('experiments', updated);
-                                              }}
-                                              className={`cursor-pointer transition-colors ${isSelected ? 'bg-sky-50' : 'hover:bg-slate-50'}`}
-                                            >
-                                              <td className="px-3 py-2 w-12 align-top">
-                                                <span className={`inline-block px-2 py-0.5 rounded font-black text-[10px] ${isSelected ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
-                                                  {co.coNo}
-                                                </span>
-                                              </td>
-                                              <td className="px-3 py-2 text-slate-700 leading-snug">{co.statement}</td>
-                                              <td className="px-3 py-2 w-10 text-center align-top">
-                                                {isSelected
-                                                  ? <Check className="w-3.5 h-3.5 text-sky-600 mx-auto" />
-                                                  : <Plus className="w-3.5 h-3.5 text-slate-300 mx-auto" />}
-                                              </td>
-                                            </tr>
-                                          );
-                                        })}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                )}
-
-                                {/* Mapped COs summary pills */}
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                  <span className="text-[11px] font-semibold text-slate-500 mr-1">Mapped COs:</span>
+                              {/* CO Mapping — popup button + summary */}
+                              <div className="pt-1.5 border-t border-slate-200/60">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="text-[11px] font-semibold text-slate-500">Mapped COs:</span>
                                   {(exp.coNos || []).length === 0
-                                    ? <span className="text-[11px] text-slate-400 italic">None selected — click rows above to map</span>
+                                    ? <span className="text-[11px] text-slate-400 italic">None</span>
                                     : (exp.coNos || []).map(coNo => (
-                                      <span key={coNo} className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-sky-600 text-white">
-                                        {coNo}
-                                      </span>
+                                      <span key={coNo} className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-sky-600 text-white">{coNo}</span>
                                     ))
                                   }
+                                  <CoMappingPopup
+                                    expLabel={`Exp. ${exp.slNo || idx + 1}`}
+                                    courseOutcomes={course.courseOutcomes || []}
+                                    selectedCoNos={exp.coNos || []}
+                                    onToggle={(coNo) => {
+                                      const updated = [...(course.experiments || [])];
+                                      const current = updated[idx].coNos || [];
+                                      const isSelected = current.includes(coNo);
+                                      updated[idx] = { ...updated[idx], coNos: isSelected ? current.filter(c => c !== coNo) : [...current, coNo] };
+                                      updateField('experiments', updated);
+                                    }}
+                                  />
                                 </div>
                               </div>
                             </div>
