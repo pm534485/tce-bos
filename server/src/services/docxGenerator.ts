@@ -315,8 +315,8 @@ export async function generateDocxDocument(course: Course): Promise<Buffer> {
     const assessHeader1 = new TableRow({
       children: [
         createCell('CO', { bold: true, widthPercent: 10, align: AlignmentType.CENTER, verticalMerge: VerticalMergeType.RESTART }),
-        createCell('Theory', { bold: true, widthPercent: 36, align: AlignmentType.CENTER, columnSpan: 2 }),
-        createCell('Practical', { bold: true, widthPercent: 36, align: AlignmentType.CENTER, columnSpan: 2 }),
+        createCell('Theory', { bold: true, widthPercent: 36, align: AlignmentType.CENTER, colSpan: 2 }),
+        createCell('Practical', { bold: true, widthPercent: 36, align: AlignmentType.CENTER, colSpan: 2 }),
         createCell('Terminal Exam (Practical)', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, verticalMerge: VerticalMergeType.RESTART }),
       ],
     });
@@ -398,7 +398,6 @@ export async function generateDocxDocument(course: Course): Promise<Buffer> {
       width: { size: 100, type: WidthType.PERCENTAGE },
       rows: [assessHeader1, assessHeader2, assessHeader3, ...assessDataRows, assessTotalRow],
     }));
-  }
   } else {
     const assessHeader1 = new TableRow({
       children: [
