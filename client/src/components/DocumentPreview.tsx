@@ -77,6 +77,12 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
       window.URL.revokeObjectURL(url);
     } catch (err: any) {
       console.error('Download error:', err);
+      if (format === 'pdf') {
+        // Fallback for cloud/serverless environments where Chromium is not packaged:
+        // Automatically open the browser's native Print to PDF dialog with clean document formatting
+        window.print();
+        return;
+      }
       setDownloadError(err.message || 'Export failed. Please check network connection.');
     } finally {
       setDownloadingFormat(null);
@@ -317,7 +323,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
   return (
     <div className="flex flex-col items-center">
       {/* Top Action Bar */}
-      <div className="w-full max-w-5xl flex items-center justify-between pb-4 mb-4 border-b border-slate-200">
+      <div className="top-action-bar w-full max-w-5xl flex items-center justify-between pb-4 mb-4 border-b border-slate-200">
         <div className="flex items-center space-x-2">
           <FileText className="w-5 h-5 text-sky-600" />
           <span className="font-semibold text-slate-800 text-sm">
@@ -379,7 +385,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
 
       <div className="space-y-8 w-full max-w-5xl">
         {/* ==================== PAGE 1 SHEET ==================== */}
-        <div className="bg-white p-12 sm:p-14 rounded-xl shadow-lg border border-slate-300 text-slate-900 select-text font-sans text-sm">
+        <div className="document-sheet bg-white p-12 sm:p-14 rounded-xl shadow-lg border border-slate-300 text-slate-900 select-text font-sans text-sm">
           {/* Running Top Right Header */}
           <div className="text-right text-xs font-normal text-slate-800 mb-6">
             {headerText}
@@ -648,7 +654,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
         </div>
 
         {/* ==================== PAGE 2 SHEET ==================== */}
-        <div className="bg-white p-12 sm:p-14 rounded-xl shadow-lg border border-slate-300 text-slate-900 select-text font-sans text-sm">
+        <div className="document-sheet bg-white p-12 sm:p-14 rounded-xl shadow-lg border border-slate-300 text-slate-900 select-text font-sans text-sm">
           {/* Running Top Right Header */}
           <div className="text-right text-xs font-normal text-slate-800 mb-6">
             {headerText}
@@ -807,7 +813,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
 
         {/* ==================== PAGE 3 SHEET (Theory and TCP courses) ==================== */}
         {!isPractical && (
-          <div className="bg-white p-12 sm:p-14 rounded-xl shadow-lg border border-slate-300 text-slate-900 select-text font-sans text-sm">
+          <div className="document-sheet bg-white p-12 sm:p-14 rounded-xl shadow-lg border border-slate-300 text-slate-900 select-text font-sans text-sm">
             {/* Running Top Right Header */}
             <div className="text-right text-xs font-normal text-slate-800 mb-6">
               {headerText}

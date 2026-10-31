@@ -1,4 +1,4 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -264,5 +264,38 @@
 
   .card-base {
     @apply rounded-lg border border-border bg-surface shadow-sm;
+  }
+}
+
+/* ============================================================
+   PRINT / PDF EXPORT STYLES
+   ============================================================ */
+@media print {
+  /* Hide application chrome, navigation, buttons, and panels */
+  nav, header, aside, .glass-btn, button, .top-action-bar, .compliance-panel, [role="navigation"] {
+    display: none !important;
+  }
+
+  body, html {
+    background: #FFFFFF !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .document-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 10mm 15mm !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .document-sheet:last-child {
+    page-break-after: auto;
+    break-after: auto;
   }
 }
