@@ -545,46 +545,44 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
 
   <!-- Assessment Pattern -->
   ${isPractical ? `
-  <div class="gray-banner">Assessment Pattern</div>
+  <div class="gray-banner">4. Assessment Pattern: Cognitive Domain</div>
   <div class="line-space-sm"></div>
-  <table style="table-layout: fixed; width: 100%; border-collapse: collapse;">
+  <table style="width: 100%; border-collapse: collapse;">
     <thead>
       <tr>
-        <th rowspan="3" class="center" style="width: 10%; vertical-align: middle;">CO</th>
-        <th colspan="2" class="center">Theory</th>
-        <th colspan="2" class="center">Practical</th>
-        <th rowspan="2" class="center" style="width: 18%; vertical-align: middle;">Terminal Exam<br>${terminalExamBracket}</th>
-      </tr>
-      <tr>
-        <th class="center" style="width: 18%;">CAT1</th>
-        <th class="center" style="width: 18%;">CAT2</th>
-        <th class="center" style="width: 18%;">OCR/Continuous Assessment</th>
-        <th class="center" style="width: 18%;">Model Test CO-wise</th>
-      </tr>
-      <tr>
-        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
-        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
-        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
-        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
-        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
+        <th class="left" style="width: 24%;">Type of Assessment</th>
+        <th class="left" style="width: 36%;">Component</th>
+        <th class="center" style="width: 10%;">Marks</th>
+        <th class="left" style="width: 30%;">Remarks</th>
       </tr>
     </thead>
     <tbody>
-      ${practicalRowsHtml}
       <tr>
-        <td class="left font-bold" style="padding-left: 10px;">Total</td>
-        <td class="center font-bold">${totalPracticalCat1 || 100}</td>
-        <td class="center font-bold">${totalPracticalCat2 || 100}</td>
-        <td class="center font-bold">${totalPracticalCa || 100}</td>
-        <td class="center font-bold">${totalPracticalModel || 100}</td>
-        <td class="center font-bold">${totalPracticalTerm || 100}</td>
+        <td class="left font-bold">Continuous Assessment</td>
+        <td class="left">Pre-lab, In-lab, Post-lab</td>
+        <td class="center font-bold">75</td>
+        <td class="left">Conducted throughout the semester</td>
+      </tr>
+      <tr>
+        <td class="left font-bold">Model Test</td>
+        <td class="left">CO-wise (Cognitive, Psychomotor, Affective)</td>
+        <td class="center font-bold">25</td>
+        <td class="left">Mid/End semester internal test</td>
+      </tr>
+      <tr>
+        <td class="left font-bold">Total Internal Marks</td>
+        <td class="left"></td>
+        <td class="center font-bold">100</td>
+        <td class="left"></td>
+      </tr>
+      <tr>
+        <td class="left font-bold">End Semester Examination</td>
+        <td class="left">CO-wise (Cognitive, Psychomotor, Affective)</td>
+        <td class="center font-bold">100</td>
+        <td class="left">As directed by COE or as per curriculum</td>
       </tr>
     </tbody>
   </table>
-  <div style="margin-top: 24px; padding-top: 8px; display: flex; justify-content: space-between; font-size: 8.5pt; font-family: Arial, Helvetica, sans-serif; color: #1e293b;">
-    <span>${bosMeetingText}</span>
-    <span>${acmMeetingText}</span>
-  </div>
   ` : `
   <div class="gray-banner">Assessment Pattern</div>
   <div class="line-space-sm"></div>
@@ -624,7 +622,43 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
   </div>
   `}
 
-  <!-- Page Break to Page 2 -->
+  ${isPractical ? `
+  <!-- 5. List of Experiments with CO Mapping (Practical: directly follows Section 4 with NO learning resources) -->
+  <div class="line-space"></div>
+  <div class="gray-banner">5. List of Experiments with CO Mapping</div>
+  <div class="line-space-sm"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 8%; text-align: center;">Sl. No.</th>
+        <th style="width: 50%; text-align: left;">Name of the Experiment</th>
+        <th style="width: 14%; text-align: center;">Level of Experiment</th>
+        <th style="width: 14%; text-align: center;">Objective(s)</th>
+        <th style="width: 14%; text-align: center;">COs Addressed</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${experimentsList.length > 0 ? experimentsList.map((exp, idx) => `
+        <tr>
+          <td class="center">${exp.slNo || idx + 1}</td>
+          <td class="left">${exp.name || ''}</td>
+          <td class="center">${String(exp.level || 1).replace(/^Level\s*/i, '')}</td>
+          <td class="center">${(exp.objectiveNos && exp.objectiveNos.length > 0) ? exp.objectiveNos.join(', ') : '1, 3'}</td>
+          <td class="center font-bold">${Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || '')}</td>
+        </tr>
+      `).join('') : `<tr><td colspan="5" class="center">No experiments added yet.</td></tr>`}
+    </tbody>
+  </table>
+
+  <div class="line-space"></div>
+  <div class="gray-banner">6. Course Designer(s):</div>
+  <div class="line-space-sm"></div>
+  <div class="section-p">
+    ${designersHtml}
+  </div>
+  ` : `
+  <!-- Page Break to Page 2 for Theory and TCP -->
   <div class="page-break"></div>
 
   <!-- ==================== PAGE 2 ==================== -->
@@ -632,13 +666,13 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
     ${headerText}
   </div>
 
-  <!-- Syllabus -->
-  <div class="gray-banner">Syllabus</div>
+  <!-- 5. Syllabus -->
+  <div class="gray-banner">5. Syllabus</div>
   <div class="line-space"></div>
 
   ${modulesHtml}
 
-  ${(isPractical || isTcp) && experimentsList.length > 0 ? `
+  ${isTcp && experimentsList.length > 0 ? `
   <div style="margin-top: 10px;">
     <div style="font-weight: bold; text-decoration: underline; font-size: 10pt; margin-bottom: 6px;">Practical:</div>
     <ol style="margin: 0; padding-left: 22px; font-size: 10pt; line-height: 1.35;">
@@ -651,13 +685,13 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
   <div class="section-p" style="font-style: italic; color: #64748b;">No syllabus topics or laboratory experiments added yet.</div>
   ` : ''}
 
-  <!-- Learning Resources -->
+  <!-- 6. Learning Resources -->
   <div class="line-space"></div>
-  <div class="gray-banner">${isPractical ? 'Learning Resources' : '6. Learning Resources'}</div>
+  <div class="gray-banner">6. Learning Resources</div>
   <div class="line-space"></div>
 
-  ${(!isPractical || (course.textBooks && course.textBooks.length > 0)) ? `
-  <div class="gray-banner">${isPractical ? 'Text Book(s)' : '6.1 Text Book'}</div>
+  ${(course.textBooks && course.textBooks.length > 0) ? `
+  <div class="gray-banner">6.1 Text Book</div>
   <div class="line-space"></div>
 
   <ul class="bullet-list">
@@ -667,7 +701,7 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
   <div class="line-space"></div>
   ` : ''}
 
-  <div class="gray-banner">${isPractical ? 'Reference Books and Web resources' : '6.2 Reference Books & Web resources'}</div>
+  <div class="gray-banner">6.2 Reference Books & Web resources</div>
   <div class="line-space"></div>
 
   <ul class="bullet-list">
@@ -683,17 +717,20 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
     ${webResourcesHtml}
   </ul>
 
-  <!-- Page Break to Page 3 -->
+  <!-- Page Break to Page 3 for Theory/TCP -->
   <div class="page-break"></div>
 
   <!-- ==================== PAGE 3 ==================== -->
   <div style="text-align: right; font-size: 9.5pt; font-family: Arial, Helvetica, sans-serif; margin-bottom: 8px; color: #000;">
     ${headerText}
   </div>
+  `}
+  
 
-  ${(!isPractical && (scheduleItems.length > 0 || modules.length > 0)) ? `
-  <!-- Course Contents and Lecture Schedule -->
-  <div class="gray-banner">Course Contents and Lecture Schedule</div>
+  ${!isPractical ? `
+  ${(scheduleItems.length > 0 || modules.length > 0) ? `
+  <!-- 7. Course Contents and Lecture Schedule -->
+  <div class="gray-banner">7. Course Contents and Lecture Schedule</div>
   <div class="line-space"></div>
 
   <table>
@@ -715,22 +752,22 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
     </tbody>
   </table>
 
-  <!-- Line space between each section -->
   <div class="line-space"></div>
   ` : ''}
 
-  ${(isPractical || isTcp) && experimentsList.length > 0 ? `
-  <!-- List of Experiments with CO Mapping -->
+  ${isTcp && experimentsList.length > 0 ? `
+  <!-- List of Experiments with CO Mapping (TCP) -->
   <div class="gray-banner">List of Experiments with CO Mapping</div>
   <div class="line-space"></div>
 
   <table>
     <thead>
       <tr>
-        <th style="width: 10%; text-align: center;">Sl. No.</th>
-        <th style="width: 55%; text-align: left;">Name of the Experiment</th>
-        <th style="width: 15%; text-align: center;">Level of Experiment</th>
-        <th style="width: 20%; text-align: center;">COs Addressed</th>
+        <th style="width: 8%; text-align: center;">Sl. No.</th>
+        <th style="width: 50%; text-align: left;">Name of the Experiment</th>
+        <th style="width: 14%; text-align: center;">Level of Experiment</th>
+        <th style="width: 14%; text-align: center;">Objective(s)</th>
+        <th style="width: 14%; text-align: center;">COs Addressed</th>
       </tr>
     </thead>
     <tbody>
@@ -738,7 +775,6 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
     </tbody>
   </table>
 
-  <!-- Line space between each section -->
   <div class="line-space"></div>
   ` : ''}
 
@@ -749,6 +785,7 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
   <div class="section-p">
     ${designersHtml}
   </div>
+  ` : ''}
 
 </body>
 </html>

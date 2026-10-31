@@ -1,4 +1,4 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -268,7 +268,7 @@
 }
 
 /* ============================================================
-   PRINT / PDF EXPORT STYLES
+   PRINT / PDF EXPORT STYLES (Continuous Flow & Natural Breaks)
    ============================================================ */
 @media print {
   /* Hide application chrome, navigation, buttons, and panels */
@@ -280,22 +280,24 @@
     background: #FFFFFF !important;
     padding: 0 !important;
     margin: 0 !important;
+    color: #000000 !important;
   }
 
   .document-sheet {
     box-shadow: none !important;
     border: none !important;
     border-radius: 0 !important;
-    padding: 10mm 15mm !important;
+    padding: 0 !important;
     margin: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
-    page-break-after: always;
-    break-after: page;
+    page-break-after: auto !important;
+    break-after: auto !important;
   }
 
-  .document-sheet:last-child {
-    page-break-after: auto;
-    break-after: auto;
+  /* Prevent awkward splits inside tables, rows, banners, and section blocks */
+  .section-block, table, tr, thead, tbody {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }
