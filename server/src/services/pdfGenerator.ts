@@ -545,41 +545,39 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
 
   <!-- Assessment Pattern -->
   ${isPractical ? `
-  <div class="gray-banner">4. Assessment Pattern: Cognitive Domain</div>
+  <div class="gray-banner">4. Assessment Pattern</div>
   <div class="line-space-sm"></div>
   <table style="width: 100%; border-collapse: collapse;">
     <thead>
       <tr>
-        <th class="left" style="width: 24%;">Type of Assessment</th>
-        <th class="left" style="width: 36%;">Component</th>
-        <th class="center" style="width: 10%;">Marks</th>
-        <th class="left" style="width: 30%;">Remarks</th>
+        <th rowspan="3" class="center" style="width: 10%;">CO</th>
+        <th colspan="2" class="center">Theory</th>
+        <th colspan="2" class="center">Practical</th>
+        <th rowspan="2" class="center" style="width: 18%;">Terminal Exam<br />${terminalExamBracket}</th>
+      </tr>
+      <tr>
+        <th class="center" style="width: 18%;">CAT1</th>
+        <th class="center" style="width: 18%;">CAT2</th>
+        <th class="center" style="width: 18%;">OCR/Continuous Assessment</th>
+        <th class="center" style="width: 18%;">Model Test CO-wise</th>
+      </tr>
+      <tr>
+        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
       </tr>
     </thead>
     <tbody>
+      ${practicalRowsHtml}
       <tr>
-        <td class="left font-bold">Continuous Assessment</td>
-        <td class="left">Pre-lab, In-lab, Post-lab</td>
-        <td class="center font-bold">75</td>
-        <td class="left">Conducted throughout the semester</td>
-      </tr>
-      <tr>
-        <td class="left font-bold">Model Test</td>
-        <td class="left">CO-wise (Cognitive, Psychomotor, Affective)</td>
-        <td class="center font-bold">25</td>
-        <td class="left">Mid/End semester internal test</td>
-      </tr>
-      <tr>
-        <td class="left font-bold">Total Internal Marks</td>
-        <td class="left"></td>
-        <td class="center font-bold">100</td>
-        <td class="left"></td>
-      </tr>
-      <tr>
-        <td class="left font-bold">End Semester Examination</td>
-        <td class="left">CO-wise (Cognitive, Psychomotor, Affective)</td>
-        <td class="center font-bold">100</td>
-        <td class="left">As directed by COE or as per curriculum</td>
+        <td class="left" style="font-weight: bold; padding-left: 10px;">Total</td>
+        <td class="center font-bold">${totalPracticalCat1 || 100}%</td>
+        <td class="center font-bold">${totalPracticalCat2 || 100}%</td>
+        <td class="center font-bold">${totalPracticalCa || 100}%</td>
+        <td class="center font-bold">${totalPracticalModel || 100}%</td>
+        <td class="center font-bold">${totalPracticalTerm || 100}%</td>
       </tr>
     </tbody>
   </table>

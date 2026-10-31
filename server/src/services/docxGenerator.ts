@@ -312,55 +312,93 @@ export async function generateDocxDocument(course: Course): Promise<Buffer> {
   const matrix = course.assessmentMatrix || [];
 
   if (isPractical) {
-    const assessHeader = new TableRow({
+    const assessHeader1 = new TableRow({
       children: [
-        createCell('Type of Assessment', { bold: true, widthPercent: 24 }),
-        createCell('Component', { bold: true, widthPercent: 36 }),
-        createCell('Marks', { bold: true, widthPercent: 10, align: AlignmentType.CENTER }),
-        createCell('Remarks', { bold: true, widthPercent: 30 }),
+        createCell('CO', { bold: true, widthPercent: 10, align: AlignmentType.CENTER, verticalMerge: VerticalMergeType.RESTART }),
+        createCell('Theory', { bold: true, widthPercent: 36, align: AlignmentType.CENTER, columnSpan: 2 }),
+        createCell('Practical', { bold: true, widthPercent: 36, align: AlignmentType.CENTER, columnSpan: 2 }),
+        createCell('Terminal Exam (Practical)', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, verticalMerge: VerticalMergeType.RESTART }),
       ],
     });
 
-    const assessRows = [
-      assessHeader,
-      new TableRow({
+    const assessHeader2 = new TableRow({
+      children: [
+        createCell('', { widthPercent: 10, verticalMerge: VerticalMergeType.CONTINUE }),
+        createCell('CAT1', { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
+        createCell('CAT2', { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
+        createCell('OCR/Continuous Assessment', { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
+        createCell('Model Test CO-wise', { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
+        createCell('', { widthPercent: 18, verticalMerge: VerticalMergeType.CONTINUE }),
+      ],
+    });
+
+    const assessHeader3 = new TableRow({
+      children: [
+        createCell('', { widthPercent: 10, verticalMerge: VerticalMergeType.CONTINUE }),
+        createCell('% of Marks', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, size: 17 }),
+        createCell('% of Marks', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, size: 17 }),
+        createCell('% of Marks', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, size: 17 }),
+        createCell('% of Marks', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, size: 17 }),
+        createCell('% of Marks', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, size: 17 }),
+      ],
+    });
+
+    let totLabCat1 = 0;
+    let totLabCat2 = 0;
+    let totLabCa = 0;
+    let totLabModel = 0;
+    let totLabTerm = 0;
+
+    const assessDataRows = coList.map((co) => {
+      const row = matrix.find(m => m.coNo === co.coNo);
+      let cat1: number | string = '';
+      let cat2: number | string = '';
+      let ca: number | string = '';
+      let model: number | string = '';
+      let term: number | string = '';
+
+      if (row) {
+        cat1 = row.theoryCat1 && row.theoryCat1 > 0 ? row.theoryCat1 : (row.cat1 && row.cat1 > 0 ? row.cat1 : '');
+        cat2 = row.theoryCat2 && row.theoryCat2 > 0 ? row.theoryCat2 : (row.cat2 && row.cat2 > 0 ? row.cat2 : (row.assignment1 && row.assignment1 > 0 ? row.assignment1 : ''));
+        ca = row.practicalCa && row.practicalCa > 0 ? row.practicalCa : '';
+        model = row.practicalModel && row.practicalModel > 0 ? row.practicalModel : '';
+        term = row.terminalExam && row.terminalExam > 0 ? row.terminalExam : (row.tcpTerminal && row.tcpTerminal > 0 ? row.tcpTerminal : '');
+      }
+
+      if (typeof cat1 === 'number') totLabCat1 += cat1;
+      if (typeof cat2 === 'number') totLabCat2 += cat2;
+      if (typeof ca === 'number') totLabCa += ca;
+      if (typeof model === 'number') totLabModel += model;
+      if (typeof term === 'number') totLabTerm += term;
+
+      return new TableRow({
         children: [
-          createCell('Continuous Assessment', { bold: true, widthPercent: 24 }),
-          createCell('Pre-lab, In-lab, Post-lab', { widthPercent: 36 }),
-          createCell('75', { bold: true, widthPercent: 10, align: AlignmentType.CENTER }),
-          createCell('Conducted throughout the semester', { widthPercent: 30 }),
+          createCell(co.coNo, { bold: true, widthPercent: 10, align: AlignmentType.LEFT }),
+          createCell(String(cat1 !== '' ? cat1 : ''), { widthPercent: 18, align: AlignmentType.CENTER }),
+          createCell(String(cat2 !== '' ? cat2 : ''), { widthPercent: 18, align: AlignmentType.CENTER }),
+          createCell(String(ca !== '' ? ca : ''), { widthPercent: 18, align: AlignmentType.CENTER }),
+          createCell(String(model !== '' ? model : ''), { widthPercent: 18, align: AlignmentType.CENTER }),
+          createCell(String(term !== '' ? term : ''), { widthPercent: 18, align: AlignmentType.CENTER }),
         ],
-      }),
-      new TableRow({
-        children: [
-          createCell('Model Test', { bold: true, widthPercent: 24 }),
-          createCell('CO-wise (Cognitive, Psychomotor, Affective)', { widthPercent: 36 }),
-          createCell('25', { bold: true, widthPercent: 10, align: AlignmentType.CENTER }),
-          createCell('Mid/End semester internal test', { widthPercent: 30 }),
-        ],
-      }),
-      new TableRow({
-        children: [
-          createCell('Total Internal Marks', { bold: true, widthPercent: 24 }),
-          createCell('', { widthPercent: 36 }),
-          createCell('100', { bold: true, widthPercent: 10, align: AlignmentType.CENTER }),
-          createCell('', { widthPercent: 30 }),
-        ],
-      }),
-      new TableRow({
-        children: [
-          createCell('End Semester Examination', { bold: true, widthPercent: 24 }),
-          createCell('CO-wise (Cognitive, Psychomotor, Affective)', { widthPercent: 36 }),
-          createCell('100', { bold: true, widthPercent: 10, align: AlignmentType.CENTER }),
-          createCell('As directed by COE or as per curriculum', { widthPercent: 30 }),
-        ],
-      }),
-    ];
+      });
+    });
+
+    const assessTotalRow = new TableRow({
+      children: [
+        createCell('Total', { bold: true, widthPercent: 10, align: AlignmentType.LEFT }),
+        createCell(`${totLabCat1 || 100}%`, { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
+        createCell(`${totLabCat2 || 100}%`, { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
+        createCell(`${totLabCa || 100}%`, { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
+        createCell(`${totLabModel || 100}%`, { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
+        createCell(`${totLabTerm || 100}%`, { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
+      ],
+    });
 
     children.push(new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
-      rows: assessRows,
+      rows: [assessHeader1, assessHeader2, assessHeader3, ...assessDataRows, assessTotalRow],
     }));
+  }
   } else {
     const assessHeader1 = new TableRow({
       children: [
