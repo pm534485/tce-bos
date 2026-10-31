@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Course } from '@syllabusforge/shared';
 import { Download, FileText, Printer, Loader2, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
@@ -640,96 +640,128 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
             {headerText}
           </div>
 
-          {/* Syllabus Section */}
-          <div>
-            <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-              Syllabus
+          {/* Syllabus / List of Experiments Section */}
+          {isPractical ? (
+            /* Practical: show List of Experiments with CO Mapping table directly */
+            <div>
+              <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
+                List of Experiments with CO Mapping
+              </div>
+              <div className="h-3.5 my-1" />
+              {(course.experiments && course.experiments.length > 0) ? (
+                <table className="w-full border-collapse border border-black text-xs">
+                  <thead>
+                    <tr>
+                      <th className="border border-black p-1.5 text-center w-[10%]">Sl. No.</th>
+                      <th className="border border-black p-1.5 text-left w-[50%]">Name of the Experiment</th>
+                      <th className="border border-black p-1.5 text-center w-[15%]">Level of Experiment</th>
+                      <th className="border border-black p-1.5 text-center w-[25%]">COs Addressed</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(course.experiments || []).map((exp, idx) => (
+                      <tr key={idx} className="border-b border-black">
+                        <td className="border border-black p-1.5 text-center">{exp.slNo || idx + 1}</td>
+                        <td className="border border-black p-1.5 text-left">{exp.name || ''}</td>
+                        <td className="border border-black p-1.5 text-center">{exp.level || 1}</td>
+                        <td className="border border-black p-1.5 text-center">
+                          {Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || '')}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="text-xs italic text-slate-500 py-1">No experiments added yet.</div>
+              )}
             </div>
-            <div className="h-3.5 my-1" />
-
-            {/* Theory Modules (if any entered) */}
-            {(course.modules && course.modules.length > 0) && (
-              <div className="space-y-3">
-                {course.modules.map((mod, idx) => (
-                  <div key={idx} className="text-xs leading-relaxed text-justify">
-                    <span className="font-bold text-black">{mod.mainTopic}: </span>
-                    <span className="text-black">{Array.isArray(mod.subtopics) ? mod.subtopics.join(' – ') : ''}</span>
-                  </div>
-                ))}
+          ) : (
+            /* Theory / TCP: keep existing Syllabus section */
+            <div>
+              <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
+                Syllabus
               </div>
-            )}
+              <div className="h-3.5 my-1" />
 
-            {/* Practical Experiments under Syllabus (matching official TCE format) */}
-            {(isPractical || isTcp) && (course.experiments && course.experiments.length > 0) && (
-              <div className={!isPractical && course.modules && course.modules.length > 0 ? "mt-4" : ""}>
-                {!isPractical && <div className="font-bold underline text-xs text-black mb-1.5">Practical:</div>}
-                <ol className="list-decimal pl-5 space-y-1 text-xs text-black">
-                  {course.experiments.map((exp, idx) => (
-                    <li key={idx} className="text-justify">
-                      {exp.name}
-                    </li>
+              {(course.modules && course.modules.length > 0) && (
+                <div className="space-y-3">
+                  {course.modules.map((mod, idx) => (
+                    <div key={idx} className="text-xs leading-relaxed text-justify">
+                      <span className="font-bold text-black">{mod.mainTopic}: </span>
+                      <span className="text-black">{Array.isArray(mod.subtopics) ? mod.subtopics.join(' – ') : ''}</span>
+                    </div>
                   ))}
-                </ol>
-              </div>
-            )}
+                </div>
+              )}
 
-            {/* Fallback if neither modules nor experiments entered yet */}
-            {(!course.modules || course.modules.length === 0) && (!course.experiments || course.experiments.length === 0) && (
-              <div className="text-xs italic text-slate-500 py-1">
-                No syllabus topics or laboratory experiments added yet.
-              </div>
-            )}
-          </div>
+              {isTcp && (course.experiments && course.experiments.length > 0) && (
+                <div className={course.modules && course.modules.length > 0 ? "mt-4" : ""}>
+                  <div className="font-bold underline text-xs text-black mb-1.5">Practical:</div>
+                  <ol className="list-decimal pl-5 space-y-1 text-xs text-black">
+                    {course.experiments.map((exp, idx) => (
+                      <li key={idx} className="text-justify">{exp.name}</li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+
+              {(!course.modules || course.modules.length === 0) && (!course.experiments || course.experiments.length === 0) && (
+                <div className="text-xs italic text-slate-500 py-1">No syllabus topics or laboratory experiments added yet.</div>
+              )}
+            </div>
+          )}
 
           {/* Line space between sections */}
           <div className="h-3.5 my-1" />
 
-          {/* 6. Learning Resources */}
-          <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-            {isPractical ? 'Learning Resources' : '6. Learning Resources'}
-          </div>
-          <div className="h-3.5 my-1" />
-
-          {(!isPractical || (course.textBooks && course.textBooks.length > 0)) && (
+          {/* 6. Learning Resources — hidden for pure Practical courses */}
+          {!isPractical && (
             <>
               <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-                {isPractical ? 'Text Book(s)' : '6.1 Text Book'}
+                6. Learning Resources
               </div>
-              <div className="h-3.5 my-1" />
-
-              <ul className="list-disc pl-5 space-y-1.5 text-xs text-black">
-                {(course.textBooks || []).map((b, idx) => (
-                  <li key={idx} className="text-justify">{formatCitation(b)}</li>
-                ))}
-              </ul>
-
               <div className="h-3.5 my-1" />
             </>
           )}
+          {isPractical && <div className="h-3.5 my-1" />}
 
-          <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-            {isPractical ? 'Reference Books and Web resources' : '6.2 Reference Books & Web resources'}
-          </div>
-          <div className="h-3.5 my-1" />
+          {/* Learning Resources content — hidden entirely for Practical courses */}
+          {!isPractical && (
+            <>
+              {(course.textBooks && course.textBooks.length > 0) && (
+                <>
+                  <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
+                    6.1 Text Book
+                  </div>
+                  <div className="h-3.5 my-1" />
+                  <ul className="list-disc pl-5 space-y-1.5 text-xs text-black">
+                    {(course.textBooks || []).map((b, idx) => (
+                      <li key={idx} className="text-justify">{formatCitation(b)}</li>
+                    ))}
+                  </ul>
+                  <div className="h-3.5 my-1" />
+                </>
+              )}
 
-          <ul className="list-disc pl-5 space-y-1.5 text-xs text-black">
-            {(course.referenceBooks || []).map((b, idx) => (
-              <li key={idx} className="text-justify">{formatCitation(b)}</li>
-            ))}
-          </ul>
+              <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
+                6.2 Reference Books &amp; Web resources
+              </div>
+              <div className="h-3.5 my-1" />
+              <ul className="list-disc pl-5 space-y-1.5 text-xs text-black">
+                {(course.referenceBooks || []).map((b, idx) => (
+                  <li key={idx} className="text-justify">{formatCitation(b)}</li>
+                ))}
+              </ul>
+              <div className="h-3.5 my-1" />
 
-          <div className="h-3.5 my-1" />
-
-          <div className="font-bold text-sm text-black mb-1">
-            NPTEL Courses
-          </div>
-          <ul className="list-disc pl-5 space-y-1.5 text-xs text-black">
-            {(course.webResources || []).map((w, idx) => (
-              <li key={idx} className="text-justify">
-                {formatNptel(w)}
-              </li>
-            ))}
-          </ul>
+              <div className="font-bold text-sm text-black mb-1">NPTEL Courses</div>
+              <ul className="list-disc pl-5 space-y-1.5 text-xs text-black">
+                {(course.webResources || []).map((w, idx) => (
+                  <li key={idx} className="text-justify">{formatNptel(w)}</li>
+                ))}
+              </ul>
+            </>
+          )}
 
           {/* Running Footer Note */}
           <div className="mt-14 pt-4 flex justify-between text-[11px] text-slate-800">

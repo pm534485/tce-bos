@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+﻿import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -1397,24 +1397,25 @@ export const CourseWizard: React.FC = () => {
   );
 
   const isStepComplete = (stepIdx: number): boolean => {
-    switch (stepIdx) {
-      case 0: return isStep0Complete;
-      case 1: return isStep1Complete;
-      case 2: return isStep2Complete;
-      case 3: return isStep3Complete;
-      case 4: return isStep4Complete;
-      case 5: return isStep5Complete;
-      case 6: return isStep6Complete;
-      case 7: return true;
+    const sid = steps[stepIdx]?.id ?? '';
+    switch (sid) {
+      case 'identity':   return isStep0Complete;
+      case 'preamble':   return isStep1Complete;
+      case 'cos':        return isStep2Complete;
+      case 'assessment': return isStep3Complete;
+      case 'syllabus':   return isStep4Complete;
+      case 'resources':  return isStep5Complete;
+      case 'designers':  return isStep6Complete;
       default: return true;
     }
   };
 
   const getStepIncompleteMessage = (stepIdx: number): string => {
-    switch (stepIdx) {
-      case 0: return 'Complete all required course code & credits details to continue';
-      case 1: return 'Complete preamble (max 90 words) to continue';
-      case 2: {
+    const sid = steps[stepIdx]?.id ?? '';
+    switch (sid) {
+      case 'identity': return 'Complete all required course code & credits details to continue';
+      case 'preamble': return 'Complete preamble (max 90 words) to continue';
+      case 'cos': {
         const numCr = Number(course.credits) || 0;
         const validCount = (course.courseOutcomes || []).filter(co => Boolean((co.statement || '').trim())).length;
         if (course.courseType === 'PRACTICAL') {
@@ -1424,8 +1425,8 @@ export const CourseWizard: React.FC = () => {
         const req = numCr < 3 && numCr > 0 ? (numCr === 1 ? 3 : 4) : 6;
         return `Theory (${numCr || 3} credits) requires minimum ${req} Course Outcomes with statements to continue (currently ${validCount}/${req})`;
       }
-      case 3: return 'Complete assessment marks distribution (each component must total 100%) to continue';
-      case 4: {
+      case 'assessment': return 'Complete assessment marks distribution (each component must total 100%) to continue';
+      case 'syllabus': {
         if (course.courseType === 'PRACTICAL') {
           const exps = course.experiments || [];
           if (exps.length === 0) return 'Add at least one laboratory experiment to continue';
@@ -1437,7 +1438,7 @@ export const CourseWizard: React.FC = () => {
         }
         return 'Complete all syllabus modules & topics to continue';
       }
-      case 5: {
+      case 'resources': {
         const isLab = course.courseType === 'PRACTICAL';
         const tbs = course.textBooks || [];
         const rbs = course.referenceBooks || [];
@@ -1476,7 +1477,7 @@ export const CourseWizard: React.FC = () => {
 
         return 'Add required textbook(s) & learning resources to continue';
       }
-      case 6: return 'Add course designer details (name and email) to continue';
+      case 'designers': return 'Add course designer details (name and email) to continue';
       default: return 'Please complete required details to continue';
     }
   };
@@ -1874,21 +1875,25 @@ export const CourseWizard: React.FC = () => {
     }
   };
 
-  // Stepper definition
+  // Stepper definition — Learning Resources step is skipped for PRACTICAL courses
+  const isPracticalCourse = course.courseType === 'PRACTICAL';
   const steps = [
-    { id: 'identity', title: '1. Course Code & Credits', desc: 'Code, title, L-T-P & credits' },
-    { id: 'preamble', title: '2. Preamble & Prerequisites', desc: 'Course context & prior courses' },
-    { id: 'cos', title: '3. Course Outcomes', desc: 'TPS taxonomy & weightages' },
-    { id: 'assessment', title: '4. Assessment Pattern', desc: 'Continuous & Terminal exam' },
+    { id: 'identity',   title: '1. Course Code & Credits',      desc: 'Code, title, L-T-P & credits' },
+    { id: 'preamble',   title: '2. Preamble & Prerequisites',   desc: 'Course context & prior courses' },
+    { id: 'cos',        title: '3. Course Outcomes',            desc: 'TPS taxonomy & weightages' },
+    { id: 'assessment', title: '4. Assessment Pattern',         desc: 'Continuous & Terminal exam' },
     {
       id: 'syllabus',
-      title: course.courseType === 'PRACTICAL' ? '5. Laboratory Experiments' : (course.courseType === 'TCP' ? '5. Syllabus & Experiments' : '5. Syllabus & Content'),
-      desc: course.courseType === 'PRACTICAL' ? 'List of Laboratory Experiments' : (course.courseType === 'TCP' ? 'Modules, Schedule & Experiments' : 'Modules & Schedule'),
+      title: isPracticalCourse ? '5. List of Experiments with CO Mapping' : (course.courseType === 'TCP' ? '5. Syllabus & Experiments' : '5. Syllabus & Content'),
+      desc:  isPracticalCourse ? 'Experiments with CO Mapping' : (course.courseType === 'TCP' ? 'Modules, Schedule & Experiments' : 'Modules & Schedule'),
     },
-    { id: 'resources', title: '6. Learning Resources', desc: 'Text & reference books' },
-    { id: 'designers', title: '7. Course Designers', desc: 'Faculty details & emails' },
-    { id: 'review', title: '8. Review & Submit', desc: '17-point compliance audit' },
+    ...(isPracticalCourse ? [] : [{ id: 'resources', title: '6. Learning Resources', desc: 'Text & reference books' }]),
+    { id: 'designers', title: isPracticalCourse ? '6. Course Designers' : '7. Course Designers', desc: 'Faculty details & emails' },
+    { id: 'review',    title: isPracticalCourse ? '7. Review & Submit'  : '8. Review & Submit',  desc: '17-point compliance audit' },
   ];
+
+  // Derive current step id so rendering is index-independent
+  const activeStepId = steps[currentStep]?.id ?? '';
 
   // Inline highlighted error component directly below the field
   const InlineFieldError: React.FC<{ field: string; fixHint?: boolean }> = ({ field, fixHint = true }) => {
@@ -2319,7 +2324,7 @@ export const CourseWizard: React.FC = () => {
                 </div>
 
                 {/* Step 1: Course Code & Credits */}
-                {currentStep === 0 && (
+                {activeStepId === 'identity' && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <h2 className="text-xl font-bold text-slate-900">Course Code &amp; Credits</h2>
@@ -2771,7 +2776,7 @@ export const CourseWizard: React.FC = () => {
                 )}
 
                 {/* Step 2: Preamble & Prerequisites */}
-                {currentStep === 1 && (() => {
+                {activeStepId === 'preamble' && (() => {
                   const getPrereqsArray = (prereqs: any): Prerequisite[] => {
                     if (!prereqs) return [];
                     if (Array.isArray(prereqs)) {
@@ -2932,7 +2937,7 @@ export const CourseWizard: React.FC = () => {
                 })()}
 
                 {/* Step 3: Course Outcomes */}
-                {currentStep === 2 && (
+                {activeStepId === 'cos' && (
                   <div className="space-y-6">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div>
@@ -3253,7 +3258,7 @@ export const CourseWizard: React.FC = () => {
                 )}
 
                 {/* Step 4: Assessment Pattern */}
-                {currentStep === 3 && (
+                {activeStepId === 'assessment' && (
                   <div className="space-y-6">
                     <div>
                       <h2 className="text-xl font-bold text-slate-900">4. Assessment Pattern</h2>
@@ -3949,7 +3954,7 @@ export const CourseWizard: React.FC = () => {
                 )}
 
                 {/* Step 5: Syllabus Modules & Experiments */}
-                {currentStep === 4 && (
+                {activeStepId === 'syllabus' && (
                   <div className="space-y-6">
                     <div>
                       <h2 className="text-xl font-bold text-slate-900">
@@ -4902,7 +4907,7 @@ export const CourseWizard: React.FC = () => {
                 )}
 
                 {/* Step 6: Learning Resources */}
-                {currentStep === 5 && (
+                {activeStepId === 'resources' && (
                   <div className="space-y-6">
                     <div>
                       <h2 className="text-xl font-bold text-slate-900">6. Learning Resources</h2>
@@ -5304,7 +5309,7 @@ export const CourseWizard: React.FC = () => {
                 )}
 
                 {/* Step 7: Course Designers */}
-                {currentStep === 6 && (
+                {activeStepId === 'designers' && (
                   <div className="space-y-6">
                     <div>
                       <h2 className="text-xl font-bold text-slate-900">7. Course Designers</h2>
@@ -5426,7 +5431,7 @@ export const CourseWizard: React.FC = () => {
                 )}
 
                 {/* Step 8: Review & Compliance Audit */}
-                {currentStep === 7 && (
+                {activeStepId === 'review' && (
                   <div className="space-y-6">
                     <div>
                       <h2 className="text-xl font-bold text-slate-900">8. Review & Self-Audit</h2>
