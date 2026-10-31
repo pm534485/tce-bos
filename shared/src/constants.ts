@@ -24,7 +24,6 @@ export const PROGRAMME_CODES: ProgrammeCode[] = [
   { code: 'PC', name: 'Communication Systems',                                department: 'Electronics and Communication Engineering' },
   // Computer Science and Engineering
   { code: 'CS', name: 'Computer Science and Engineering',                     department: 'Computer Science and Engineering' },
-  { code: 'AM', name: 'CSE (Artificial Intelligence & Machine Learning)',     department: 'Computer Science and Engineering' },
   { code: 'PD', name: 'Computer Science and Engineering (PG)',                department: 'Computer Science and Engineering' },
   // Information Technology
   { code: 'IT', name: 'Information Technology',                               department: 'Information Technology' },
@@ -34,6 +33,8 @@ export const PROGRAMME_CODES: ProgrammeCode[] = [
   { code: 'CA', name: 'Computer Applications (MCA)',                          department: 'Computer Applications' },
   // Data Science
   { code: 'DS', name: 'Data Science (Five Years)',                            department: 'Data Science' },
+  // Artificial Intelligence
+  { code: 'AM', name: 'Artificial Intelligence and Machine Learning',         department: 'Artificial Intelligence' },
   // Fashion Technology
   { code: 'FT', name: 'Fashion Technology',                                   department: 'Fashion Technology' },
   // Service Departments
@@ -72,7 +73,7 @@ export function getProgrammesForDepartment(dept?: string): ProgrammeCode[] {
   const map: Record<string, string[]> = {
     'Civil Engineering':                          ['CE', 'PA', 'PB'],
     'Chemistry':                                  ['CH'],
-    'Computer Science and Engineering':           ['CS', 'AM', 'PD'],
+    'Computer Science and Engineering':           ['CS', 'PD'],
     'Computer Science and Business Systems':      ['CB'],
     'Computer Applications':                      ['CA'],
     'Data Science':                               ['DS'],
