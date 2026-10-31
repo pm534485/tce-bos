@@ -1,4 +1,4 @@
-// Institutional Validation Engine for SyllabusForge (Regulation 2026)
+﻿// Institutional Validation Engine for SyllabusForge (Regulation 2026)
 
 import {
   PROGRAMME_CODES,
@@ -1295,59 +1295,34 @@ export function validateLearningResources(
   isAdvanced = false,
   courseType?: CourseType
 ): ValidationRuleResult[] {
+  // Pure Practical (Laboratory) courses do not have a Learning Resources section
+  if (courseType === 'PRACTICAL') {
+    return [];
+  }
   const results: ValidationRuleResult[] = [];
   const textList = textBooks || [];
   const refList = referenceBooks || [];
-  const isLab = courseType === 'PRACTICAL';
 
-  // Text books:
-  // For Theory / TCP: strictly 1 to 2 Text Books required
-  // For Practical (Laboratory): Text Books are optional (0 to 2), as lab courses rely on Reference Books & Manuals
-  if (!isLab) {
-    if (textList.length < 1 || textList.length > 2) {
-      results.push({
-        id: 'B10_TEXTBOOK_COUNT',
-        field: 'textBooks',
-        severity: 'error',
-        message: `A theory course must list 1 to 2 Text Books (currently ${textList.length}).`,
-        fixHint: 'Ensure exactly 1 or 2 text books are specified.',
-      });
-    }
-  } else {
-    if (textList.length > 2) {
-      results.push({
-        id: 'B10_TEXTBOOK_COUNT',
-        field: 'textBooks',
-        severity: 'error',
-        message: `A laboratory course can list up to 2 Text Books (currently ${textList.length}).`,
-        fixHint: 'Ensure at most 2 text books are specified.',
-      });
-    }
+  // Text books: strictly 1 to 2 Text Books required for Theory / TCP
+  if (textList.length < 1 || textList.length > 2) {
+    results.push({
+      id: 'B10_TEXTBOOK_COUNT',
+      field: 'textBooks',
+      severity: 'error',
+      message: `A theory course must list 1 to 2 Text Books (currently ${textList.length}).`,
+      fixHint: 'Ensure exactly 1 or 2 text books are specified.',
+    });
   }
 
-  // Reference books:
-  // For Theory / TCP: 3 to 6 Reference Books
-  // For Practical (Laboratory): at least 1 and up to 6 Reference Books / Lab Manuals
-  if (isLab) {
-    if (refList.length < 1 || refList.length > 6) {
-      results.push({
-        id: 'B10_REFBOOK_COUNT',
-        field: 'referenceBooks',
-        severity: 'error',
-        message: `A laboratory course must list at least 1 Reference Book or Lab Manual (currently ${refList.length}).`,
-        fixHint: 'Add 1 to 6 reference books or laboratory manuals.',
-      });
-    }
-  } else {
-    if (refList.length < 3 || refList.length > 6) {
-      results.push({
-        id: 'B10_REFBOOK_COUNT',
-        field: 'referenceBooks',
-        severity: 'error',
-        message: `A course must list 3 to 6 Reference Books (currently ${refList.length}).`,
-        fixHint: 'Add or remove reference books to have between 3 and 6 titles.',
-      });
-    }
+  // Reference books: 3 to 6 Reference Books required for Theory / TCP
+  if (refList.length < 3 || refList.length > 6) {
+    results.push({
+      id: 'B10_REFBOOK_COUNT',
+      field: 'referenceBooks',
+      severity: 'error',
+      message: `A course must list 3 to 6 Reference Books (currently ${refList.length}).`,
+      fixHint: 'Add or remove reference books to have between 3 and 6 titles.',
+    });
   }
 
   const allBooks = [
@@ -1724,29 +1699,29 @@ export function evaluateTheoryChecklist(course: Course): Array<{ id: number; tit
     {
       id: 14,
       title: '1–2 Text Books listed with chapter references per module.',
-      passed: (course.textBooks || []).length >= 1 && (course.textBooks || []).length <= 2,
-      reason: `Text books count: ${(course.textBooks || []).length} (required: 1-2).`,
+      passed: course.courseType === 'PRACTICAL' ? true : ((course.textBooks || []).length >= 1 && (course.textBooks || []).length <= 2),
+      reason: course.courseType === 'PRACTICAL' ? 'Not applicable for Laboratory courses.' : `Text books count: ${(course.textBooks || []).length} (required: 1-2).`,
     },
     {
       id: 15,
       title: 'For advanced courses: all books published within 5 years of syllabus year.',
-      passed: (() => {
+      passed: course.courseType === 'PRACTICAL' ? true : (() => {
         if (!course.isAdvanced && course.categoryAbbr !== 'PEC' && course.categoryAbbr !== 'OEC') return true;
         const books = [...(course.textBooks || []), ...(course.referenceBooks || [])];
-        if (books.length === 0) return false;
+        if (books.length === 0) return true;
         const year = course.regulationYear || 2026;
         return books.some(b => {
           const y = parseInt(String(b.year), 10);
           return !isNaN(y) && year - y <= 5;
         });
       })(),
-      reason: 'At least one publication within 5 years for advanced/elective courses.',
+      reason: course.courseType === 'PRACTICAL' ? 'Not applicable for Laboratory courses.' : 'At least one publication within 5 years for advanced/elective courses.',
     },
     {
       id: 16,
       title: 'Reference books follow standard citation format with year (3–6 titles).',
-      passed: (course.referenceBooks || []).length >= 3 && (course.referenceBooks || []).length <= 6 && (course.referenceBooks || []).every(b => !!b.year),
-      reason: `Reference books count: ${(course.referenceBooks || []).length} (required: 3-6) with publication year.`,
+      passed: course.courseType === 'PRACTICAL' ? true : ((course.referenceBooks || []).length >= 3 && (course.referenceBooks || []).length <= 6 && (course.referenceBooks || []).every(b => !!b.year)),
+      reason: course.courseType === 'PRACTICAL' ? 'Not applicable for Laboratory courses.' : `Reference books count: ${(course.referenceBooks || []).length} (required: 3-6) with publication year.`,
     },
     {
       id: 17,

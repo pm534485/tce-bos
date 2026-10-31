@@ -272,6 +272,20 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
     return parts.join('; ');
   };
 
+  // Helper for experiment objectives (e.g. 1,2,3,4,13)
+  const getExperimentObjectives = (exp: any): string => {
+    if (exp.objectiveNos && exp.objectiveNos.length > 0) {
+      return exp.objectiveNos.join(',');
+    }
+    const objSet = new Set<number>();
+    (exp.coNos || []).forEach((cNo: string) => {
+      const matched = (course.courseOutcomes || []).find(c => c.coNo === cNo);
+      if (matched?.objectiveNo) objSet.add(matched.objectiveNo);
+    });
+    const sorted = Array.from(objSet).sort((a, b) => a - b);
+    return sorted.length > 0 ? sorted.join(',') : '—';
+  };
+
   // 5. Lecture schedule
   let scheduleItems = course.lectureScheduleItems || [];
   if (scheduleItems.length === 0 && (course.modules || []).length > 0) {
@@ -652,10 +666,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
                 <table className="w-full border-collapse border border-black text-xs">
                   <thead>
                     <tr>
-                      <th className="border border-black p-1.5 text-center w-[10%]">Sl. No.</th>
+                      <th className="border border-black p-1.5 text-center w-[8%]">Sl. No.</th>
                       <th className="border border-black p-1.5 text-left w-[50%]">Name of the Experiment</th>
-                      <th className="border border-black p-1.5 text-center w-[15%]">Level of Experiment</th>
-                      <th className="border border-black p-1.5 text-center w-[25%]">COs Addressed</th>
+                      <th className="border border-black p-1.5 text-center w-[14%]">Level of Experiment</th>
+                      <th className="border border-black p-1.5 text-center w-[14%]">Objective(s)</th>
+                      <th className="border border-black p-1.5 text-center w-[14%]">COs Addressed</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -664,6 +679,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
                         <td className="border border-black p-1.5 text-center">{exp.slNo || idx + 1}</td>
                         <td className="border border-black p-1.5 text-left">{exp.name || ''}</td>
                         <td className="border border-black p-1.5 text-center">{exp.level || 1}</td>
+                        <td className="border border-black p-1.5 text-center">{getExperimentObjectives(exp)}</td>
                         <td className="border border-black p-1.5 text-center">
                           {Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || '')}
                         </td>
@@ -674,9 +690,38 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
               ) : (
                 <div className="text-xs italic text-slate-500 py-1">No experiments added yet.</div>
               )}
+
+              {/* Course Designer(s) for Practical courses (directly after experiments with no learning resources) */}
+              <div className="h-3.5 my-1" />
+              <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
+                Course Designer(s):
+              </div>
+              <div className="h-3.5 my-1" />
+              <div className="text-xs text-black leading-relaxed">
+                {(course.designers && course.designers.length > 0) ? (
+                  course.designers.map((d, idx) => {
+                    const textParts = [d.name, d.designation].filter(Boolean).join(', ');
+                    return (
+                      <div key={idx}>
+                        {textParts}
+                        {d.email ? (
+                          <>
+                            {textParts ? ', ' : ''}
+                            <a href={`mailto:${d.email}`} className="text-[#0000FF] underline font-medium hover:text-blue-800">
+                              {d.email}
+                            </a>
+                          </>
+                        ) : ''}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div>Faculty Member, <a href="mailto:faculty@tce.edu" className="text-[#0000FF] underline font-medium">faculty@tce.edu</a></div>
+                )}
+              </div>
             </div>
           ) : (
-            /* Theory / TCP: keep existing Syllabus section */
+            /* Theory / TCP: Syllabus and Learning Resources sections */
             <div>
               <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
                 Syllabus
@@ -708,26 +753,16 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
               {(!course.modules || course.modules.length === 0) && (!course.experiments || course.experiments.length === 0) && (
                 <div className="text-xs italic text-slate-500 py-1">No syllabus topics or laboratory experiments added yet.</div>
               )}
-            </div>
-          )}
 
-          {/* Line space between sections */}
-          <div className="h-3.5 my-1" />
+              {/* Line space between sections */}
+              <div className="h-3.5 my-1" />
 
-          {/* 6. Learning Resources — hidden for pure Practical courses */}
-          {!isPractical && (
-            <>
+              {/* 6. Learning Resources */}
               <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
                 6. Learning Resources
               </div>
               <div className="h-3.5 my-1" />
-            </>
-          )}
-          {isPractical && <div className="h-3.5 my-1" />}
 
-          {/* Learning Resources content — hidden entirely for Practical courses */}
-          {!isPractical && (
-            <>
               {(course.textBooks && course.textBooks.length > 0) && (
                 <>
                   <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
@@ -760,7 +795,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
                   <li key={idx} className="text-justify">{formatNptel(w)}</li>
                 ))}
               </ul>
-            </>
+            </div>
           )}
 
           {/* Running Footer Note */}
@@ -770,125 +805,129 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
           </div>
         </div>
 
-        {/* ==================== PAGE 3 SHEET ==================== */}
-        <div className="bg-white p-12 sm:p-14 rounded-xl shadow-lg border border-slate-300 text-slate-900 select-text font-sans text-sm">
-          {/* Running Top Right Header */}
-          <div className="text-right text-xs font-normal text-slate-800 mb-6">
-            {headerText}
-          </div>
+        {/* ==================== PAGE 3 SHEET (Theory and TCP courses) ==================== */}
+        {!isPractical && (
+          <div className="bg-white p-12 sm:p-14 rounded-xl shadow-lg border border-slate-300 text-slate-900 select-text font-sans text-sm">
+            {/* Running Top Right Header */}
+            <div className="text-right text-xs font-normal text-slate-800 mb-6">
+              {headerText}
+            </div>
 
-          {/* Course Contents and Lecture Schedule */}
-          {!isPractical && (scheduleItems.length > 0 || (course.modules && course.modules.length > 0)) && (
-            <>
-              <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-                Course Contents and Lecture Schedule
-              </div>
-              <div className="h-3.5 my-1" />
+            {/* Course Contents and Lecture Schedule */}
+            {(scheduleItems.length > 0 || (course.modules && course.modules.length > 0)) && (
+              <>
+                <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
+                  Course Contents and Lecture Schedule
+                </div>
+                <div className="h-3.5 my-1" />
 
-              <table className="w-full border-collapse border border-black mb-0 text-xs">
-                <thead>
-                  <tr className="border-b border-black">
-                    <th className="border border-black p-1.5 text-center w-[12%]">Module<br />No</th>
-                    <th className="border border-black p-1.5 text-left w-[58%]">Topics</th>
-                    <th className="border border-black p-1.5 text-center w-[14%]">No of<br />Periods</th>
-                    <th className="border border-black p-1.5 text-center w-[16%]">Course<br />Outcomes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {scheduleItems.map((item, idx) => (
-                    <tr key={idx} className="border-b border-black">
-                      <td className="border border-black p-1.5 text-center">{item.moduleNo || ''}</td>
-                      <td className="border border-black p-1.5 text-left">{item.topic || ''}</td>
-                      <td className="border border-black p-1.5 text-center">
-                        {item.periods !== undefined && item.periods !== null && item.periods !== '' ? String(item.periods) : ''}
-                      </td>
-                      <td className="border border-black p-1.5 text-center">
-                        {Array.isArray(item.coMapping) ? item.coMapping.join(', ') : (item.coMapping || '')}
-                      </td>
+                <table className="w-full border-collapse border border-black mb-0 text-xs">
+                  <thead>
+                    <tr className="border-b border-black">
+                      <th className="border border-black p-1.5 text-center w-[12%]">Module<br />No</th>
+                      <th className="border border-black p-1.5 text-left w-[58%]">Topics</th>
+                      <th className="border border-black p-1.5 text-center w-[14%]">No of<br />Periods</th>
+                      <th className="border border-black p-1.5 text-center w-[16%]">Course<br />Outcomes</th>
                     </tr>
-                  ))}
-                  <tr>
-                    <td colSpan={2} className="border border-black p-1.5 text-center font-bold">Total Periods</td>
-                    <td className="border border-black p-1.5 text-center font-bold">{totalPeriods}</td>
-                    <td className="border border-black p-1.5 text-center font-bold"></td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <div className="h-3.5 my-1" />
-            </>
-          )}
-
-          {/* List of Experiments with CO Mapping table (Practical & TCP courses) */}
-          {(isPractical || isTcp) && (course.experiments && course.experiments.length > 0) && (
-            <>
-              <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-                List of Experiments with CO Mapping
-              </div>
-              <div className="h-3.5 my-1" />
-
-              <table className="w-full border-collapse border border-black mb-0 text-xs">
-                <thead>
-                  <tr className="border-b border-black">
-                    <th className="border border-black p-1.5 text-center w-[10%]">Sl. No.</th>
-                    <th className="border border-black p-1.5 text-left w-[55%]">Name of the Experiment</th>
-                    <th className="border border-black p-1.5 text-center w-[15%]">Level of Experiment</th>
-                    <th className="border border-black p-1.5 text-center w-[20%]">COs Addressed</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(course.experiments || []).map((exp, idx) => (
-                    <tr key={idx} className="border-b border-black">
-                      <td className="border border-black p-1.5 text-center">{exp.slNo || idx + 1}</td>
-                      <td className="border border-black p-1.5 text-left">{exp.name || ''}</td>
-                      <td className="border border-black p-1.5 text-center">Level {exp.level || 1}</td>
-                      <td className="border border-black p-1.5 text-center">
-                        {Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || '')}
-                      </td>
+                  </thead>
+                  <tbody>
+                    {scheduleItems.map((item, idx) => (
+                      <tr key={idx} className="border-b border-black">
+                        <td className="border border-black p-1.5 text-center">{item.moduleNo || ''}</td>
+                        <td className="border border-black p-1.5 text-left">{item.topic || ''}</td>
+                        <td className="border border-black p-1.5 text-center">
+                          {item.periods !== undefined && item.periods !== null && item.periods !== '' ? String(item.periods) : ''}
+                        </td>
+                        <td className="border border-black p-1.5 text-center">
+                          {Array.isArray(item.coMapping) ? item.coMapping.join(', ') : (item.coMapping || '')}
+                        </td>
+                      </tr>
+                    ))}
+                    <tr>
+                      <td colSpan={2} className="border border-black p-1.5 text-center font-bold">Total Periods</td>
+                      <td className="border border-black p-1.5 text-center font-bold">{totalPeriods}</td>
+                      <td className="border border-black p-1.5 text-center font-bold"></td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
 
-              <div className="h-3.5 my-1" />
-            </>
-          )}
-
-          {/* Course Designer(s) */}
-          <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-            Course Designer(s):
-          </div>
-          <div className="h-3.5 my-1" />
-
-          <div className="text-xs text-black leading-relaxed">
-            {(course.designers && course.designers.length > 0) ? (
-              course.designers.map((d, idx) => {
-                const textParts = [d.name, d.designation].filter(Boolean).join(', ');
-                return (
-                  <div key={idx}>
-                    {textParts}
-                    {d.email ? (
-                      <>
-                        {textParts ? ', ' : ''}
-                        <a href={`mailto:${d.email}`} className="text-[#0000FF] underline font-medium hover:text-blue-800">
-                          {d.email}
-                        </a>
-                      </>
-                    ) : ''}
-                  </div>
-                );
-              })
-            ) : (
-              <div>Faculty Member, <a href="mailto:faculty@tce.edu" className="text-[#0000FF] underline font-medium">faculty@tce.edu</a></div>
+                <div className="h-3.5 my-1" />
+              </>
             )}
-          </div>
 
-          {/* Running Footer Note */}
-          <div className="mt-14 pt-4 flex justify-between text-[11px] text-slate-800">
-            <span>{bosMeetingText}</span>
-            <span>{acmMeetingText}</span>
+            {/* List of Experiments with CO Mapping table (TCP courses only on Page 3) */}
+            {isTcp && (course.experiments && course.experiments.length > 0) && (
+              <>
+                <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
+                  List of Experiments with CO Mapping
+                </div>
+                <div className="h-3.5 my-1" />
+
+                <table className="w-full border-collapse border border-black mb-0 text-xs">
+                  <thead>
+                    <tr className="border-b border-black">
+                      <th className="border border-black p-1.5 text-center w-[8%]">Sl. No.</th>
+                      <th className="border border-black p-1.5 text-left w-[50%]">Name of the Experiment</th>
+                      <th className="border border-black p-1.5 text-center w-[14%]">Level of Experiment</th>
+                      <th className="border border-black p-1.5 text-center w-[14%]">Objective(s)</th>
+                      <th className="border border-black p-1.5 text-center w-[14%]">COs Addressed</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(course.experiments || []).map((exp, idx) => (
+                      <tr key={idx} className="border-b border-black">
+                        <td className="border border-black p-1.5 text-center">{exp.slNo || idx + 1}</td>
+                        <td className="border border-black p-1.5 text-left">{exp.name || ''}</td>
+                        <td className="border border-black p-1.5 text-center">{exp.level || 1}</td>
+                        <td className="border border-black p-1.5 text-center">{getExperimentObjectives(exp)}</td>
+                        <td className="border border-black p-1.5 text-center">
+                          {Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || '')}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                <div className="h-3.5 my-1" />
+              </>
+            )}
+
+            {/* Course Designer(s) */}
+            <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
+              Course Designer(s):
+            </div>
+            <div className="h-3.5 my-1" />
+
+            <div className="text-xs text-black leading-relaxed">
+              {(course.designers && course.designers.length > 0) ? (
+                course.designers.map((d, idx) => {
+                  const textParts = [d.name, d.designation].filter(Boolean).join(', ');
+                  return (
+                    <div key={idx}>
+                      {textParts}
+                      {d.email ? (
+                        <>
+                          {textParts ? ', ' : ''}
+                          <a href={`mailto:${d.email}`} className="text-[#0000FF] underline font-medium hover:text-blue-800">
+                            {d.email}
+                          </a>
+                        </>
+                      ) : ''}
+                    </div>
+                  );
+                })
+              ) : (
+                <div>Faculty Member, <a href="mailto:faculty@tce.edu" className="text-[#0000FF] underline font-medium">faculty@tce.edu</a></div>
+              )}
+            </div>
+
+            {/* Running Footer Note */}
+            <div className="mt-14 pt-4 flex justify-between text-[11px] text-slate-800">
+              <span>{bosMeetingText}</span>
+              <span>{acmMeetingText}</span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
