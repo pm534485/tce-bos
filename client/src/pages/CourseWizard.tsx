@@ -1993,8 +1993,9 @@ export const CourseWizard: React.FC = () => {
             </span>
             {/* Circular loading spinner shown while fetching existing course */}
             {isLoadingCourse && (
-              <span title="Loading course...">
-                <Loader2 className="w-4 h-4 text-[#7B1113] animate-spin flex-shrink-0" />
+              <span className="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-[#7B1113] text-xs font-medium flex-shrink-0 animate-pulse" title="Loading course...">
+                <Loader2 className="w-3.5 h-3.5 text-[#7B1113] animate-spin flex-shrink-0" />
+                <span className="text-[11px] font-semibold">Loading course...</span>
               </span>
             )}
           </div>

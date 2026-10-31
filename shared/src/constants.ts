@@ -34,7 +34,7 @@ export const PROGRAMME_CODES: ProgrammeCode[] = [
   // Data Science
   { code: 'DS', name: 'Data Science (Five Years)',                            department: 'Data Science' },
   // Artificial Intelligence
-  { code: 'AM', name: 'Artificial Intelligence and Machine Learning',         department: 'Artificial Intelligence' },
+  { code: 'AM', name: 'Artificial Intelligence and Machine Learning',         department: 'Computer Science and Engineering' },
   // Fashion Technology
   { code: 'FT', name: 'Fashion Technology',                                   department: 'Fashion Technology' },
   // Service Departments
@@ -53,7 +53,6 @@ export const DEPARTMENT_OPTIONS = [
   'Computer Science and Business Systems',
   'Computer Applications',
   'Data Science',
-  'Artificial Intelligence',
   'Electronics and Communication Engineering',
   'Electrical and Electronics Engineering',
   'English',
@@ -73,11 +72,10 @@ export function getProgrammesForDepartment(dept?: string): ProgrammeCode[] {
   const map: Record<string, string[]> = {
     'Civil Engineering':                          ['CE', 'PA', 'PB'],
     'Chemistry':                                  ['CH'],
-    'Computer Science and Engineering':           ['CS', 'PD'],
+    'Computer Science and Engineering':           ['CS', 'PD', 'AM'],
     'Computer Science and Business Systems':      ['CB'],
     'Computer Applications':                      ['CA'],
     'Data Science':                               ['DS'],
-    'Artificial Intelligence':                    ['AM'],
     'Electronics and Communication Engineering':  ['EC', 'EL', 'PC'],
     'Electrical and Electronics Engineering':     ['EE', 'ER'],
     'English':                                    ['EG'],
