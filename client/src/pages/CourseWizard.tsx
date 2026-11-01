@@ -861,10 +861,98 @@ const CoDomainPicker: React.FC<CoDomainPickerProps> = ({ courseOutcomes, onAdd }
   const addedRefs = courseOutcomes.map(c => c.generalCoRef).filter(Boolean);
   const cogCount = courseOutcomes.filter(c => c.domain === 'Cognitive').length;
 
-  const domainColors: Record<string, { btn: string; active: string; row: string; badge: string }> = {
-    Cognitive:   { btn: 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600 shadow-sm',    active: 'bg-blue-700 text-white border-blue-700 ring-2 ring-blue-300 shadow-md',    row: 'hover:bg-blue-50',    badge: 'bg-white/25 text-white' },
-    Affective:   { btn: 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-sm', active: 'bg-emerald-700 text-white border-emerald-700 ring-2 ring-emerald-300 shadow-md', row: 'hover:bg-emerald-50', badge: 'bg-white/25 text-white' },
-    Psychomotor: { btn: 'bg-violet-600 hover:bg-violet-700 text-white border-violet-600 shadow-sm',  active: 'bg-violet-700 text-white border-violet-700 ring-2 ring-violet-300 shadow-md',  row: 'hover:bg-violet-50',  badge: 'bg-white/25 text-white' },
+  const domainColors: Record<string, {
+    btn: string;
+    active: string;
+    badge: string;
+    modalBorder: string;
+    modalHeader: string;
+    modalHeaderTitle: string;
+    modalHeaderSubtitle: string;
+    modalCloseBtn: string;
+    tableThead: string;
+    tableTh: string;
+    tableDivider: string;
+    rowBg: string;
+    rowHover: string;
+    codeText: string;
+    statementText: string;
+    tpsText: string;
+    objText: string;
+    addedRowBg: string;
+    modalFooter: string;
+    modalFooterLabel: string;
+    modalDoneBtn: string;
+  }> = {
+    Cognitive: {
+      btn: 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600 shadow-sm',
+      active: 'bg-blue-700 text-white border-blue-700 ring-2 ring-blue-300 shadow-md',
+      badge: 'bg-white/25 text-white',
+      modalBorder: 'border-blue-200',
+      modalHeader: 'bg-blue-600 text-white border-blue-700',
+      modalHeaderTitle: 'text-white',
+      modalHeaderSubtitle: 'text-blue-100',
+      modalCloseBtn: 'text-white/80 hover:text-white hover:bg-white/20',
+      tableThead: 'bg-blue-100/80 border-b border-blue-200',
+      tableTh: 'text-blue-900',
+      tableDivider: 'divide-blue-100',
+      rowBg: 'bg-blue-50/30',
+      rowHover: 'hover:bg-blue-100/60',
+      codeText: 'text-blue-900',
+      statementText: 'text-slate-800',
+      tpsText: 'text-blue-900 font-bold',
+      objText: 'text-blue-800/80',
+      addedRowBg: 'bg-blue-100/70 opacity-90',
+      modalFooter: 'bg-blue-50 border-t border-blue-200',
+      modalFooterLabel: 'text-blue-900 font-bold',
+      modalDoneBtn: 'bg-blue-600 hover:bg-blue-700 text-white',
+    },
+    Affective: {
+      btn: 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-sm',
+      active: 'bg-emerald-700 text-white border-emerald-700 ring-2 ring-emerald-300 shadow-md',
+      badge: 'bg-white/25 text-white',
+      modalBorder: 'border-emerald-200',
+      modalHeader: 'bg-emerald-600 text-white border-emerald-700',
+      modalHeaderTitle: 'text-white',
+      modalHeaderSubtitle: 'text-emerald-100',
+      modalCloseBtn: 'text-white/80 hover:text-white hover:bg-white/20',
+      tableThead: 'bg-emerald-100/80 border-b border-emerald-200',
+      tableTh: 'text-emerald-900',
+      tableDivider: 'divide-emerald-100',
+      rowBg: 'bg-emerald-50/30',
+      rowHover: 'hover:bg-emerald-100/60',
+      codeText: 'text-emerald-900',
+      statementText: 'text-slate-800',
+      tpsText: 'text-emerald-900 font-bold',
+      objText: 'text-emerald-800/80',
+      addedRowBg: 'bg-emerald-100/70 opacity-90',
+      modalFooter: 'bg-emerald-50 border-t border-emerald-200',
+      modalFooterLabel: 'text-emerald-900 font-bold',
+      modalDoneBtn: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+    },
+    Psychomotor: {
+      btn: 'bg-violet-600 hover:bg-violet-700 text-white border-violet-600 shadow-sm',
+      active: 'bg-violet-700 text-white border-violet-700 ring-2 ring-violet-300 shadow-md',
+      badge: 'bg-white/25 text-white',
+      modalBorder: 'border-violet-200',
+      modalHeader: 'bg-violet-600 text-white border-violet-700',
+      modalHeaderTitle: 'text-white',
+      modalHeaderSubtitle: 'text-violet-100',
+      modalCloseBtn: 'text-white/80 hover:text-white hover:bg-white/20',
+      tableThead: 'bg-violet-100/80 border-b border-violet-200',
+      tableTh: 'text-violet-900',
+      tableDivider: 'divide-violet-100',
+      rowBg: 'bg-violet-50/30',
+      rowHover: 'hover:bg-violet-100/60',
+      codeText: 'text-violet-900',
+      statementText: 'text-slate-800',
+      tpsText: 'text-violet-900 font-bold',
+      objText: 'text-violet-800/80',
+      addedRowBg: 'bg-violet-100/70 opacity-90',
+      modalFooter: 'bg-violet-50 border-t border-violet-200',
+      modalFooterLabel: 'text-violet-900 font-bold',
+      modalDoneBtn: 'bg-violet-600 hover:bg-violet-700 text-white',
+    },
   };
   const poolMap: Record<string, typeof cogPool> = { Cognitive: cogPool, Affective: affPool, Psychomotor: psyPool };
   const tableTitle: Record<string, string> = {
@@ -917,106 +1005,125 @@ const CoDomainPicker: React.FC<CoDomainPickerProps> = ({ courseOutcomes, onAdd }
       </div>
 
       {/* Domain table modal dialog */}
-      {openDomain && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          onClick={() => setOpenDomain(null)}
-        >
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      {openDomain && (() => {
+        const col = domainColors[openDomain];
+        return (
           <div
-            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
-            onClick={e => e.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            onClick={() => setOpenDomain(null)}
           >
-            {/* Modal header */}
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 bg-slate-50">
-              <div>
-                <h3 className="font-bold text-sm text-slate-800">{tableTitle[openDomain]}</h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  {openDomain === 'Cognitive'
-                    ? `Select up to 2 — ${cogCount}/2 selected`
-                    : 'Click a row to add it to your course outcomes'}
-                </p>
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+            <div
+              className={`relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden border ${col.modalBorder} animate-in fade-in zoom-in-95 duration-150`}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Modal header with solid domain color */}
+              <div className={`flex items-center justify-between px-6 py-4 ${col.modalHeader}`}>
+                <div>
+                  <h3 className={`font-bold text-sm tracking-wide ${col.modalHeaderTitle}`}>{tableTitle[openDomain]}</h3>
+                  <p className={`text-xs mt-0.5 ${col.modalHeaderSubtitle}`}>
+                    {openDomain === 'Cognitive'
+                      ? `Select up to 2 — ${cogCount}/2 selected`
+                      : 'Click a row to add it to your course outcomes'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setOpenDomain(null)}
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${col.modalCloseBtn}`}
+                  title="Close modal"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setOpenDomain(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-all cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
-            {/* Scrollable table body */}
-            <div className="overflow-auto flex-1">
-              <table className="w-full text-xs border-collapse">
-                <thead className="sticky top-0 bg-slate-100 z-10 border-b border-slate-200">
-                  <tr>
-                    <th className="px-4 py-3 text-left font-bold text-slate-600 w-20">CO</th>
-                    <th className="px-4 py-3 text-left font-bold text-slate-600">Outcome Statement</th>
-                    <th className="px-4 py-3 text-center font-bold text-slate-600 w-16">TPS</th>
-                    <th className="px-4 py-3 text-left font-bold text-slate-600 w-36 hidden sm:table-cell">Objective</th>
-                    <th className="px-4 py-3 text-center w-16"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {poolMap[openDomain].map(g => {
-                    const alreadyAdded = addedRefs.includes(g.code);
-                    const blocked = openDomain === 'Cognitive' && cogCount >= 2 && !alreadyAdded;
-                    const col = domainColors[openDomain];
-                    return (
-                      <tr
-                        key={g.code}
-                        className={`transition-colors ${alreadyAdded ? 'bg-slate-50 opacity-60' : blocked ? 'opacity-40 cursor-not-allowed' : col.row + ' cursor-pointer'}`}
-                        onClick={() => { if (!alreadyAdded && !blocked) handleAdd(g); }}
+              {/* Scrollable table body styled with rich domain background tint */}
+              <div className={`overflow-auto flex-1 ${col.rowBg}`}>
+                <table className="w-full text-xs border-collapse">
+                  <thead className={`sticky top-0 z-10 ${col.tableThead}`}>
+                    <tr>
+                      <th className={`px-4 py-3 text-left font-bold ${col.tableTh} w-20`}>CO</th>
+                      <th className={`px-4 py-3 text-left font-bold ${col.tableTh}`}>Outcome Statement</th>
+                      <th className={`px-4 py-3 text-center font-bold ${col.tableTh} w-16`}>TPS</th>
+                      <th className={`px-4 py-3 text-left font-bold ${col.tableTh} w-36 hidden sm:table-cell`}>Objective</th>
+                      <th className="px-4 py-3 text-center w-16"></th>
+                    </tr>
+                  </thead>
+                  <tbody className={`divide-y ${col.tableDivider}`}>
+                    {poolMap[openDomain].map(g => {
+                      const alreadyAdded = addedRefs.includes(g.code);
+                      const blocked = openDomain === 'Cognitive' && cogCount >= 2 && !alreadyAdded;
+                      return (
+                        <tr
+                          key={g.code}
+                          className={`transition-colors ${
+                            alreadyAdded
+                              ? `${col.addedRowBg} font-medium`
+                              : blocked
+                              ? 'opacity-40 cursor-not-allowed bg-slate-50'
+                              : `${col.rowHover} cursor-pointer bg-white/60`
+                          }`}
+                          onClick={() => { if (!alreadyAdded && !blocked) handleAdd(g); }}
+                        >
+                          <td className={`px-4 py-3 font-black align-top ${col.codeText}`}>{g.code}</td>
+                          <td className={`px-4 py-3 leading-snug align-top ${col.statementText}`}>{g.statement}</td>
+                          <td className={`px-4 py-3 text-center align-top ${col.tpsText}`}>{g.tpsLevel}</td>
+                          <td className={`px-4 py-3 hidden sm:table-cell align-top ${col.objText}`}>{g.objectiveName}</td>
+                          <td className="px-4 py-3 text-center align-top">
+                            {alreadyAdded ? (
+                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white shadow-xs">
+                                <Check className="w-4 h-4 text-emerald-600" />
+                              </span>
+                            ) : blocked ? (
+                              <span className="text-[10px] text-slate-400 font-bold">max</span>
+                            ) : (
+                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/80 hover:bg-white text-slate-500 hover:text-slate-800 shadow-xs transition-all">
+                                <Plus className="w-3.5 h-3.5" />
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Modal footer — themed status summary + Done button */}
+              <div className={`flex items-center justify-between px-6 py-3.5 ${col.modalFooter}`}>
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className={col.modalFooterLabel}>Added:</span>
+                  {courseOutcomes.filter(c => c.domain === openDomain).length === 0 ? (
+                    <span className="text-[11px] text-slate-400 italic">None yet</span>
+                  ) : (
+                    courseOutcomes.filter(c => c.domain === openDomain).map(c => (
+                      <span
+                        key={c.coNo}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-black shadow-xs ${
+                          openDomain === 'Cognitive'
+                            ? 'bg-blue-600 text-white'
+                            : openDomain === 'Affective'
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-violet-600 text-white'
+                        }`}
                       >
-                        <td className="px-4 py-3 font-black text-slate-800 align-top">{g.code}</td>
-                        <td className="px-4 py-3 text-slate-700 leading-snug align-top">{g.statement}</td>
-                        <td className="px-4 py-3 text-center font-bold text-slate-600 align-top">{g.tpsLevel}</td>
-                        <td className="px-4 py-3 text-slate-500 hidden sm:table-cell align-top">{g.objectiveName}</td>
-                        <td className="px-4 py-3 text-center align-top">
-                          {alreadyAdded
-                            ? <Check className="w-4 h-4 text-emerald-500 mx-auto" />
-                            : blocked
-                            ? <span className="text-[10px] text-slate-400">max</span>
-                            : <Plus className="w-4 h-4 text-slate-400 mx-auto" />}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Modal footer — status summary + Done */}
-            <div className="flex items-center justify-between px-5 py-3 border-t border-slate-200 bg-slate-50">
-              <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-600">
-                <span className="font-semibold text-slate-500">Added:</span>
-                {courseOutcomes.filter(c => c.domain === openDomain).length === 0 ? (
-                  <span className="text-[11px] text-slate-400 italic">None yet</span>
-                ) : (
-                  courseOutcomes.filter(c => c.domain === openDomain).map(c => (
-                    <span
-                      key={c.coNo}
-                      className={`px-2 py-0.5 rounded text-[10px] font-black ${
-                        openDomain === 'Cognitive' ? 'bg-blue-600 text-white' : openDomain === 'Affective' ? 'bg-emerald-600 text-white' : 'bg-violet-600 text-white'
-                      }`}
-                    >
-                      {c.coNo} ({c.generalCoRef || c.domain})
-                    </span>
-                  ))
-                )}
+                        {c.coNo} ({c.generalCoRef || c.domain})
+                      </span>
+                    ))
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setOpenDomain(null)}
+                  className={`px-5 py-2 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer ${col.modalDoneBtn}`}
+                >
+                  Done
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setOpenDomain(null)}
-                className="px-4 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-bold hover:bg-slate-700 transition-all cursor-pointer"
-              >
-                Done
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };
