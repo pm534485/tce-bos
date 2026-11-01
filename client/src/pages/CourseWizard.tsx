@@ -3214,15 +3214,15 @@ export const CourseWizard: React.FC = () => {
                                   }}
                                   className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-[11px] font-semibold bg-white focus:ring-2 focus:ring-sky-500"
                                 >
-                                  <option value={1} disabled className="text-slate-400 bg-slate-100">TPS 1</option>
+                                  <option value={1} disabled className="text-slate-400 bg-slate-100">TPS 1 (Remember)</option>
                                   <option
                                     value={2}
                                     disabled={co.tpsLevel !== 2 && (course.courseOutcomes || []).filter(c => c.tpsLevel === 2).length >= 2}
                                     className={co.tpsLevel !== 2 && (course.courseOutcomes || []).filter(c => c.tpsLevel === 2).length >= 2 ? "text-slate-400 bg-slate-100" : ""}
                                   >
                                     {co.tpsLevel !== 2 && (course.courseOutcomes || []).filter(c => c.tpsLevel === 2).length >= 2
-                                      ? "TPS 2 (Max 2)"
-                                      : "TPS 2"}
+                                      ? "TPS 2 (Understand) (Max 2)"
+                                      : "TPS 2 (Understand)"}
                                   </option>
                                   <option value={3}>TPS 3 (Apply)</option>
                                   <option value={4}>TPS 4 (Analyze)</option>
