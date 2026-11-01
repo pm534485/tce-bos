@@ -83,16 +83,41 @@ export function validateCourseName(name: string, courseType: CourseType): Valida
     });
   }
 
-  // For PRACTICAL courses, course name should end with "Laboratory"
+  // For PRACTICAL courses, course name must end with the exact word "Laboratory"
   if (courseType === 'PRACTICAL') {
-    if (!trimmed.toLowerCase().endsWith('laboratory')) {
-      results.push({
-        id: 'B1_PRACTICAL_SUFFIX',
-        field: 'courseName',
-        severity: 'error',
-        message: 'Practical course titles must end with the word "Laboratory".',
-        fixHint: 'Append "Laboratory" to the end of the course title (e.g. "AC Machines Laboratory").',
-      });
+    if (!trimmed.endsWith('Laboratory')) {
+      if (trimmed.toLowerCase().endsWith('laboratory')) {
+        results.push({
+          id: 'B1_PRACTICAL_SUFFIX_CASE',
+          field: 'courseName',
+          severity: 'error',
+          message: 'Practical course title must end with exact title case "Laboratory" (not lowercase or uppercase).',
+          fixHint: 'Ensure "Laboratory" is spelled with a capital "L" and lowercase "aboratory".',
+        });
+      } else {
+        const lastWord = trimmed.split(/\s+/).pop() || '';
+        const isMisspelled = /^(lab|laboratry|labrotary|laboratary|laborotary|labortory|labratory|laboratorie|laboratories)$/i.test(lastWord);
+        results.push({
+          id: 'B1_PRACTICAL_SUFFIX',
+          field: 'courseName',
+          severity: 'error',
+          message: isMisspelled
+            ? `Misspelling detected: "${lastWord}". Practical course titles must end exactly with the correct spelling "Laboratory".`
+            : 'Practical course titles must end with the word "Laboratory" (nothing may be added after "Laboratory").',
+          fixHint: 'Ensure the course title ends exactly with "Laboratory" (e.g. "Data Structures Laboratory").',
+        });
+      }
+    } else {
+      const matches = trimmed.match(/\bLaboratory\b/g);
+      if (matches && matches.length > 1) {
+        results.push({
+          id: 'B1_PRACTICAL_EXTRA_LAB',
+          field: 'courseName',
+          severity: 'error',
+          message: 'The word "Laboratory" should only appear once at the very end of the course title.',
+          fixHint: 'Remove any extra occurrences of "Laboratory".',
+        });
+      }
     }
   }
 

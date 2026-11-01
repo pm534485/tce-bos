@@ -2705,17 +2705,45 @@ export const CourseWizard: React.FC = () => {
                           {(course.courseName || '').length}/60 characters
                         </span>
                       </div>
-                      <input
-                        type="text"
-                        value={course.courseName || ''}
-                        onChange={e => updateField('courseName', e.target.value)}
-                        placeholder="Course Name"
-                        className={`w-full px-3.5 py-2.5 border rounded-lg text-sm font-medium transition-all ${
+                      {course.courseType === 'PRACTICAL' ? (
+                        <div className={`flex items-stretch rounded-lg border transition-all overflow-hidden ${
                           hasFieldError('courseName')
-                            ? 'border-red-400 bg-red-50/20 text-slate-900 focus:ring-2 focus:ring-red-200 focus:border-red-500'
-                            : 'border-slate-300 focus:ring-2 focus:ring-sky-500'
-                        }`}
-                      />
+                            ? 'border-red-400 bg-red-50/20 focus-within:ring-2 focus-within:ring-red-200 focus-within:border-red-500'
+                            : 'border-slate-300 focus-within:ring-2 focus-within:ring-sky-500 focus-within:border-sky-500'
+                        }`}>
+                          <input
+                            type="text"
+                            value={(course.courseName || '').replace(/\s*\bLaboratory\b\s*$/i, '')}
+                            onChange={e => {
+                              const prefix = e.target.value.replace(/\bLaboratory\b/gi, '').trimStart();
+                              const newFullName = prefix.trim() ? `${prefix.trimEnd()} Laboratory` : '';
+                              updateField('courseName', newFullName);
+                            }}
+                            placeholder="e.g. Data Structures, AC Machines"
+                            className="flex-1 px-3.5 py-2.5 text-sm font-medium text-slate-900 bg-white border-0 outline-none focus:ring-0"
+                          />
+                          <div className="bg-slate-100 border-l border-slate-300 px-3.5 flex items-center justify-center select-none text-slate-700 font-bold text-sm">
+                            Laboratory
+                          </div>
+                        </div>
+                      ) : (
+                        <input
+                          type="text"
+                          value={course.courseName || ''}
+                          onChange={e => updateField('courseName', e.target.value)}
+                          placeholder="Course Name"
+                          className={`w-full px-3.5 py-2.5 border rounded-lg text-sm font-medium transition-all ${
+                            hasFieldError('courseName')
+                              ? 'border-red-400 bg-red-50/20 text-slate-900 focus:ring-2 focus:ring-red-200 focus:border-red-500'
+                              : 'border-slate-300 focus:ring-2 focus:ring-sky-500'
+                          }`}
+                        />
+                      )}
+                      {course.courseType === 'PRACTICAL' && (
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          Practical course titles automatically lock with the exact suffix <strong className="text-slate-700">"Laboratory"</strong>. Enter only the subject name.
+                        </p>
+                      )}
                       <InlineFieldError field="courseName" />
                     </div>
 
