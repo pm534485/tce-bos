@@ -862,9 +862,9 @@ const CoDomainPicker: React.FC<CoDomainPickerProps> = ({ courseOutcomes, onAdd }
   const cogCount = courseOutcomes.filter(c => c.domain === 'Cognitive').length;
 
   const domainColors: Record<string, { btn: string; active: string; row: string; badge: string }> = {
-    Cognitive:   { btn: 'border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-400',    active: 'bg-blue-600 text-white border-blue-600',    row: 'hover:bg-blue-50',    badge: 'bg-blue-100 text-blue-800' },
-    Affective:   { btn: 'border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-400', active: 'bg-emerald-600 text-white border-emerald-600', row: 'hover:bg-emerald-50', badge: 'bg-emerald-100 text-emerald-800' },
-    Psychomotor: { btn: 'border-violet-200 text-violet-700 hover:bg-violet-50 hover:border-violet-400',  active: 'bg-violet-600 text-white border-violet-600',  row: 'hover:bg-violet-50',  badge: 'bg-violet-100 text-violet-800' },
+    Cognitive:   { btn: 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100 hover:border-blue-400 shadow-xs',    active: 'bg-blue-600 text-white border-blue-600 shadow-sm',    row: 'hover:bg-blue-50',    badge: 'bg-blue-100 text-blue-800' },
+    Affective:   { btn: 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-400 shadow-xs', active: 'bg-emerald-600 text-white border-emerald-600 shadow-sm', row: 'hover:bg-emerald-50', badge: 'bg-emerald-100 text-emerald-800' },
+    Psychomotor: { btn: 'bg-violet-50 border-violet-300 text-violet-700 hover:bg-violet-100 hover:border-violet-400 shadow-xs',  active: 'bg-violet-600 text-white border-violet-600 shadow-sm',  row: 'hover:bg-violet-50',  badge: 'bg-violet-100 text-violet-800' },
   };
   const poolMap: Record<string, typeof cogPool> = { Cognitive: cogPool, Affective: affPool, Psychomotor: psyPool };
   const tableTitle: Record<string, string> = {
