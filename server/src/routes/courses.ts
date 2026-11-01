@@ -2,8 +2,8 @@ import { Router, Response } from 'express';
 import { Course } from '../models/Course.js';
 import { authenticate, AuthRequest, requireRole } from '../middleware/auth.js';
 import { validateCourse, computeCredits, computeCourseCode } from '@syllabusforge/shared';
-import { generateDocxDocument } from '../services/docxGenerator.js';
-import { generatePdfDocument } from '../services/pdfGenerator.js';
+import { generateDocxDocument, generateMergedCoursesDocx } from '../services/docxGenerator.js';
+import { generatePdfDocument, generateMergedCoursesPdf } from '../services/pdfGenerator.js';
 
 const router = Router();
 
@@ -26,7 +26,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response): Promise<v
     // If scope is 'all', bypass user filter (used by CourseWizard for code uniqueness checks)
     if (scope === 'all') {
       // No user restriction
-    } else if (scope === 'review' && (req.user?.role === 'HOD' || req.user?.role === 'ADMIN')) {
+    } else if (scope === 'review' && (req.user?.role === 'HOD' || req.user?.role === 'ADMIN' || req.user?.role === 'BOS_COORDINATOR')) {
       // HoD/Admin institutional review queue: all courses in their department/programme access
       const conditions: any[] = [];
       if (req.user.department) {
@@ -55,7 +55,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response): Promise<v
           andConditions.push({ $or: userConditions });
         }
       }
-    } else if (req.user?.role === 'HOD') {
+    } else if (req.user?.role === 'HOD' || req.user?.role === 'BOS_COORDINATOR') {
       // HoD dashboard: view own authored courses as well as courses in their department
       if (scope === 'mine') {
         const userConditions: any[] = [];
@@ -478,6 +478,65 @@ router.get('/:id/export', async (req, res): Promise<void> => {
     }
   } catch (err: any) {
     res.status(500).json({ error: `Export failed: ${err.message}` });
+  }
+});
+
+
+// POST /api/courses/merge - Merge selected courses in explicit order into one DOCX or PDF bundle
+router.post('/merge', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { courseIds, format = 'docx', regulationYear = 2026, annexureNo = '01' } = req.body;
+    if (!Array.isArray(courseIds) || courseIds.length === 0) {
+      res.status(400).json({ error: 'Please select at least one course to merge.' });
+      return;
+    }
+
+    // Fetch the courses
+    const fetchedCourses = await Course.find({ _id: { $in: courseIds } });
+    if (fetchedCourses.length === 0) {
+      res.status(404).json({ error: 'No courses found for the given IDs.' });
+      return;
+    }
+
+    // Preserve the EXACT order requested by the client
+    const courseMap = new Map<string, any>();
+    fetchedCourses.forEach(c => courseMap.set(c._id.toString(), c.toObject()));
+
+    const orderedCourses: any[] = [];
+    for (const id of courseIds) {
+      const c = courseMap.get(id.toString());
+      if (c) {
+        orderedCourses.push(c);
+      }
+    }
+
+    if (orderedCourses.length === 0) {
+      res.status(404).json({ error: 'Selected courses could not be compiled.' });
+      return;
+    }
+
+    const deptName = orderedCourses[0]?.department || req.user?.department || 'Curriculum';
+    const deptSlug = deptName.replace(/[^a-zA-Z0-9]/g, '_');
+
+    if (format === 'pdf') {
+      const pdfBuffer = await generateMergedCoursesPdf(orderedCourses, {
+        department: deptName,
+        regulationYear: Number(regulationYear),
+      });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="Curriculum_Bundle_${deptSlug}_${regulationYear}.pdf"`);
+      res.send(pdfBuffer);
+    } else {
+      const docxBuffer = await generateMergedCoursesDocx(orderedCourses, {
+        department: deptName,
+        regulationYear: Number(regulationYear),
+      });
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', `attachment; filename="Curriculum_Bundle_${deptSlug}_${regulationYear}.docx"`);
+      res.send(docxBuffer);
+    }
+  } catch (err: any) {
+    res.status(500).json({ error: `Merge compilation failed: ${err.message}` });
   }
 });
 

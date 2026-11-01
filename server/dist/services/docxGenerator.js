@@ -75,7 +75,7 @@ function createCell(textOrRuns, options = {}) {
         children,
     });
 }
-export async function generateDocxDocument(course) {
+export function buildCourseDocxElements(course) {
     const headerText = getDegreeProgramHeader(course);
     const titleText = (course.courseName || '').toUpperCase();
     // Running Header on every page
@@ -861,6 +861,10 @@ export async function generateDocxDocument(course) {
             }));
         }
     }
+    return { header, footer, children };
+}
+export async function generateDocxDocument(course) {
+    const { header, footer, children } = buildCourseDocxElements(course);
     const doc = new Document({
         styles: {
             default: {
@@ -894,6 +898,48 @@ export async function generateDocxDocument(course) {
                 children,
             },
         ],
+    });
+    return Packer.toBuffer(doc);
+}
+export async function generateMergedCoursesDocx(courses, metadata) {
+    if (!courses || courses.length === 0) {
+        throw new Error('No courses provided for merged document.');
+    }
+    const sections = courses.map((course) => {
+        const { header, footer, children } = buildCourseDocxElements(course);
+        return {
+            properties: {
+                page: {
+                    margin: {
+                        top: 1134,
+                        bottom: 1134,
+                        left: 1134,
+                        right: 1134,
+                    },
+                },
+            },
+            headers: {
+                default: header,
+            },
+            footers: {
+                default: footer,
+            },
+            children,
+        };
+    });
+    const doc = new Document({
+        styles: {
+            default: {
+                document: {
+                    run: {
+                        font: 'Arial',
+                        size: 20,
+                        color: '000000',
+                    },
+                },
+            },
+        },
+        sections,
     });
     return Packer.toBuffer(doc);
 }

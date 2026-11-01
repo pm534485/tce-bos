@@ -3,7 +3,7 @@ const UserSchema = new Schema({
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     passwordHash: { type: String, required: false },
-    role: { type: String, enum: ['FACULTY', 'HOD', 'ADMIN'], default: 'FACULTY', required: true },
+    role: { type: String, enum: ['FACULTY', 'HOD', 'BOS_COORDINATOR', 'ADMIN'], default: 'FACULTY', required: true },
     department: { type: String, required: true, trim: true },
     designation: { type: String, required: true, trim: true },
     programmeAccess: [{ type: String, trim: true }],

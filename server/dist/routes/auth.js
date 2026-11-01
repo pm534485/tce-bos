@@ -4,6 +4,113 @@ import jwt from 'jsonwebtoken';
 import { User } from '../models/User.js';
 import { authenticate, JWT_SECRET, requireRole } from '../middleware/auth.js';
 const router = Router();
+export const PREDEFINED_COORDINATORS = [
+    {
+        department: 'Civil Engineering',
+        email: 'bos.civil@tce.edu',
+        defaultPassword: 'CivilBos@2026',
+        name: 'BOS Coordinator - Civil Engineering',
+        programmeAccess: ['CE', 'PA', 'PB'],
+    },
+    {
+        department: 'Mechanical Engineering',
+        email: 'bos.mech@tce.edu',
+        defaultPassword: 'MechBos@2026',
+        name: 'BOS Coordinator - Mechanical Engineering',
+        programmeAccess: ['ME'],
+    },
+    {
+        department: 'Mechatronics',
+        email: 'bos.mect@tce.edu',
+        defaultPassword: 'MectBos@2026',
+        name: 'BOS Coordinator - Mechatronics',
+        programmeAccess: ['MT'],
+    },
+    {
+        department: 'Electrical and Electronics Engineering',
+        email: 'bos.eee@tce.edu',
+        defaultPassword: 'EeeBos@2026',
+        name: 'BOS Coordinator - EEE',
+        programmeAccess: ['EE', 'ER'],
+    },
+    {
+        department: 'Electronics and Communication Engineering',
+        email: 'bos.ece@tce.edu',
+        defaultPassword: 'EceBos@2026',
+        name: 'BOS Coordinator - ECE',
+        programmeAccess: ['EC', 'EL', 'PC'],
+    },
+    {
+        department: 'Computer Science and Engineering',
+        email: 'bos.cse@tce.edu',
+        defaultPassword: 'CseBos@2026',
+        name: 'BOS Coordinator - CSE',
+        programmeAccess: ['CS', 'PD', 'AM'],
+    },
+    {
+        department: 'Information Technology',
+        email: 'bos.it@tce.edu',
+        defaultPassword: 'ItBos@2026',
+        name: 'BOS Coordinator - IT',
+        programmeAccess: ['IT'],
+    },
+    {
+        department: 'Computer Science and Business Systems',
+        email: 'bos.csbs@tce.edu',
+        defaultPassword: 'CsbsBos@2026',
+        name: 'BOS Coordinator - CSBS',
+        programmeAccess: ['CB'],
+    },
+    {
+        department: 'Computer Applications',
+        email: 'bos.ca@tce.edu',
+        defaultPassword: 'CaBos@2026',
+        name: 'BOS Coordinator - Computer Applications',
+        programmeAccess: ['CA'],
+    },
+    {
+        department: 'Data Science',
+        email: 'bos.ds@tce.edu',
+        defaultPassword: 'DsBos@2026',
+        name: 'BOS Coordinator - Data Science',
+        programmeAccess: ['DS'],
+    },
+    {
+        department: 'Fashion Technology',
+        email: 'bos.ft@tce.edu',
+        defaultPassword: 'FtBos@2026',
+        name: 'BOS Coordinator - Fashion Technology',
+        programmeAccess: ['FT'],
+    },
+    {
+        department: 'Mathematics',
+        email: 'bos.maths@tce.edu',
+        defaultPassword: 'MathsBos@2026',
+        name: 'BOS Coordinator - Mathematics',
+        programmeAccess: ['MA'],
+    },
+    {
+        department: 'Physics',
+        email: 'bos.physics@tce.edu',
+        defaultPassword: 'PhysicsBos@2026',
+        name: 'BOS Coordinator - Physics',
+        programmeAccess: ['PH'],
+    },
+    {
+        department: 'Chemistry',
+        email: 'bos.chemistry@tce.edu',
+        defaultPassword: 'ChemistryBos@2026',
+        name: 'BOS Coordinator - Chemistry',
+        programmeAccess: ['CH'],
+    },
+    {
+        department: 'English',
+        email: 'bos.english@tce.edu',
+        defaultPassword: 'EnglishBos@2026',
+        name: 'BOS Coordinator - English',
+        programmeAccess: ['EG'],
+    },
+];
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
     try {
@@ -363,5 +470,14 @@ router.get('/users', authenticate, requireRole(['ADMIN']), async (req, res) => {
     catch (err) {
         res.status(500).json({ error: err.message });
     }
+});
+// GET /api/auth/coordinators - List of available BOS Coordinator departments and accounts
+router.get('/coordinators', async (req, res) => {
+    res.json(PREDEFINED_COORDINATORS.map(c => ({
+        department: c.department,
+        email: c.email,
+        name: c.name,
+        programmeAccess: c.programmeAccess,
+    })));
 });
 export default router;

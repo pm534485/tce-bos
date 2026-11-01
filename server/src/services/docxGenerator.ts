@@ -113,7 +113,7 @@ function createCell(
   });
 }
 
-export async function generateDocxDocument(course: Course): Promise<Buffer> {
+export function buildCourseDocxElements(course: Course): { header: Header; footer: Footer; children: any[] } {
   const headerText = getDegreeProgramHeader(course);
   const titleText = (course.courseName || '').toUpperCase();
 
@@ -903,6 +903,11 @@ export async function generateDocxDocument(course: Course): Promise<Buffer> {
     }
   }
 
+  return { header, footer, children };
+}
+
+export async function generateDocxDocument(course: Course): Promise<Buffer> {
+  const { header, footer, children } = buildCourseDocxElements(course);
   const doc = new Document({
     styles: {
       default: {
@@ -936,6 +941,52 @@ export async function generateDocxDocument(course: Course): Promise<Buffer> {
         children,
       },
     ],
+  });
+
+  return Packer.toBuffer(doc);
+}
+
+export async function generateMergedCoursesDocx(courses: Course[], metadata: { department?: string; regulationYear?: number }): Promise<Buffer> {
+  if (!courses || courses.length === 0) {
+    throw new Error('No courses provided for merged document.');
+  }
+
+  const sections: any[] = courses.map((course) => {
+    const { header, footer, children } = buildCourseDocxElements(course);
+    return {
+      properties: {
+        page: {
+          margin: {
+            top: 1134,
+            bottom: 1134,
+            left: 1134,
+            right: 1134,
+          },
+        },
+      },
+      headers: {
+        default: header,
+      },
+      footers: {
+        default: footer,
+      },
+      children,
+    };
+  });
+
+  const doc = new Document({
+    styles: {
+      default: {
+        document: {
+          run: {
+            font: 'Arial',
+            size: 20,
+            color: '000000',
+          },
+        },
+      },
+    },
+    sections,
   });
 
   return Packer.toBuffer(doc);

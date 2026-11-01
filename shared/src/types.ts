@@ -6,7 +6,7 @@ export type CourseType = 'THEORY' | 'PRACTICAL' | 'TCP' | 'AUDIT';
 
 export type CourseStatus = 'DRAFT' | 'SUBMITTED' | 'RETURNED' | 'APPROVED' | 'FINALIZED';
 
-export type UserRole = 'FACULTY' | 'HOD' | 'ADMIN';
+export type UserRole = 'FACULTY' | 'HOD' | 'BOS_COORDINATOR' | 'ADMIN';
 
 export interface User {
   id: string;

@@ -84,7 +84,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNewCourse }) => {
                   <span>Dashboard</span>
                 </Link>
 
-                {(user?.role === 'HOD' || user?.role === 'ADMIN') && (
+                {(user?.role === 'HOD' || user?.role === 'ADMIN' || user?.role === 'BOS_COORDINATOR') && (
                   <Link
                     to="/reviews"
                     className={`px-2.5 py-1 rounded-md transition-all flex items-center space-x-1.5 ${
@@ -94,7 +94,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNewCourse }) => {
                     }`}
                   >
                     <CheckSquare className="w-4 h-4" />
-                    <span>Review Queue</span>
+                    <span>{user?.role === 'BOS_COORDINATOR' ? 'BOS Review & Merge' : 'Review Queue'}</span>
                   </Link>
                 )}
 
@@ -157,14 +157,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onNewCourse }) => {
                         <LayoutDashboard className="w-3.5 h-3.5 text-slate-500" />
                         <span>Dashboard</span>
                       </Link>
-                      {(user.role === 'HOD' || user.role === 'ADMIN') && (
+                      {(user.role === 'HOD' || user.role === 'ADMIN' || user.role === 'BOS_COORDINATOR') && (
                         <Link
                           to="/reviews"
                           onClick={() => setShowProfileMenu(false)}
                           className="flex items-center space-x-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100"
                         >
                           <CheckSquare className="w-3.5 h-3.5 text-slate-500" />
-                          <span>Review Queue</span>
+                          <span>{user.role === 'BOS_COORDINATOR' ? 'BOS Review & Merge' : 'Review Queue'}</span>
                         </Link>
                       )}
                       {user.role === 'ADMIN' && (

@@ -79,7 +79,7 @@ export const AppContent: React.FC = () => {
           <Route
             path="/reviews"
             element={
-              <ProtectedRoute allowedRoles={['HOD', 'ADMIN']}>
+              <ProtectedRoute allowedRoles={['HOD', 'ADMIN', 'BOS_COORDINATOR']}>
                 <ReviewWorkspace />
               </ProtectedRoute>
             }

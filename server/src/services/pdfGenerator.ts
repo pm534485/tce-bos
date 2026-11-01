@@ -41,16 +41,7 @@ export function getDegreeProgramHeader(course: Course): string {
   return `${degree} Degree Program ${acadYear}`;
 }
 
-export async function generatePdfDocument(course: Course): Promise<Buffer> {
-  let footerSettingValue: string | null = null;
-  try {
-    if (ConfigSettingsModel.db?.readyState === 1) {
-      const configSetting = await ConfigSettingsModel.findOne({ key: 'acmText' });
-      footerSettingValue = configSetting?.value || null;
-    }
-  } catch (err) {
-    // MongoDB not connected, proceed with institutional defaults
-  }
+export function buildCourseInnerHtml(course: Course): { headerText: string; bodyHtml: string; bosMeetingText: string; acmMeetingText: string } {
   const bosMeetingText = `Passed in BoS Meeting ${course.bosMeetingDate || '30.05.2026'}`;
   const acmMeetingText = `Approved in 71<sup>st</sup> Academic council meeting ${course.academicCouncilDate || '27.06.2026'}`;
 
@@ -363,116 +354,8 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
       }).join('<br>')
     : 'Faculty Member, <a href="mailto:faculty@tce.edu" style="color: #0000FF; text-decoration: underline;">faculty@tce.edu</a>';
 
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<style>
-  @page {
-    size: A4 portrait;
-    margin: 18mm 20mm 20mm 20mm;
-  }
-  * {
-    box-sizing: border-box;
-  }
-  body {
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 10pt;
-    line-height: 1.35;
-    color: #000;
-    margin: 0;
-    padding: 0;
-  }
-  .line-space {
-    height: 14px;
-    clear: both;
-  }
-  .line-space-sm {
-    height: 8px;
-    clear: both;
-  }
-  .plain-heading {
-    font-size: 10.5pt;
-    font-weight: bold;
-    color: #000;
-    margin-bottom: 4px;
-  }
-  .section-p {
-    font-size: 10pt;
-    line-height: 1.35;
-    text-align: justify;
-    margin: 0;
-    color: #000;
-  }
-  .gray-banner {
-    background-color: #D9D9D9;
-    color: #000;
-    font-weight: bold;
-    font-size: 10pt;
-    padding: 3px 6px;
-    margin: 0;
-    width: 100%;
-    box-sizing: border-box;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 9.5pt;
-    margin: 0;
-  }
-  thead {
-    display: table-header-group;
-  }
-  tr {
-    page-break-inside: avoid;
-  }
-  th, td {
-    border: 1px solid #000;
-    padding: 2px 5px;
-    vertical-align: middle;
-    color: #000;
-    line-height: 1.25;
-  }
-  th {
-    font-weight: bold;
-  }
-  .center {
-    text-align: center;
-  }
-  .left {
-    text-align: left;
-  }
-  .font-bold {
-    font-weight: bold;
-  }
-  .syllabus-topic {
-    font-size: 10pt;
-    line-height: 1.35;
-    text-align: justify;
-    margin: 0;
-  }
-  .bullet-list {
-    margin: 0;
-    padding-left: 20px;
-    list-style-type: disc;
-    font-size: 10pt;
-    line-height: 1.35;
-  }
-  .bullet-list li {
-    margin-bottom: 4px;
-    text-align: justify;
-  }
-  .page-break {
-    page-break-after: always;
-    break-after: page;
-  }
-</style>
-</head>
-<body>
 
+  const bodyHtml = `
   <!-- ==================== PAGE 1 ==================== -->
   <div style="text-align: right; font-size: 9.5pt; font-family: Arial, Helvetica, sans-serif; margin-bottom: 8px; color: #000;">
     ${headerText}
@@ -584,15 +467,19 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
   ` : `
   <div class="gray-banner">Assessment Pattern</div>
   <div class="line-space-sm"></div>
+  <div class="plain-heading">Continuous Assessment – Theory</div>
   <table>
     <thead>
       <tr>
-        <th rowspan="2" class="center" style="width: 10%;">CO</th>
-        <th class="center" style="width: 18%;">${isTcp ? 'Theory CAT1' : 'CAT1'}</th>
-        <th class="center" style="width: 18%;">${isTcp ? 'Theory CAT2' : 'Assignment 1'}</th>
-        <th class="center" style="width: 18%;">${isTcp ? 'Practical CA' : 'CAT2'}</th>
-        <th class="center" style="width: 18%;">${isTcp ? 'Model Test' : 'Assignment 2'}</th>
-        <th class="center" style="width: 18%;">Terminal Exam</th>
+        <th rowspan="3" class="center" style="width: 10%;">CO</th>
+        <th colspan="4" class="center">Continuous Assessment</th>
+        <th rowspan="2" class="center" style="width: 18%;">Terminal Exam<br>${terminalExamBracket}</th>
+      </tr>
+      <tr>
+        <th class="center" style="width: 18%;">CAT1</th>
+        <th class="center" style="width: 18%;">CAT2</th>
+        <th class="center" style="width: 18%;">Assignment-1 / Tutorial</th>
+        <th class="center" style="width: 18%;">Assignment-2</th>
       </tr>
       <tr>
         <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
@@ -606,25 +493,21 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
       ${assessmentRowsHtml}
       <tr>
         <td class="center font-bold">Total</td>
-        <td class="center font-bold">${totalCol1 || 100}</td>
-        <td class="center font-bold">${totalCol2 || 100}</td>
-        <td class="center font-bold">${totalCol3 || 100}</td>
-        <td class="center font-bold">${totalCol4 || 100}</td>
-        <td class="center font-bold">${totalCol5 || 100}</td>
+        <td class="center font-bold">${totalCol1 || 100}%</td>
+        <td class="center font-bold">${totalCol2 || 100}%</td>
+        <td class="center font-bold">${totalCol3 || 100}%</td>
+        <td class="center font-bold">${totalCol4 || 100}%</td>
+        <td class="center font-bold">${totalCol5 || 100}%</td>
       </tr>
     </tbody>
   </table>
-  <div style="margin-top: 24px; padding-top: 8px; display: flex; justify-content: space-between; font-size: 8.5pt; font-family: Arial, Helvetica, sans-serif; color: #1e293b;">
-    <span>${bosMeetingText}</span>
-    <span>${acmMeetingText}</span>
-  </div>
   `}
 
   ${isPractical ? `
-  <!-- 5. List of Experiments with CO Mapping (Practical: directly follows Section 4 with NO learning resources) -->
+  <!-- ==================== PRACTICAL: EXPERIMENTS & DESIGNERS ==================== -->
   <div class="line-space"></div>
   <div class="gray-banner">List of Experiments with CO Mapping</div>
-  <div class="line-space-sm"></div>
+  <div class="line-space"></div>
 
   <table>
     <thead>
@@ -637,95 +520,72 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
       </tr>
     </thead>
     <tbody>
-      ${experimentsList.length > 0 ? experimentsList.map((exp, idx) => `
-        <tr>
-          <td class="center">${exp.slNo || idx + 1}</td>
-          <td class="left">${exp.name || ''}</td>
-          <td class="center">${String(exp.level || 1).replace(/^Level\s*/i, '')}</td>
-          <td class="center">${(exp.objectiveNos && exp.objectiveNos.length > 0) ? exp.objectiveNos.join(', ') : '1, 3'}</td>
-          <td class="center font-bold">${Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || '')}</td>
-        </tr>
-      `).join('') : `<tr><td colspan="5" class="center">No experiments added yet.</td></tr>`}
+      ${experimentsRowsHtml}
     </tbody>
   </table>
 
   <div class="line-space"></div>
+
+  <!-- Course Designer(s) -->
   <div class="gray-banner">Course Designer(s):</div>
-  <div class="line-space-sm"></div>
+  <div class="line-space"></div>
+
   <div class="section-p">
     ${designersHtml}
   </div>
-  ` : `
-  <!-- Page Break to Page 2 for Theory and TCP -->
+  ` : ''}
+
+  ${!isPractical ? `
+  <!-- ==================== PAGE 2 (THEORY & TCP) ==================== -->
   <div class="page-break"></div>
 
-  <!-- ==================== PAGE 2 ==================== -->
-  <div style="text-align: right; font-size: 9.5pt; font-family: Arial, Helvetica, sans-serif; margin-bottom: 8px; color: #000;">
-    ${headerText}
-  </div>
-
-  <!-- 5. Syllabus -->
+  <!-- Syllabus -->
   <div class="gray-banner">Syllabus</div>
   <div class="line-space"></div>
 
   ${modulesHtml}
 
   ${isTcp && experimentsList.length > 0 ? `
-  <div style="margin-top: 10px;">
-    <div style="font-weight: bold; text-decoration: underline; font-size: 10pt; margin-bottom: 6px;">Practical:</div>
-    <ol style="margin: 0; padding-left: 22px; font-size: 10pt; line-height: 1.35;">
-      ${experimentsList.map(exp => `<li style="margin-bottom: 3px; text-align: justify;">${exp.name}</li>`).join('')}
-    </ol>
+  <div style="font-size: 10pt; font-weight: bold; text-decoration: underline; margin-bottom: 6px;">Practical:</div>
+  <div class="line-space-sm"></div>
+  <div class="section-p">
+    ${experimentsList.map(e => `${e.slNo || ''}. ${e.name || ''}`).join('; ')}
   </div>
-  ` : ''}
-
-  ${(!modules || modules.length === 0) && (!experimentsList || experimentsList.length === 0) ? `
-  <div class="section-p" style="font-style: italic; color: #64748b;">No syllabus topics or laboratory experiments added yet.</div>
-  ` : ''}
-
-  <!-- 6. Learning Resources -->
   <div class="line-space"></div>
+  ` : ''}
+
+  <!-- Learning Resources -->
   <div class="gray-banner">Learning Resources</div>
   <div class="line-space"></div>
 
-  ${(course.textBooks && course.textBooks.length > 0) ? `
-  <div class="gray-banner">Text Book</div>
-  <div class="line-space"></div>
-
-  <ul class="bullet-list">
+  ${(course.textBooks || []).length > 0 ? `
+  <div class="plain-heading">Text Book(s):</div>
+  <ol class="bullet-list" style="list-style-type: decimal;">
     ${textBooksHtml}
-  </ul>
-
-  <div class="line-space"></div>
+  </ol>
+  <div class="line-space-sm"></div>
   ` : ''}
 
-  <div class="gray-banner">Reference Books & web resources</div>
-  <div class="line-space"></div>
-
-  <ul class="bullet-list">
+  ${(course.referenceBooks || []).length > 0 ? `
+  <div class="plain-heading">Reference Book(s):</div>
+  <ol class="bullet-list" style="list-style-type: decimal;">
     ${refBooksHtml}
-  </ul>
-
-  <div class="line-space"></div>
-
-  <div class="plain-heading">NPTEL Courses</div>
+  </ol>
   <div class="line-space-sm"></div>
+  ` : ''}
 
-  <ul class="bullet-list">
+  ${webResourcesHtml ? `
+  <div class="plain-heading">Web Resource(s):</div>
+  <ol class="bullet-list" style="list-style-type: decimal;">
     ${webResourcesHtml}
-  </ul>
+  </ol>
+  <div class="line-space-sm"></div>
+  ` : ''}
 
-  <!-- Page Break to Page 3 for Theory/TCP -->
+  <!-- ==================== PAGE 3 (THEORY & TCP) ==================== -->
+  ${(scheduleItems.length > 0 || modules.length > 0 || (isTcp && experimentsList.length > 0)) ? `
   <div class="page-break"></div>
-
-  <!-- ==================== PAGE 3 ==================== -->
-  <div style="text-align: right; font-size: 9.5pt; font-family: Arial, Helvetica, sans-serif; margin-bottom: 8px; color: #000;">
-    ${headerText}
-  </div>
-  `}
-  
-
-  ${!isPractical ? `
+  ` : ''}
   ${(scheduleItems.length > 0 || modules.length > 0) ? `
   <!-- 7. Course Contents and Lecture Schedule -->
   <div class="gray-banner">Course Contents and Lecture Schedule</div>
@@ -784,7 +644,197 @@ export async function generatePdfDocument(course: Course): Promise<Buffer> {
     ${designersHtml}
   </div>
   ` : ''}
+  `;
 
+  return { headerText, bodyHtml, bosMeetingText, acmMeetingText };
+}
+
+const COMMON_PDF_STYLES = `
+  @page {
+    size: A4 portrait;
+    margin: 18mm 20mm 20mm 20mm;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10pt;
+    line-height: 1.35;
+    color: #000;
+    margin: 0;
+    padding: 0;
+  }
+  .line-space {
+    height: 14px;
+    clear: both;
+  }
+  .line-space-sm {
+    height: 8px;
+    clear: both;
+  }
+  .plain-heading {
+    font-size: 10.5pt;
+    font-weight: bold;
+    color: #000;
+    margin-bottom: 4px;
+  }
+  .section-p {
+    font-size: 10pt;
+    line-height: 1.35;
+    text-align: justify;
+    margin: 0;
+    color: #000;
+  }
+  .gray-banner {
+    background-color: #D9D9D9;
+    color: #000;
+    font-weight: bold;
+    font-size: 10pt;
+    padding: 3px 6px;
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9.5pt;
+    margin: 0;
+  }
+  thead {
+    display: table-header-group;
+  }
+  tr {
+    page-break-inside: avoid;
+  }
+  th, td {
+    border: 1px solid #000;
+    padding: 2px 5px;
+    vertical-align: middle;
+    color: #000;
+    line-height: 1.25;
+  }
+  th {
+    font-weight: bold;
+  }
+  .center {
+    text-align: center;
+  }
+  .left {
+    text-align: left;
+  }
+  .font-bold {
+    font-weight: bold;
+  }
+  .syllabus-topic {
+    font-size: 10pt;
+    line-height: 1.35;
+    text-align: justify;
+    margin: 0;
+  }
+  .bullet-list {
+    margin: 0;
+    padding-left: 20px;
+    list-style-type: disc;
+    font-size: 10pt;
+    line-height: 1.35;
+  }
+  .bullet-list li {
+    margin-bottom: 4px;
+    text-align: justify;
+  }
+  .page-break {
+    page-break-after: always;
+    break-after: page;
+  }
+  .course-separator {
+    page-break-before: always;
+    break-before: page;
+  }
+`;
+
+export async function generatePdfDocument(course: Course): Promise<Buffer> {
+  const { bodyHtml, bosMeetingText, acmMeetingText } = buildCourseInnerHtml(course);
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>${COMMON_PDF_STYLES}</style>
+</head>
+<body>
+${bodyHtml}
+</body>
+</html>
+  `;
+
+  let puppeteer: any;
+  try {
+    const puppeteerModule = await import('puppeteer');
+    puppeteer = puppeteerModule.default || puppeteerModule;
+  } catch (err: any) {
+    throw new Error('PDF export requires Puppeteer runtime: ' + err.message);
+  }
+
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  });
+
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' as any });
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      margin: {
+        top: '15mm',
+        bottom: '15mm',
+        left: '20mm',
+        right: '20mm',
+      },
+      displayHeaderFooter: true,
+      headerTemplate: '<div></div>',
+      footerTemplate: `
+        <div style="font-family: Arial, sans-serif; font-size: 8pt; width: 100%; display: flex; justify-content: space-between; padding-left: 20mm; padding-right: 20mm; color: #000; -webkit-print-color-adjust: exact;">
+          <span>${bosMeetingText}</span>
+          <span>${acmMeetingText}</span>
+        </div>
+      `,
+      printBackground: true,
+    });
+    return Buffer.from(pdfBuffer);
+  } finally {
+    await browser.close();
+  }
+}
+
+export async function generateMergedCoursesPdf(courses: Course[], metadata: { department?: string; regulationYear?: number }): Promise<Buffer> {
+  if (!courses || courses.length === 0) {
+    throw new Error('No courses provided for merged PDF.');
+  }
+
+  const firstCourseMeta = buildCourseInnerHtml(courses[0]);
+  const bosMeetingText = firstCourseMeta.bosMeetingText;
+  const acmMeetingText = firstCourseMeta.acmMeetingText;
+
+  const combinedBodies = courses.map((course, idx) => {
+    const { bodyHtml } = buildCourseInnerHtml(course);
+    if (idx === 0) return bodyHtml;
+    return `<div class="course-separator"></div>${bodyHtml}`;
+  }).join('\n');
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>${COMMON_PDF_STYLES}</style>
+</head>
+<body>
+${combinedBodies}
 </body>
 </html>
   `;

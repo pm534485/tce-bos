@@ -45,9 +45,61 @@ export const Login: React.FC = () => {
   const { user, googleLogin, login } = useAuth();
   const navigate = useNavigate();
 
-  const [authMode, setAuthMode] = useState<'faculty' | 'admin'>('faculty');
+  const [authMode, setAuthMode] = useState<'faculty' | 'coordinator' | 'admin'>('faculty');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+
+  // BOS Coordinator credentials state
+  const [selectedDept, setSelectedDept] = useState<string>('Civil Engineering');
+  const [coordEmail, setCoordEmail] = useState<string>('bos.civil@tce.edu');
+  const [coordPassword, setCoordPassword] = useState<string>('CivilBos@2026');
+  const [coordLoading, setCoordLoading] = useState<boolean>(false);
+
+  const COORDINATOR_DEPARTMENTS = [
+    { department: 'Civil Engineering', email: 'bos.civil@tce.edu', defaultPassword: 'CivilBos@2026' },
+    { department: 'Computer Science and Engineering', email: 'bos.cse@tce.edu', defaultPassword: 'CseBos@2026' },
+    { department: 'Electronics and Communication Engineering', email: 'bos.ece@tce.edu', defaultPassword: 'EceBos@2026' },
+    { department: 'Electrical and Electronics Engineering', email: 'bos.eee@tce.edu', defaultPassword: 'EeeBos@2026' },
+    { department: 'Mechanical Engineering', email: 'bos.mech@tce.edu', defaultPassword: 'MechBos@2026' },
+    { department: 'Information Technology', email: 'bos.it@tce.edu', defaultPassword: 'ItBos@2026' },
+    { department: 'Mechatronics', email: 'bos.mect@tce.edu', defaultPassword: 'MectBos@2026' },
+    { department: 'Data Science', email: 'bos.ds@tce.edu', defaultPassword: 'DsBos@2026' },
+    { department: 'Computer Applications', email: 'bos.ca@tce.edu', defaultPassword: 'CaBos@2026' },
+    { department: 'Computer Science and Business Systems', email: 'bos.csbs@tce.edu', defaultPassword: 'CsbsBos@2026' },
+    { department: 'Fashion Technology', email: 'bos.ft@tce.edu', defaultPassword: 'FtBos@2026' },
+    { department: 'Mathematics', email: 'bos.maths@tce.edu', defaultPassword: 'MathsBos@2026' },
+    { department: 'Physics', email: 'bos.physics@tce.edu', defaultPassword: 'PhysicsBos@2026' },
+    { department: 'Chemistry', email: 'bos.chemistry@tce.edu', defaultPassword: 'ChemistryBos@2026' },
+    { department: 'English', email: 'bos.english@tce.edu', defaultPassword: 'EnglishBos@2026' },
+  ];
+
+  const handleDeptSelect = (dept: string) => {
+    setSelectedDept(dept);
+    const found = COORDINATOR_DEPARTMENTS.find(d => d.department === dept);
+    if (found) {
+      setCoordEmail(found.email);
+      setCoordPassword(found.defaultPassword);
+    }
+  };
+
+  const handleCoordinatorLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!coordEmail.trim() || !coordPassword) {
+      setError('Please provide both BOS Coordinator email and password.');
+      return;
+    }
+    setCoordLoading(true);
+    try {
+      await login(coordEmail.trim(), coordPassword);
+      navigate('/reviews', { replace: true });
+    } catch (err: any) {
+      setError(err.message || 'Invalid coordinator credentials. Please check your department and password.');
+    } finally {
+      setCoordLoading(false);
+    }
+  };
 
   // Admin credentials state
   const [adminEmail, setAdminEmail] = useState('admin@tce.edu');
@@ -379,6 +431,92 @@ export const Login: React.FC = () => {
                 Institutional single sign-on is restricted to verified <strong>@tce.edu</strong> faculty accounts.
               </p>
             </div>
+          )}
+
+          
+          {/* BOS COORDINATOR CREDENTIALS LOGIN */}
+          {authMode === 'coordinator' && (
+            <form onSubmit={handleCoordinatorLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Select Department
+                </label>
+                <select
+                  value={selectedDept}
+                  onChange={e => handleDeptSelect(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#7B1113] focus:border-transparent transition-all"
+                >
+                  {COORDINATOR_DEPARTMENTS.map(d => (
+                    <option key={d.department} value={d.department}>
+                      {d.department}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  BOS Coordinator Email ID
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="email"
+                    value={coordEmail}
+                    onChange={e => setCoordEmail(e.target.value)}
+                    placeholder="bos.dept@tce.edu"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#7B1113] focus:border-transparent transition-all"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="password"
+                    value={coordPassword}
+                    onChange={e => setCoordPassword(e.target.value)}
+                    placeholder="Department coordinator password"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#7B1113] focus:border-transparent transition-all"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const found = COORDINATOR_DEPARTMENTS.find(d => d.department === selectedDept);
+                    if (found) {
+                      setCoordEmail(found.email);
+                      setCoordPassword(found.defaultPassword);
+                    }
+                  }}
+                  className="text-amber-700 hover:text-amber-800 underline font-semibold flex items-center space-x-1"
+                >
+                  <KeyRound className="w-3 h-3" />
+                  <span>Reset / auto-fill department credentials</span>
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                disabled={coordLoading}
+                className="w-full py-3 px-6 rounded-xl bg-[#7B1113] hover:bg-[#600D0F] text-white font-bold text-xs shadow-md flex items-center justify-center transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+              >
+                <span>{coordLoading ? 'Signing In...' : 'Sign In as BOS Coordinator'}</span>
+              </button>
+
+              <p className="text-[11px] text-center text-slate-400 pt-1">
+                Authorized for reviewing department curriculum and compiling syllabus documents.
+              </p>
+            </form>
           )}
 
           {/* ADMIN CREDENTIALS LOGIN */}

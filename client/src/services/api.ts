@@ -145,6 +145,30 @@ export const api = {
     throw new Error('Export service encountered an error. Please try again.');
   },
 
+  // Merge selected courses in explicit order
+  mergeCourses: async (courseIds: string[], format: 'docx' | 'pdf' = 'docx', regulationYear: number = 2026): Promise<Blob> => {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    };
+    const res = await fetch(`${API_BASE}/courses/merge`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ courseIds, format, regulationYear }),
+    });
+    if (!res.ok) {
+      let errorMsg = 'Failed to merge course documents.';
+      try {
+        const errorData = await res.json();
+        errorMsg = errorData.error || errorMsg;
+      } catch (_) {}
+      throw new Error(errorMsg);
+    }
+    return await res.blob();
+  },
+
+  getCoordinators: () => request<Array<{ department: string; email: string; name: string; programmeAccess: string[] }>>('/auth/coordinators'),
+
   // Master Data
   getMaster: <T = any>(collection: string) => request<T[]>(`/master/${collection}`),
   createMaster: (collection: string, data: any) =>
