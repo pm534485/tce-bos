@@ -916,49 +916,105 @@ const CoDomainPicker: React.FC<CoDomainPickerProps> = ({ courseOutcomes, onAdd }
         })}
       </div>
 
-      {/* Domain table panel */}
+      {/* Domain table modal dialog */}
       {openDomain && (
-        <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-          <div className={`px-4 py-2 text-xs font-bold flex items-center justify-between ${openDomain === 'Cognitive' ? 'bg-blue-50 text-blue-800' : openDomain === 'Affective' ? 'bg-emerald-50 text-emerald-800' : 'bg-violet-50 text-violet-800'}`}>
-            <span>{tableTitle[openDomain]}</span>
-            {openDomain === 'Cognitive' && <span className="font-normal">Select up to 2 — {cogCount}/2 selected</span>}
-          </div>
-          <table className="w-full text-xs">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="px-3 py-2 text-left font-bold text-slate-600 w-16">CO</th>
-                <th className="px-3 py-2 text-left font-bold text-slate-600">Outcome Statement</th>
-                <th className="px-3 py-2 text-center font-bold text-slate-600 w-16">TPS</th>
-                <th className="px-3 py-2 text-left font-bold text-slate-600 w-32 hidden sm:table-cell">Objective</th>
-                <th className="px-3 py-2 w-16"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {poolMap[openDomain].map(g => {
-                const alreadyAdded = addedRefs.includes(g.code);
-                const blocked = openDomain === 'Cognitive' && cogCount >= 2 && !alreadyAdded;
-                const col = domainColors[openDomain];
-                return (
-                  <tr key={g.code}
-                    className={`transition-colors ${alreadyAdded ? 'bg-slate-50 opacity-60' : blocked ? 'opacity-40 cursor-not-allowed' : col.row + ' cursor-pointer'}`}
-                    onClick={() => { if (!alreadyAdded && !blocked) handleAdd(g); }}
-                  >
-                    <td className="px-3 py-2.5 font-black text-slate-800">{g.code}</td>
-                    <td className="px-3 py-2.5 text-slate-700 leading-snug">{g.statement}</td>
-                    <td className="px-3 py-2.5 text-center font-bold text-slate-600">{g.tpsLevel}</td>
-                    <td className="px-3 py-2.5 text-slate-500 hidden sm:table-cell">{g.objectiveName}</td>
-                    <td className="px-3 py-2.5 text-center">
-                      {alreadyAdded
-                        ? <Check className="w-4 h-4 text-emerald-500 mx-auto" />
-                        : blocked
-                        ? <span className="text-[10px] text-slate-400">max</span>
-                        : <Plus className="w-4 h-4 text-slate-400 mx-auto" />}
-                    </td>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={() => setOpenDomain(null)}
+        >
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div
+            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 bg-slate-50">
+              <div>
+                <h3 className="font-bold text-sm text-slate-800">{tableTitle[openDomain]}</h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  {openDomain === 'Cognitive'
+                    ? `Select up to 2 — ${cogCount}/2 selected`
+                    : 'Click a row to add it to your course outcomes'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpenDomain(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Scrollable table body */}
+            <div className="overflow-auto flex-1">
+              <table className="w-full text-xs border-collapse">
+                <thead className="sticky top-0 bg-slate-100 z-10 border-b border-slate-200">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-bold text-slate-600 w-20">CO</th>
+                    <th className="px-4 py-3 text-left font-bold text-slate-600">Outcome Statement</th>
+                    <th className="px-4 py-3 text-center font-bold text-slate-600 w-16">TPS</th>
+                    <th className="px-4 py-3 text-left font-bold text-slate-600 w-36 hidden sm:table-cell">Objective</th>
+                    <th className="px-4 py-3 text-center w-16"></th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {poolMap[openDomain].map(g => {
+                    const alreadyAdded = addedRefs.includes(g.code);
+                    const blocked = openDomain === 'Cognitive' && cogCount >= 2 && !alreadyAdded;
+                    const col = domainColors[openDomain];
+                    return (
+                      <tr
+                        key={g.code}
+                        className={`transition-colors ${alreadyAdded ? 'bg-slate-50 opacity-60' : blocked ? 'opacity-40 cursor-not-allowed' : col.row + ' cursor-pointer'}`}
+                        onClick={() => { if (!alreadyAdded && !blocked) handleAdd(g); }}
+                      >
+                        <td className="px-4 py-3 font-black text-slate-800 align-top">{g.code}</td>
+                        <td className="px-4 py-3 text-slate-700 leading-snug align-top">{g.statement}</td>
+                        <td className="px-4 py-3 text-center font-bold text-slate-600 align-top">{g.tpsLevel}</td>
+                        <td className="px-4 py-3 text-slate-500 hidden sm:table-cell align-top">{g.objectiveName}</td>
+                        <td className="px-4 py-3 text-center align-top">
+                          {alreadyAdded
+                            ? <Check className="w-4 h-4 text-emerald-500 mx-auto" />
+                            : blocked
+                            ? <span className="text-[10px] text-slate-400">max</span>
+                            : <Plus className="w-4 h-4 text-slate-400 mx-auto" />}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Modal footer — status summary + Done */}
+            <div className="flex items-center justify-between px-5 py-3 border-t border-slate-200 bg-slate-50">
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-600">
+                <span className="font-semibold text-slate-500">Added:</span>
+                {courseOutcomes.filter(c => c.domain === openDomain).length === 0 ? (
+                  <span className="text-[11px] text-slate-400 italic">None yet</span>
+                ) : (
+                  courseOutcomes.filter(c => c.domain === openDomain).map(c => (
+                    <span
+                      key={c.coNo}
+                      className={`px-2 py-0.5 rounded text-[10px] font-black ${
+                        openDomain === 'Cognitive' ? 'bg-blue-600 text-white' : openDomain === 'Affective' ? 'bg-emerald-600 text-white' : 'bg-violet-600 text-white'
+                      }`}
+                    >
+                      {c.coNo} ({c.generalCoRef || c.domain})
+                    </span>
+                  ))
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpenDomain(null)}
+                className="px-4 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-bold hover:bg-slate-700 transition-all cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
