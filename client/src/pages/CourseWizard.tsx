@@ -3180,9 +3180,6 @@ export const CourseWizard: React.FC = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-1 items-start">
                               {/* Performance Indicators */}
                               <div className="sm:col-span-4">
-                                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                                  Performance Indicators (PIs)
-                                </label>
                                 <PiCheckboxSelector
                                   value={co.pi || ''}
                                   coNo={co.coNo}
@@ -3243,9 +3240,6 @@ export const CourseWizard: React.FC = () => {
 
                               {/* SDG(s) Addressed */}
                               <div className="sm:col-span-3">
-                                <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                                  SDG(s) Addressed
-                                </label>
                                 <SdgCheckboxSelector
                                   sdgNo={co.sdgNo || 'NC'}
                                   coNo={co.coNo}
