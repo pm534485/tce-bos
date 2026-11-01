@@ -272,7 +272,7 @@
    ============================================================ */
 @page {
   size: A4 portrait;
-  margin: 15mm 20mm 15mm 20mm;
+  margin: 0;
 }
 
 @media print {
@@ -288,10 +288,10 @@
     display: none !important;
   }
 
-  /* Completely reset body and html for printing */
+  /* Completely reset body and html for printing with clean margins */
   body, html {
     background: #FFFFFF !important;
-    padding: 0 !important;
+    padding: 15mm 20mm 15mm 20mm !important;
     margin: 0 !important;
     color: #000000 !important;
     font-family: Arial, Helvetica, sans-serif !important;

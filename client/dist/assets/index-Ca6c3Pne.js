@@ -347,7 +347,7 @@ Error generating stack: `+a.message+`
 <style>
   @page {
     size: A4 portrait;
-    margin: 15mm 20mm 15mm 20mm;
+    margin: 0;
   }
   *, *::before, *::after {
     box-sizing: border-box;
@@ -361,7 +361,7 @@ Error generating stack: `+a.message+`
     line-height: 1.35;
     color: #000000;
     margin: 0;
-    padding: 0;
+    padding: 15mm 20mm 15mm 20mm;
     background: #FFFFFF;
   }
   .document-sheet {
