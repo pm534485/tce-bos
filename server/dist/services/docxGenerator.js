@@ -556,7 +556,7 @@ export async function generateDocxDocument(course) {
     if (isPractical) {
         // Practical: 5. List of Experiments directly follows Assessment Pattern (NO Learning Resources)
         children.push(createLineSpace());
-        children.push(createShadedBanner('5. List of Experiments with CO Mapping'));
+        children.push(createShadedBanner('List of Experiments with CO Mapping'));
         children.push(createLineSpace());
         const expHeaderRow = new TableRow({
             children: [
@@ -587,7 +587,7 @@ export async function generateDocxDocument(course) {
         }));
         children.push(createLineSpace());
         // 6. Course Designer(s) directly follows experiments
-        children.push(createShadedBanner('6. Course Designer(s):'));
+        children.push(createShadedBanner('Course Designer(s):'));
         children.push(createLineSpace());
         const designers = course.designers || [];
         if (designers.length > 0) {
@@ -630,7 +630,7 @@ export async function generateDocxDocument(course) {
     }
     else {
         // ==================== PAGE 2 (THEORY & TCP) ====================
-        children.push(createShadedBanner('5. Syllabus', { pageBreakBefore: true }));
+        children.push(createShadedBanner('Syllabus', { pageBreakBefore: true }));
         children.push(createLineSpace());
         if (modulesList.length > 0) {
             modulesList.forEach(mod => {
@@ -677,10 +677,10 @@ export async function generateDocxDocument(course) {
             children.push(createLineSpace());
         }
         // 6. Learning Resources
-        children.push(createShadedBanner('6. Learning Resources'));
+        children.push(createShadedBanner('Learning Resources'));
         children.push(createLineSpace());
         if (course.textBooks && course.textBooks.length > 0) {
-            children.push(createShadedBanner('6.1 Text Book'));
+            children.push(createShadedBanner('Text Book'));
             children.push(createLineSpace());
             (course.textBooks || []).forEach(b => {
                 children.push(new Paragraph({
@@ -691,7 +691,7 @@ export async function generateDocxDocument(course) {
             });
             children.push(createLineSpace());
         }
-        children.push(createShadedBanner('6.2 Reference Books & Web resources'));
+        children.push(createShadedBanner('Reference Books & web resources'));
         children.push(createLineSpace());
         (course.referenceBooks || []).forEach(b => {
             children.push(new Paragraph({
@@ -745,7 +745,7 @@ export async function generateDocxDocument(course) {
         let page3HasContent = false;
         if (hasSchedule) {
             page3HasContent = true;
-            children.push(createShadedBanner('7. Course Contents and Lecture Schedule', { pageBreakBefore: true }));
+            children.push(createShadedBanner('Course Contents and Lecture Schedule', { pageBreakBefore: true }));
             children.push(createLineSpace());
             const schedHeaderRow = new TableRow({
                 children: [

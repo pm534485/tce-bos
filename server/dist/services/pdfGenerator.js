@@ -567,7 +567,7 @@ export async function generatePdfDocument(course) {
 
   <!-- Assessment Pattern -->
   ${isPractical ? `
-  <div class="gray-banner">4. Assessment Pattern</div>
+  <div class="gray-banner">Assessment Pattern</div>
   <div class="line-space-sm"></div>
   <table style="width: 100%; border-collapse: collapse;">
     <thead>
@@ -645,7 +645,7 @@ export async function generatePdfDocument(course) {
   ${isPractical ? `
   <!-- 5. List of Experiments with CO Mapping (Practical: directly follows Section 4 with NO learning resources) -->
   <div class="line-space"></div>
-  <div class="gray-banner">5. List of Experiments with CO Mapping</div>
+  <div class="gray-banner">List of Experiments with CO Mapping</div>
   <div class="line-space-sm"></div>
 
   <table>
@@ -672,7 +672,7 @@ export async function generatePdfDocument(course) {
   </table>
 
   <div class="line-space"></div>
-  <div class="gray-banner">6. Course Designer(s):</div>
+  <div class="gray-banner">Course Designer(s):</div>
   <div class="line-space-sm"></div>
   <div class="section-p">
     ${designersHtml}
@@ -687,7 +687,7 @@ export async function generatePdfDocument(course) {
   </div>
 
   <!-- 5. Syllabus -->
-  <div class="gray-banner">5. Syllabus</div>
+  <div class="gray-banner">Syllabus</div>
   <div class="line-space"></div>
 
   ${modulesHtml}
@@ -707,11 +707,11 @@ export async function generatePdfDocument(course) {
 
   <!-- 6. Learning Resources -->
   <div class="line-space"></div>
-  <div class="gray-banner">6. Learning Resources</div>
+  <div class="gray-banner">Learning Resources</div>
   <div class="line-space"></div>
 
   ${(course.textBooks && course.textBooks.length > 0) ? `
-  <div class="gray-banner">6.1 Text Book</div>
+  <div class="gray-banner">Text Book</div>
   <div class="line-space"></div>
 
   <ul class="bullet-list">
@@ -721,7 +721,7 @@ export async function generatePdfDocument(course) {
   <div class="line-space"></div>
   ` : ''}
 
-  <div class="gray-banner">6.2 Reference Books & Web resources</div>
+  <div class="gray-banner">Reference Books & web resources</div>
   <div class="line-space"></div>
 
   <ul class="bullet-list">
@@ -750,7 +750,7 @@ export async function generatePdfDocument(course) {
   ${!isPractical ? `
   ${(scheduleItems.length > 0 || modules.length > 0) ? `
   <!-- 7. Course Contents and Lecture Schedule -->
-  <div class="gray-banner">7. Course Contents and Lecture Schedule</div>
+  <div class="gray-banner">Course Contents and Lecture Schedule</div>
   <div class="line-space"></div>
 
   <table>

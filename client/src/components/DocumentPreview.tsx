@@ -370,7 +370,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
       )}
 
       {/* CONTINUOUS DOCUMENT CONTAINER (Continuous layout matching reference PDF without artificial page gaps) */}
-      <div className="document-sheet bg-white p-10 sm:p-14 rounded-xl shadow-lg border border-slate-300 text-slate-900 select-text font-sans text-sm w-full max-w-5xl space-y-4">
+      <div className="document-sheet bg-white p-10 sm:p-14 rounded-xl shadow-lg border border-slate-300 text-slate-900 select-text font-sans text-[10pt] leading-[1.35] w-full max-w-5xl space-y-3.5">
         {/* Running Top Right Header */}
         <div className="text-right text-xs font-normal text-slate-800 mb-3">
           {headerText}
@@ -447,13 +447,13 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
           <table className="w-full border-collapse border border-black mb-0 text-xs">
             <thead>
               <tr className="border-b border-black">
-                <th className="border border-black p-1.5 text-center w-[7%]">COs</th>
-                <th className="border border-black p-1.5 text-left w-[45%]">Course Outcome Statement</th>
-                <th className="border border-black p-1.5 text-center w-[12%]">TCE Proficiency Scale</th>
-                <th className="border border-black p-1.5 text-center w-[14%]">Performance Indicators</th>
-                <th className="border border-black p-1.5 text-center w-[8%]">Objective</th>
-                <th className="border border-black p-1.5 text-center w-[8%]">SDG Addressed</th>
-                <th className="border border-black p-1.5 text-center w-[6%]">SDG Level</th>
+                <th className="border border-black p-1 text-center w-[7%]">No.</th>
+                <th className="border border-black p-1 text-left w-[44%]">Course Outcome</th>
+                <th className="border border-black p-1 text-center w-[11%]">TCE<br />Proficiency Scale</th>
+                <th className="border border-black p-1 text-center w-[14%]">Performance<br />Indicator</th>
+                <th className="border border-black p-1 text-center w-[8%]">CO<br />Weightage</th>
+                <th className="border border-black p-1 text-center w-[10%]">SDG<br />Addressed</th>
+                <th className="border border-black p-1 text-center w-[6%]">SDG<br />Level</th>
               </tr>
             </thead>
             <tbody>
@@ -461,9 +461,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
                 <tr key={co.coNo} className="border-b border-black">
                   <td className="border border-black p-1.5 text-center font-bold">{co.coNo}</td>
                   <td className="border border-black p-1.5 text-left">{co.statement}</td>
-                  <td className="border border-black p-1.5 text-center">TPS {co.tpsLevel}</td>
+                  <td className="border border-black p-1 text-center">TPS{co.tpsLevel}</td>
                   <td className="border border-black p-1.5 text-center">{co.pi}</td>
-                  <td className="border border-black p-1.5 text-center">{co.objectiveNo !== undefined ? co.objectiveNo : ''}</td>
+                  <td className="border border-black p-1 text-center">{co.weightage !== undefined && co.weightage !== null ? co.weightage : (co.objectiveNo !== undefined ? co.objectiveNo : '')}</td>
                   <td className="border border-black p-1.5 text-center">{co.sdgNo && co.sdgNo !== 'NC' ? (String(co.sdgNo).includes(',') ? `SDGs ${co.sdgNo}` : `SDG ${co.sdgNo}`) : 'NC'}</td>
                   <td className="border border-black p-1.5 text-center">{co.sdgLevel !== undefined ? co.sdgLevel : ''}</td>
                 </tr>
@@ -763,7 +763,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
         {/* Course Designer(s): Section 6 for Practical, Course Designer(s) for Theory/TCP */}
         <div className="section-block">
           <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-            {isPractical ? '6. Course Designer(s):' : 'Course Designer(s):'}
+            'Course Designer(s):'
           </div>
           <div className="h-2" />
 
