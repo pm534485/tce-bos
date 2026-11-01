@@ -268,7 +268,7 @@
 }
 
 /* ============================================================
-   PRINT / PDF EXPORT STYLES (Exact Color Retention & Continuous Flow)
+   PRINT / PDF EXPORT STYLES (Clean Document Without Chrome/URL)
    ============================================================ */
 @page {
   size: A4 portrait;
@@ -283,17 +283,24 @@
     color-adjust: exact !important;
   }
 
-  /* Hide application chrome, navigation, buttons, top action bars, and panels */
-  nav, header, aside, .glass-btn, button, .top-action-bar, .compliance-panel, [role="navigation"] {
+  /* Hide ALL application chrome, header bars, navigation, auto-save indicators, buttons, action bars, and overlays */
+  nav, header, aside, .glass-btn, button, .top-action-bar, .compliance-panel, [role="navigation"], .print\:hidden, .sticky {
     display: none !important;
   }
 
+  /* Completely reset body and html for printing */
   body, html {
     background: #FFFFFF !important;
     padding: 0 !important;
     margin: 0 !important;
     color: #000000 !important;
     font-family: Arial, Helvetica, sans-serif !important;
+  }
+
+  /* Hide any parent wrappers except the document itself */
+  .min-h-screen {
+    min-height: auto !important;
+    background: transparent !important;
   }
 
   .document-sheet {
@@ -322,5 +329,12 @@
   .section-block, table, tr, thead, tbody {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+  }
+
+  /* Ensure footer line is clean */
+  .document-sheet > .border-t {
+    border-top: 1px solid #000000 !important;
+    margin-top: 24px !important;
+    padding-top: 8px !important;
   }
 }

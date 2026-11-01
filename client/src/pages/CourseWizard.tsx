@@ -1951,7 +1951,7 @@ export const CourseWizard: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Minimal Sleek Header Bar - Compact single row, no redundant details */}
-      <div className="bg-white border-b border-slate-200 px-3 sm:px-6 lg:px-8 py-1.5 sticky top-[46px] z-30 flex items-center justify-between shadow-xs h-11">
+      <div className="bg-white border-b border-slate-200 px-3 sm:px-6 lg:px-8 py-1.5 sticky top-[46px] z-30 flex items-center justify-between shadow-xs h-11 print:hidden">
         <div className="flex items-center space-x-2.5 min-w-0">
           <button
             onClick={() => setIsSidebarOpen(prev => !prev)}
