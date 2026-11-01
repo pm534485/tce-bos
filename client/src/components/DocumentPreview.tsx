@@ -408,20 +408,20 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
           </tbody>
         </table>
 
-        {/* 1. Preamble */}
+        {/* Preamble */}
         <div className="section-block">
-          <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-            1. Preamble
+          <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
+            Preamble
           </div>
           <p className="text-justify text-xs leading-relaxed text-black mt-1.5 mb-0">
             {course.preamble || ''}
           </p>
         </div>
 
-        {/* 2. Prerequisite */}
+        {/* Prerequisite */}
         <div className="section-block">
-          <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-            2. Prerequisite
+          <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
+            Prerequisite
           </div>
           {prereqList.length > 0 ? (
             <ul className="list-disc pl-5 text-xs text-black mt-1.5 mb-0 space-y-0.5">
@@ -436,10 +436,10 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
           )}
         </div>
 
-        {/* 3. Course Outcomes */}
+        {/* Course Outcomes */}
         <div className="section-block">
-          <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-            3. Course Outcomes
+          <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
+            Course Outcomes
           </div>
           <p className="text-xs text-black mt-1 mb-1.5">
             On the successful completion of the course, students will be able to
@@ -472,11 +472,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
           </table>
         </div>
 
-        {/* 4. Assessment Pattern */}
+        {/* Assessment Pattern */}
         {isPractical ? (
           <div className="section-block">
-            <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1 text-left">
-              4. Assessment Pattern
+            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1 text-left print:bg-[#D9D9D9]">
+              Assessment Pattern
             </div>
             <table className="w-full border-collapse border border-black mb-0 text-xs table-fixed">
               <thead>
@@ -526,8 +526,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
           </div>
         ) : (
           <div className="section-block">
-            <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1">
-              4. Assessment Pattern
+            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1 print:bg-[#D9D9D9]">
+              Assessment Pattern
             </div>
             <table className="w-full border-collapse border border-black mb-0 text-xs">
               <thead>
@@ -571,11 +571,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
           </div>
         )}
 
-        {/* 5. Syllabus (Theory/TCP) OR 5. List of Experiments with CO Mapping (Practical) */}
+        {/* Syllabus (Theory/TCP) OR List of Experiments with CO Mapping (Practical) */}
         {isPractical ? (
           <div className="section-block">
-            <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-              5. List of Experiments with CO Mapping
+            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
+              List of Experiments with CO Mapping
             </div>
             <div className="h-2" />
             {(course.experiments && course.experiments.length > 0) ? (
@@ -609,8 +609,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
           </div>
         ) : (
           <div className="section-block">
-            <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-              5. Syllabus
+            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
+              Syllabus
             </div>
             <div className="h-2" />
 
@@ -642,18 +642,18 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
           </div>
         )}
 
-        {/* 6. Learning Resources (ONLY for Theory and TCP) */}
+        {/* Learning Resources (ONLY for Theory and TCP) */}
         {!isPractical && (
           <div className="section-block">
-            <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-              6. Learning Resources
+            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
+              Learning Resources
             </div>
             <div className="h-2" />
 
             {(course.textBooks && course.textBooks.length > 0) && (
               <>
-                <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-                  6.1 Text Book
+                <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
+                  Text Book
                 </div>
                 <div className="h-1" />
                 <ul className="list-disc pl-5 space-y-1 text-xs text-black">
@@ -665,8 +665,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
               </>
             )}
 
-            <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-              6.2 Reference Books &amp; Web resources
+            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
+              Reference Books &amp; web resources
             </div>
             <div className="h-1" />
             <ul className="list-disc pl-5 space-y-1 text-xs text-black">
@@ -685,11 +685,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
           </div>
         )}
 
-        {/* 7. Course Contents and Lecture Schedule (ONLY for Theory and TCP) */}
+        {/* Course Contents and Lecture Schedule (ONLY for Theory and TCP) */}
         {!isPractical && (scheduleItems.length > 0 || (course.modules && course.modules.length > 0)) && (
           <div className="section-block">
-            <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-              7. Course Contents and Lecture Schedule
+            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
+              Course Contents and Lecture Schedule
             </div>
             <div className="h-2" />
 
@@ -728,7 +728,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
         {/* List of Experiments with CO Mapping table (TCP courses only) */}
         {isTcp && (course.experiments && course.experiments.length > 0) && (
           <div className="section-block">
-            <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
+            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
               List of Experiments with CO Mapping
             </div>
             <div className="h-2" />
@@ -762,8 +762,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
 
         {/* Course Designer(s): Section 6 for Practical, Course Designer(s) for Theory/TCP */}
         <div className="section-block">
-          <div className="bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full">
-            'Course Designer(s):'
+          <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
+            Course Designer(s):
           </div>
           <div className="h-2" />
 

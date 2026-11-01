@@ -268,10 +268,22 @@
 }
 
 /* ============================================================
-   PRINT / PDF EXPORT STYLES (Continuous Flow & Natural Breaks)
+   PRINT / PDF EXPORT STYLES (Exact Color Retention & Continuous Flow)
    ============================================================ */
+@page {
+  size: A4 portrait;
+  margin: 15mm 20mm 15mm 20mm;
+}
+
 @media print {
-  /* Hide application chrome, navigation, buttons, and panels */
+  /* Force exact background colors and banner shading to print in browser dialog */
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Hide application chrome, navigation, buttons, top action bars, and panels */
   nav, header, aside, .glass-btn, button, .top-action-bar, .compliance-panel, [role="navigation"] {
     display: none !important;
   }
@@ -281,6 +293,7 @@
     padding: 0 !important;
     margin: 0 !important;
     color: #000000 !important;
+    font-family: Arial, Helvetica, sans-serif !important;
   }
 
   .document-sheet {
@@ -293,6 +306,16 @@
     max-width: 100% !important;
     page-break-after: auto !important;
     break-after: auto !important;
+    background: transparent !important;
+  }
+
+  /* Gray banners must stay distinctly shaded with #D9D9D9 background */
+  .document-banner, [class*="bg-[#D9D9D9]"] {
+    background-color: #D9D9D9 !important;
+    color: #000000 !important;
+    font-weight: bold !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   /* Prevent awkward splits inside tables, rows, banners, and section blocks */
