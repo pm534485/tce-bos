@@ -3069,52 +3069,53 @@ export const CourseWizard: React.FC = () => {
                               </div>
                             </div>
 
-                            {/* Practical: Objective (1-13) moved to top row before Outcome Statement */}
-                            {course.courseType === 'PRACTICAL' && (
-                              <div className="p-2.5 bg-white border border-slate-200 rounded-lg shadow-2xs">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
-                                  <label className="block text-[11px] font-bold text-slate-700">
-                                    Objective (1–13)
-                                  </label>
-                                  <span className="text-[10px] text-slate-500 font-medium">
-                                    Select lab objective to automatically align domain &amp; category
-                                  </span>
-                                </div>
-                                <select
-                                  value={co.objectiveNo || 1}
-                                  onChange={e => {
-                                    const objNum = parseInt(e.target.value);
-                                    const matched = LAB_OBJECTIVES.find(o => o.no === objNum);
-                                    const updated = [...(course.courseOutcomes || [])];
-                                    updated[idx] = {
-                                      ...updated[idx],
-                                      objectiveNo: objNum,
-                                      objectiveName: matched?.name,
-                                      domain: matched?.domain,
-                                    };
-                                    updateField('courseOutcomes', updated);
-                                  }}
-                                  className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white font-medium focus:ring-2 focus:ring-sky-500"
-                                >
-                                  {LAB_OBJECTIVES.map(o => (
-                                    <option key={o.no} value={o.no}>
-                                      {o.no}. {o.name} ({o.domain})
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            )}
-
-                            {/* Outcome Statement, TPS Level (compact), and PI Selector */}
+                            {/* ROW 1: Objective (if Practical), Outcome Statement, TPS Level */}
                             <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
-                              <div className="md:col-span-8">
+                              {/* Objective (1-13) - appears first on row 1 for Practical */}
+                              {course.courseType === 'PRACTICAL' && (
+                                <div className="md:col-span-4">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <label className="block text-[11px] font-bold text-slate-700">
+                                      Objective (1–13)
+                                    </label>
+                                    <span className="text-[10px] text-slate-500 font-medium hidden sm:inline">
+                                      Aligns domain
+                                    </span>
+                                  </div>
+                                  <select
+                                    value={co.objectiveNo || 1}
+                                    onChange={e => {
+                                      const objNum = parseInt(e.target.value);
+                                      const matched = LAB_OBJECTIVES.find(o => o.no === objNum);
+                                      const updated = [...(course.courseOutcomes || [])];
+                                      updated[idx] = {
+                                        ...updated[idx],
+                                        objectiveNo: objNum,
+                                        objectiveName: matched?.name,
+                                        domain: matched?.domain,
+                                      };
+                                      updateField('courseOutcomes', updated);
+                                    }}
+                                    className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white font-medium focus:ring-2 focus:ring-sky-500"
+                                  >
+                                    {LAB_OBJECTIVES.map(o => (
+                                      <option key={o.no} value={o.no}>
+                                        {o.no}. {o.name} ({o.domain})
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              )}
+
+                              {/* Outcome Statement */}
+                              <div className={course.courseType === 'PRACTICAL' ? 'md:col-span-6' : 'md:col-span-9'}>
                                 <div className="flex flex-wrap items-center gap-2 mb-1">
                                   <label className="block text-[11px] font-bold text-slate-700">
                                     Outcome Statement (must start with TPS {co.tpsLevel} verb)
                                   </label>
                                   {TPS_VERBS[co.tpsLevel]?.length > 0 && (
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-xs">
-                                      Approved TPS {co.tpsLevel} Verbs: <span className="ml-1 font-black text-amber-950 underline decoration-amber-400">{TPS_VERBS[co.tpsLevel]?.slice(0, 4).join(', ')}</span>
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-xs">
+                                      Verbs: <span className="ml-1 font-black text-amber-950 underline decoration-amber-400">{TPS_VERBS[co.tpsLevel]?.slice(0, 3).join(', ')}</span>
                                     </span>
                                   )}
                                 </div>
@@ -3131,8 +3132,8 @@ export const CourseWizard: React.FC = () => {
                                 />
                               </div>
 
-                              {/* TPS Level: Compact Size */}
-                              <div className="md:col-span-2">
+                              {/* TPS Level */}
+                              <div className={course.courseType === 'PRACTICAL' ? 'md:col-span-2' : 'md:col-span-3'}>
                                 <div className="flex items-center justify-between mb-1">
                                   <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-tight">
                                     TPS Level
@@ -3173,8 +3174,15 @@ export const CourseWizard: React.FC = () => {
                                   <option value={6}>TPS 6 (Create)</option>
                                 </select>
                               </div>
+                            </div>
 
-                              <div className="md:col-span-2">
+                            {/* ROW 2: Performance Indicators, CO Weightage, SDG Addressed, SDG Level */}
+                            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-1 items-start">
+                              {/* Performance Indicators */}
+                              <div className="sm:col-span-4">
+                                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                  Performance Indicators (PIs)
+                                </label>
                                 <PiCheckboxSelector
                                   value={co.pi || ''}
                                   coNo={co.coNo}
@@ -3191,11 +3199,9 @@ export const CourseWizard: React.FC = () => {
                                   }}
                                 />
                               </div>
-                            </div>
 
-                            {/* Bottom Row: Weightage, SDG Addressed, SDG Level */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
-                              <div>
+                              {/* CO Weightage (%) */}
+                              <div className="sm:col-span-3">
                                 <div className="flex items-center justify-between mb-1">
                                   <label className="block text-[11px] font-bold text-slate-600">
                                     CO Weightage (%)
@@ -3235,7 +3241,11 @@ export const CourseWizard: React.FC = () => {
                                 />
                               </div>
 
-                              <div>
+                              {/* SDG(s) Addressed */}
+                              <div className="sm:col-span-3">
+                                <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                                  SDG(s) Addressed
+                                </label>
                                 <SdgCheckboxSelector
                                   sdgNo={co.sdgNo || 'NC'}
                                   coNo={co.coNo}
@@ -3252,7 +3262,8 @@ export const CourseWizard: React.FC = () => {
                                 />
                               </div>
 
-                              <div>
+                              {/* SDG Level (0–5) */}
+                              <div className="sm:col-span-2">
                                 <label className="block text-[11px] font-bold text-slate-600 mb-1">
                                   SDG Level (0–5)
                                 </label>
