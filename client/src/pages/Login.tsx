@@ -311,12 +311,7 @@ export const Login: React.FC = () => {
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
               Welcome back
             </h2>
-            {authMode === 'admin' && (
-              <span className="px-2.5 py-1 bg-amber-100 border border-amber-300 text-amber-900 text-xs font-black rounded-lg flex items-center space-x-1">
-                <Shield className="w-3.5 h-3.5 text-amber-700" />
-                <span>Admin Portal</span>
-              </span>
-            )}
+
           </div>
           <p className="text-sm text-slate-500 mb-6 leading-relaxed">
             {authMode === 'faculty'
