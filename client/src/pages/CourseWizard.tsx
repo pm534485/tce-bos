@@ -5638,7 +5638,7 @@ export const CourseWizard: React.FC = () => {
                       {(course.designers || []).map((des, idx) => (
                         <div key={idx} className="p-3 border border-slate-200 rounded-xl bg-slate-50/50 space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="font-bold text-xs text-slate-700">Designer {idx + 1}</span>
+                            <span className="font-bold text-xs text-slate-700">Faculty {idx + 1}</span>
                             {(course.designers || []).length > 1 && (
                               <button
                                 onClick={() => {
