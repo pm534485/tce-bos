@@ -88,7 +88,135 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
   };
 
   const handlePrint = () => {
-    window.print();
+    const sheetEl = document.querySelector('.document-sheet');
+    if (!sheetEl) {
+      window.print();
+      return;
+    }
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) {
+      window.print();
+      return;
+    }
+
+    doc.open();
+    doc.write(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>${(course.courseCode || 'Course').replace(/[^a-zA-Z0-9_-]/g, '_')}_Syllabus</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 15mm 20mm 15mm 20mm;
+  }
+  *, *::before, *::after {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10pt;
+    line-height: 1.35;
+    color: #000000;
+    margin: 0;
+    padding: 0;
+    background: #FFFFFF;
+  }
+  .document-sheet {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .document-banner, [class*="bg-[#D9D9D9]"], [class*="bg-slate-"] {
+    background-color: #D9D9D9 !important;
+    color: #000000 !important;
+    font-weight: bold !important;
+    font-size: 10pt !important;
+    padding: 3px 6px !important;
+    margin: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9.5pt;
+    margin: 0;
+  }
+  thead {
+    display: table-header-group;
+  }
+  tr {
+    page-break-inside: avoid;
+  }
+  th, td {
+    border: 1px solid #000000;
+    padding: 2px 5px;
+    vertical-align: middle;
+    color: #000000;
+    line-height: 1.25;
+  }
+  th {
+    font-weight: bold;
+    background-color: transparent;
+  }
+  .text-center { text-align: center; }
+  .text-left { text-align: left; }
+  .text-right { text-align: right; }
+  .text-justify { text-align: justify; }
+  .font-bold { font-weight: bold; }
+  .font-medium { font-weight: 500; }
+  .uppercase { text-transform: uppercase; }
+  .w-full { width: 100%; }
+  .space-y-4 > * + * { margin-top: 14px; }
+  .space-y-3 > * + * { margin-top: 10px; }
+  .space-y-2 > * + * { margin-top: 8px; }
+  .space-y-1 > * + * { margin-top: 4px; }
+  .border-t { border-top: 1px solid #000000 !important; }
+  .pt-6 { padding-top: 16px !important; }
+  .mt-4 { margin-top: 16px !important; }
+  .flex { display: flex; }
+  .justify-between { justify-content: space-between; }
+  .leading-relaxed { line-height: 1.35; }
+  ul.list-disc { padding-left: 20px; margin: 4px 0 0 0; }
+  ol.list-decimal { padding-left: 20px; margin: 4px 0 0 0; }
+  li { text-align: justify; margin-bottom: 2px; }
+  a { color: #0000FF !important; text-decoration: underline !important; }
+  button, .glass-btn, .top-action-bar, nav, header {
+    display: none !important;
+  }
+</style>
+</head>
+<body>
+${sheetEl.outerHTML}
+</body>
+</html>`);
+    doc.close();
+
+    setTimeout(() => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 1500);
+    }, 250);
   };
 
   // 1. Prerequisites formatting
