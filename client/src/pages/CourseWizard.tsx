@@ -730,6 +730,26 @@ const SdgCheckboxSelector: React.FC<SdgCheckboxSelectorProps> = ({ sdgNo, onChan
   );
 };
 
+// Helper to determine a CO's domain
+export const getDomainForCourseOutcome = (co?: CourseOutcome): 'Cognitive' | 'Affective' | 'Psychomotor' => {
+  if (!co) return 'Cognitive';
+  if (co.domain === 'Cognitive' || co.domain === 'Affective' || co.domain === 'Psychomotor') {
+    return co.domain;
+  }
+  if (co.objectiveNo) {
+    if (co.objectiveNo >= 1 && co.objectiveNo <= 7) return 'Cognitive';
+    if (co.objectiveNo >= 8 && co.objectiveNo <= 9) return 'Affective';
+    if (co.objectiveNo >= 10 && co.objectiveNo <= 13) return 'Psychomotor';
+  }
+  return 'Cognitive';
+};
+
+export const getDomainPillClass = (domain: 'Cognitive' | 'Affective' | 'Psychomotor'): string => {
+  if (domain === 'Affective') return 'bg-emerald-600 text-white shadow-xs';
+  if (domain === 'Psychomotor') return 'bg-violet-600 text-white shadow-xs';
+  return 'bg-blue-600 text-white shadow-xs';
+};
+
 // ── CO Mapping Popup — full document-preview-style CO table in a modal ──
 interface CoMappingPopupProps {
   expLabel: string;
@@ -739,19 +759,7 @@ interface CoMappingPopupProps {
 }
 const CoMappingPopup: React.FC<CoMappingPopupProps> = ({ expLabel, courseOutcomes, selectedCoNos, onToggle }) => {
   const [open, setOpen] = useState(false);
-
-  // Helper to determine a CO's domain
-  const getDomainForCo = (co: CourseOutcome): 'Cognitive' | 'Affective' | 'Psychomotor' => {
-    if (co.domain === 'Cognitive' || co.domain === 'Affective' || co.domain === 'Psychomotor') {
-      return co.domain;
-    }
-    if (co.objectiveNo) {
-      if (co.objectiveNo >= 1 && co.objectiveNo <= 7) return 'Cognitive';
-      if (co.objectiveNo >= 8 && co.objectiveNo <= 9) return 'Affective';
-      if (co.objectiveNo >= 10 && co.objectiveNo <= 13) return 'Psychomotor';
-    }
-    return 'Cognitive';
-  };
+  const getDomainForCo = (co: CourseOutcome) => getDomainForCourseOutcome(co);
 
   const domainStyleMap: Record<'Cognitive' | 'Affective' | 'Psychomotor', {
     pill: string;
@@ -5150,9 +5158,16 @@ export const CourseWizard: React.FC = () => {
                                   <span className="text-[11px] font-semibold text-slate-500">Mapped COs:</span>
                                   {(exp.coNos || []).length === 0
                                     ? <span className="text-[11px] text-slate-400 italic">None</span>
-                                    : (exp.coNos || []).map(coNo => (
-                                      <span key={coNo} className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-sky-600 text-white">{coNo}</span>
-                                    ))
+                                    : (exp.coNos || []).map(coNo => {
+                                      const matchedCo = (course.courseOutcomes || []).find(c => c.coNo === coNo);
+                                      const domain = getDomainForCourseOutcome(matchedCo);
+                                      const pillClass = getDomainPillClass(domain);
+                                      return (
+                                        <span key={coNo} className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold ${pillClass}`}>
+                                          {coNo}
+                                        </span>
+                                      );
+                                    })
                                   }
                                   <CoMappingPopup
                                     expLabel={`Exp. ${exp.slNo || idx + 1}`}
