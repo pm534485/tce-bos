@@ -3005,163 +3005,81 @@ export const CourseWizard: React.FC = () => {
 
                     {/* CO Table Rows */}
                     <div className="space-y-4">
-                      {(course.courseOutcomes || []).map((co, idx) => (
-                        <div
-                          key={idx}
-                          className="p-4 border border-slate-200 rounded-xl bg-slate-50/50 space-y-3"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-sm text-slate-800">
-                              {co.coNo || `CO${idx + 1}`}
-                            </span>
-                            <div className="flex items-center space-x-2">
-                              <button
-                                onClick={() => {
-                                  const updated = (course.courseOutcomes || []).filter((_, i) => i !== idx);
-                                  // renumber
-                                  const renumbered = updated.map((c, i) => ({ ...c, coNo: `CO${i + 1}` }));
-                                  updateField('courseOutcomes', renumbered);
-                                }}
-                                className="p-1 text-slate-400 hover:text-rose-600 rounded"
-                                title="Delete Course Outcome"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
+                      {(course.courseOutcomes || []).map((co, idx) => {
+                        // Determine domain: from co.domain or infer from objectiveNo (1-7: Cognitive, 8-9: Affective, 10-13: Psychomotor)
+                        let coDomain = co.domain;
+                        if (!coDomain && co.objectiveNo) {
+                          if (co.objectiveNo >= 1 && co.objectiveNo <= 7) coDomain = 'Cognitive';
+                          else if (co.objectiveNo >= 8 && co.objectiveNo <= 9) coDomain = 'Affective';
+                          else if (co.objectiveNo >= 10 && co.objectiveNo <= 13) coDomain = 'Psychomotor';
+                        }
+                        if (!coDomain) coDomain = 'Cognitive';
 
-                          <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-                            <div className="md:col-span-8">
-                              <div className="flex flex-wrap items-center gap-2 mb-1">
-                                <label className="block text-[11px] font-bold text-slate-700">
-                                  Outcome Statement (must start with TPS {co.tpsLevel} verb)
-                                </label>
-                                {TPS_VERBS[co.tpsLevel]?.length > 0 && (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-xs">
-                                    Approved TPS {co.tpsLevel} Verbs: <span className="ml-1 font-black text-amber-950 underline decoration-amber-400">{TPS_VERBS[co.tpsLevel]?.slice(0, 4).join(', ')}</span>
+                        const domainTheme = {
+                          Cognitive: {
+                            card: 'border-l-4 border-l-blue-600 border-blue-200 bg-blue-50/20 shadow-xs',
+                            pill: 'bg-blue-600 text-white',
+                            badge: 'bg-blue-100 text-blue-800 border border-blue-200',
+                          },
+                          Affective: {
+                            card: 'border-l-4 border-l-emerald-600 border-emerald-200 bg-emerald-50/20 shadow-xs',
+                            pill: 'bg-emerald-600 text-white',
+                            badge: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+                          },
+                          Psychomotor: {
+                            card: 'border-l-4 border-l-violet-600 border-violet-200 bg-violet-50/20 shadow-xs',
+                            pill: 'bg-violet-600 text-white',
+                            badge: 'bg-violet-100 text-violet-800 border border-violet-200',
+                          },
+                        }[coDomain as 'Cognitive' | 'Affective' | 'Psychomotor'] || {
+                          card: 'border-l-4 border-l-blue-600 border-slate-200 bg-slate-50/50',
+                          pill: 'bg-blue-600 text-white',
+                          badge: 'bg-blue-100 text-blue-800 border border-blue-200',
+                        };
+
+                        return (
+                          <div
+                            key={idx}
+                            className={`p-4 border rounded-xl space-y-3 transition-all ${domainTheme.card}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <span className={`font-bold text-xs px-2.5 py-1 rounded-md shadow-2xs ${domainTheme.pill}`}>
+                                  {co.coNo || `CO${idx + 1}`}
+                                </span>
+                                {course.courseType === 'PRACTICAL' && (
+                                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${domainTheme.badge}`}>
+                                    {coDomain} Domain
                                   </span>
                                 )}
                               </div>
-                              <textarea
-                                rows={2}
-                                value={co.statement || ''}
-                                onChange={e => {
-                                  const updated = [...(course.courseOutcomes || [])];
-                                  updated[idx] = { ...updated[idx], statement: e.target.value };
-                                  updateField('courseOutcomes', updated);
-                                }}
-                                placeholder="Course Outcome statement"
-                                className="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-sky-500"
-                              />
-                            </div>
-
-                            <div className="md:col-span-2">
-                              <div className="flex items-center justify-between mb-1">
-                                <label className="block text-[11px] font-bold text-slate-600">
-                                  TPS Level
-                                </label>
-                                {(co.tpsLevel === 2 || co.tpsLevel === 1) && (
-                                  <span className={`text-[10px] font-bold px-1 rounded ${
-                                    (course.courseOutcomes || []).filter(c => c.tpsLevel === 2 || c.tpsLevel === 1).length >= 2
-                                      ? 'text-amber-800 bg-amber-100'
-                                      : 'text-slate-500 bg-slate-100'
-                                  }`}>
-                                    {((course.courseOutcomes || []).filter(c => c.tpsLevel === 2 || c.tpsLevel === 1).length)}/2 used
-                                  </span>
-                                )}
-                              </div>
-                              <select
-                                value={co.tpsLevel}
-                                onChange={e => {
-                                  const level = parseInt(e.target.value);
-                                  const updated = [...(course.courseOutcomes || [])];
-                                  updated[idx] = { ...updated[idx], tpsLevel: level };
-                                  updateField('courseOutcomes', updated);
-                                }}
-                                className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white"
-                              >
-                                <option value={1} disabled className="text-slate-400 bg-slate-100">TPS 1 (Remember)</option>
-                                <option
-                                  value={2}
-                                  disabled={co.tpsLevel !== 2 && (course.courseOutcomes || []).filter(c => c.tpsLevel === 2).length >= 2}
-                                  className={co.tpsLevel !== 2 && (course.courseOutcomes || []).filter(c => c.tpsLevel === 2).length >= 2 ? "text-slate-400 bg-slate-100" : ""}
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={() => {
+                                    const updated = (course.courseOutcomes || []).filter((_, i) => i !== idx);
+                                    // renumber
+                                    const renumbered = updated.map((c, i) => ({ ...c, coNo: `CO${i + 1}` }));
+                                    updateField('courseOutcomes', renumbered);
+                                  }}
+                                  className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
+                                  title="Delete Course Outcome"
                                 >
-                                  {co.tpsLevel !== 2 && (course.courseOutcomes || []).filter(c => c.tpsLevel === 2).length >= 2
-                                    ? "TPS 2 (Understand) (Max 2 reached)"
-                                    : "TPS 2 (Understand)"}
-                                </option>
-                                <option value={3}>TPS 3 (Apply)</option>
-                                <option value={4}>TPS 4 (Analyze)</option>
-                                <option value={5}>TPS 5 (Evaluate)</option>
-                                <option value={6}>TPS 6 (Create)</option>
-                              </select>
-                            </div>
-
-                            <div className="md:col-span-2">
-                              <PiCheckboxSelector
-                                value={co.pi || ''}
-                                coNo={co.coNo}
-                                onChange={(newPi, matchedTpsLevel) => {
-                                  const updated = [...(course.courseOutcomes || [])];
-                                  const otherTps2 = (course.courseOutcomes || []).filter((c, i) => i !== idx && c.tpsLevel === 2).length;
-                                  const canApplyMatchedTps = matchedTpsLevel !== 2 || otherTps2 < 2;
-                                  updated[idx] = {
-                                    ...updated[idx],
-                                    pi: newPi,
-                                    ...(matchedTpsLevel && canApplyMatchedTps ? { tpsLevel: matchedTpsLevel } : {}),
-                                  };
-                                  updateField('courseOutcomes', updated);
-                                }}
-                              />
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                            <div>
-                              <div className="flex items-center justify-between mb-1">
-                                <label className="block text-[11px] font-bold text-slate-600">
-                                  CO Weightage (%)
-                                </label>
-                                <span className="text-[10px] text-slate-400 font-semibold">5%–25%</span>
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
                               </div>
-                              <input
-                                type="number"
-                                min={5}
-                                max={25}
-                                value={co.weightage !== undefined && co.weightage !== null ? co.weightage : ''}
-                                onChange={e => {
-                                  let val = e.target.value === '' ? ('' as any) : parseInt(e.target.value);
-                                  if (typeof val === 'number') {
-                                    if (isNaN(val)) val = '' as any;
-                                    else if (val > 25) val = 25;
-                                    else if (val < 0) val = 0;
-                                  }
-                                  const updated = [...(course.courseOutcomes || [])];
-                                  updated[idx] = { ...updated[idx], weightage: val };
-                                  updateField('courseOutcomes', updated);
-                                }}
-                                onBlur={e => {
-                                  const val = parseInt(e.target.value);
-                                  if (!isNaN(val) && val > 0 && val < 5) {
-                                    const updated = [...(course.courseOutcomes || [])];
-                                    updated[idx] = { ...updated[idx], weightage: 5 };
-                                    updateField('courseOutcomes', updated);
-                                  }
-                                }}
-                                placeholder="5-25"
-                                className={`w-full p-2 border rounded-lg text-xs text-center font-bold ${
-                                  co.weightage !== undefined && co.weightage !== null && (Number(co.weightage) < 5 || Number(co.weightage) > 25)
-                                    ? 'border-red-400 bg-red-50 text-red-700'
-                                    : 'border-slate-300'
-                                }`}
-                              />
                             </div>
 
+                            {/* Practical: Objective (1-13) moved to top row before Outcome Statement */}
                             {course.courseType === 'PRACTICAL' && (
-                              <div>
-                                <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                                  Objective (1–13)
-                                </label>
+                              <div className="p-2.5 bg-white border border-slate-200 rounded-lg shadow-2xs">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
+                                  <label className="block text-[11px] font-bold text-slate-700">
+                                    Objective (1–13)
+                                  </label>
+                                  <span className="text-[10px] text-slate-500 font-medium">
+                                    Select lab objective to automatically align domain &amp; category
+                                  </span>
+                                </div>
                                 <select
                                   value={co.objectiveNo || 1}
                                   onChange={e => {
@@ -3176,7 +3094,7 @@ export const CourseWizard: React.FC = () => {
                                     };
                                     updateField('courseOutcomes', updated);
                                   }}
-                                  className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white"
+                                  className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white font-medium focus:ring-2 focus:ring-sky-500"
                                 >
                                   {LAB_OBJECTIVES.map(o => (
                                     <option key={o.no} value={o.no}>
@@ -3187,45 +3105,176 @@ export const CourseWizard: React.FC = () => {
                               </div>
                             )}
 
-                            <div className={course.courseType === 'PRACTICAL' ? '' : 'sm:col-span-2'}>
-                              <SdgCheckboxSelector
-                                sdgNo={co.sdgNo || 'NC'}
-                                coNo={co.coNo}
-                                onChange={(newSdgNo, defaultLevel) => {
-                                  const updated = [...(course.courseOutcomes || [])];
-                                  const isNc = !newSdgNo || newSdgNo === 'NC';
-                                  updated[idx] = {
-                                    ...updated[idx],
-                                    sdgNo: newSdgNo,
-                                    sdgLevel: isNc ? 0 : (updated[idx].sdgLevel && updated[idx].sdgLevel > 0 ? updated[idx].sdgLevel : (defaultLevel || 1)),
-                                  };
-                                  updateField('courseOutcomes', updated);
-                                }}
-                              />
+                            {/* Outcome Statement, TPS Level (compact), and PI Selector */}
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+                              <div className="md:col-span-8">
+                                <div className="flex flex-wrap items-center gap-2 mb-1">
+                                  <label className="block text-[11px] font-bold text-slate-700">
+                                    Outcome Statement (must start with TPS {co.tpsLevel} verb)
+                                  </label>
+                                  {TPS_VERBS[co.tpsLevel]?.length > 0 && (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-xs">
+                                      Approved TPS {co.tpsLevel} Verbs: <span className="ml-1 font-black text-amber-950 underline decoration-amber-400">{TPS_VERBS[co.tpsLevel]?.slice(0, 4).join(', ')}</span>
+                                    </span>
+                                  )}
+                                </div>
+                                <textarea
+                                  rows={2}
+                                  value={co.statement || ''}
+                                  onChange={e => {
+                                    const updated = [...(course.courseOutcomes || [])];
+                                    updated[idx] = { ...updated[idx], statement: e.target.value };
+                                    updateField('courseOutcomes', updated);
+                                  }}
+                                  placeholder="Course Outcome statement"
+                                  className="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-sky-500 bg-white"
+                                />
+                              </div>
+
+                              {/* TPS Level: Compact Size */}
+                              <div className="md:col-span-2">
+                                <div className="flex items-center justify-between mb-1">
+                                  <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-tight">
+                                    TPS Level
+                                  </label>
+                                  {(co.tpsLevel === 2 || co.tpsLevel === 1) && (
+                                    <span className={`text-[9px] font-bold px-1 rounded ${
+                                      (course.courseOutcomes || []).filter(c => c.tpsLevel === 2 || c.tpsLevel === 1).length >= 2
+                                        ? 'text-amber-800 bg-amber-100'
+                                        : 'text-slate-500 bg-slate-100'
+                                    }`}>
+                                      {((course.courseOutcomes || []).filter(c => c.tpsLevel === 2 || c.tpsLevel === 1).length)}/2
+                                    </span>
+                                  )}
+                                </div>
+                                <select
+                                  value={co.tpsLevel}
+                                  onChange={e => {
+                                    const level = parseInt(e.target.value);
+                                    const updated = [...(course.courseOutcomes || [])];
+                                    updated[idx] = { ...updated[idx], tpsLevel: level };
+                                    updateField('courseOutcomes', updated);
+                                  }}
+                                  className="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-[11px] font-semibold bg-white focus:ring-2 focus:ring-sky-500"
+                                >
+                                  <option value={1} disabled className="text-slate-400 bg-slate-100">TPS 1</option>
+                                  <option
+                                    value={2}
+                                    disabled={co.tpsLevel !== 2 && (course.courseOutcomes || []).filter(c => c.tpsLevel === 2).length >= 2}
+                                    className={co.tpsLevel !== 2 && (course.courseOutcomes || []).filter(c => c.tpsLevel === 2).length >= 2 ? "text-slate-400 bg-slate-100" : ""}
+                                  >
+                                    {co.tpsLevel !== 2 && (course.courseOutcomes || []).filter(c => c.tpsLevel === 2).length >= 2
+                                      ? "TPS 2 (Max 2)"
+                                      : "TPS 2"}
+                                  </option>
+                                  <option value={3}>TPS 3 (Apply)</option>
+                                  <option value={4}>TPS 4 (Analyze)</option>
+                                  <option value={5}>TPS 5 (Evaluate)</option>
+                                  <option value={6}>TPS 6 (Create)</option>
+                                </select>
+                              </div>
+
+                              <div className="md:col-span-2">
+                                <PiCheckboxSelector
+                                  value={co.pi || ''}
+                                  coNo={co.coNo}
+                                  onChange={(newPi, matchedTpsLevel) => {
+                                    const updated = [...(course.courseOutcomes || [])];
+                                    const otherTps2 = (course.courseOutcomes || []).filter((c, i) => i !== idx && c.tpsLevel === 2).length;
+                                    const canApplyMatchedTps = matchedTpsLevel !== 2 || otherTps2 < 2;
+                                    updated[idx] = {
+                                      ...updated[idx],
+                                      pi: newPi,
+                                      ...(matchedTpsLevel && canApplyMatchedTps ? { tpsLevel: matchedTpsLevel } : {}),
+                                    };
+                                    updateField('courseOutcomes', updated);
+                                  }}
+                                />
+                              </div>
                             </div>
 
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                                SDG Level (0–5)
-                              </label>
-                              <input
-                                type="number"
-                                min={0}
-                                max={5}
-                                disabled={!co.sdgNo || co.sdgNo === 'NC'}
-                                value={co.sdgLevel || 0}
-                                onChange={e => {
-                                  const val = parseInt(e.target.value) || 0;
-                                  const updated = [...(course.courseOutcomes || [])];
-                                  updated[idx] = { ...updated[idx], sdgLevel: val };
-                                  updateField('courseOutcomes', updated);
-                                }}
-                                className="w-full p-2 border border-slate-300 rounded-lg text-xs text-center font-bold disabled:bg-slate-100 disabled:text-slate-400"
-                              />
+                            {/* Bottom Row: Weightage, SDG Addressed, SDG Level */}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
+                              <div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <label className="block text-[11px] font-bold text-slate-600">
+                                    CO Weightage (%)
+                                  </label>
+                                  <span className="text-[10px] text-slate-400 font-semibold">5%–25%</span>
+                                </div>
+                                <input
+                                  type="number"
+                                  min={5}
+                                  max={25}
+                                  value={co.weightage !== undefined && co.weightage !== null ? co.weightage : ''}
+                                  onChange={e => {
+                                    let val = e.target.value === '' ? ('' as any) : parseInt(e.target.value);
+                                    if (typeof val === 'number') {
+                                      if (isNaN(val)) val = '' as any;
+                                      else if (val > 25) val = 25;
+                                      else if (val < 0) val = 0;
+                                    }
+                                    const updated = [...(course.courseOutcomes || [])];
+                                    updated[idx] = { ...updated[idx], weightage: val };
+                                    updateField('courseOutcomes', updated);
+                                  }}
+                                  onBlur={e => {
+                                    const val = parseInt(e.target.value);
+                                    if (!isNaN(val) && val > 0 && val < 5) {
+                                      const updated = [...(course.courseOutcomes || [])];
+                                      updated[idx] = { ...updated[idx], weightage: 5 };
+                                      updateField('courseOutcomes', updated);
+                                    }
+                                  }}
+                                  placeholder="5-25"
+                                  className={`w-full p-2 border rounded-lg text-xs text-center font-bold bg-white ${
+                                    co.weightage !== undefined && co.weightage !== null && (Number(co.weightage) < 5 || Number(co.weightage) > 25)
+                                      ? 'border-red-400 bg-red-50 text-red-700'
+                                      : 'border-slate-300'
+                                  }`}
+                                />
+                              </div>
+
+                              <div>
+                                <SdgCheckboxSelector
+                                  sdgNo={co.sdgNo || 'NC'}
+                                  coNo={co.coNo}
+                                  onChange={(newSdgNo, defaultLevel) => {
+                                    const updated = [...(course.courseOutcomes || [])];
+                                    const isNc = !newSdgNo || newSdgNo === 'NC';
+                                    updated[idx] = {
+                                      ...updated[idx],
+                                      sdgNo: newSdgNo,
+                                      sdgLevel: isNc ? 0 : (updated[idx].sdgLevel && updated[idx].sdgLevel > 0 ? updated[idx].sdgLevel : (defaultLevel || 1)),
+                                    };
+                                    updateField('courseOutcomes', updated);
+                                  }}
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                                  SDG Level (0–5)
+                                </label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={5}
+                                  disabled={!co.sdgNo || co.sdgNo === 'NC'}
+                                  value={co.sdgLevel || 0}
+                                  onChange={e => {
+                                    const val = parseInt(e.target.value) || 0;
+                                    const updated = [...(course.courseOutcomes || [])];
+                                    updated[idx] = { ...updated[idx], sdgLevel: val };
+                                    updateField('courseOutcomes', updated);
+                                  }}
+                                  className="w-full p-2 border border-slate-300 rounded-lg text-xs text-center font-bold bg-white disabled:bg-slate-100 disabled:text-slate-400"
+                                />
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
 
                       {/* Add CO Button */}
                       <button
