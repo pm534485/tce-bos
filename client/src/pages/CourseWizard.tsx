@@ -3017,24 +3017,24 @@ export const CourseWizard: React.FC = () => {
 
                         const domainTheme = {
                           Cognitive: {
-                            card: 'border-l-4 border-l-blue-600 border-blue-200 bg-blue-50/20 shadow-xs',
+                            card: 'bg-blue-100/80 border-2 border-blue-400 shadow-sm',
                             pill: 'bg-blue-600 text-white',
-                            badge: 'bg-blue-100 text-blue-800 border border-blue-200',
+                            badge: 'bg-blue-200/90 text-blue-900 border border-blue-400 font-extrabold',
                           },
                           Affective: {
-                            card: 'border-l-4 border-l-emerald-600 border-emerald-200 bg-emerald-50/20 shadow-xs',
+                            card: 'bg-emerald-100/80 border-2 border-emerald-400 shadow-sm',
                             pill: 'bg-emerald-600 text-white',
-                            badge: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+                            badge: 'bg-emerald-200/90 text-emerald-900 border border-emerald-400 font-extrabold',
                           },
                           Psychomotor: {
-                            card: 'border-l-4 border-l-violet-600 border-violet-200 bg-violet-50/20 shadow-xs',
+                            card: 'bg-violet-100/80 border-2 border-violet-400 shadow-sm',
                             pill: 'bg-violet-600 text-white',
-                            badge: 'bg-violet-100 text-violet-800 border border-violet-200',
+                            badge: 'bg-violet-200/90 text-violet-900 border border-violet-400 font-extrabold',
                           },
                         }[coDomain as 'Cognitive' | 'Affective' | 'Psychomotor'] || {
-                          card: 'border-l-4 border-l-blue-600 border-slate-200 bg-slate-50/50',
+                          card: 'bg-blue-100/80 border-2 border-blue-400 shadow-sm',
                           pill: 'bg-blue-600 text-white',
-                          badge: 'bg-blue-100 text-blue-800 border border-blue-200',
+                          badge: 'bg-blue-200/90 text-blue-900 border border-blue-400 font-extrabold',
                         };
 
                         return (
