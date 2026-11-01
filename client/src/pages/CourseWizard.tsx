@@ -862,9 +862,9 @@ const CoDomainPicker: React.FC<CoDomainPickerProps> = ({ courseOutcomes, onAdd }
   const cogCount = courseOutcomes.filter(c => c.domain === 'Cognitive').length;
 
   const domainColors: Record<string, { btn: string; active: string; row: string; badge: string }> = {
-    Cognitive:   { btn: 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100 hover:border-blue-400 shadow-xs',    active: 'bg-blue-600 text-white border-blue-600 shadow-sm',    row: 'hover:bg-blue-50',    badge: 'bg-blue-100 text-blue-800' },
-    Affective:   { btn: 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-400 shadow-xs', active: 'bg-emerald-600 text-white border-emerald-600 shadow-sm', row: 'hover:bg-emerald-50', badge: 'bg-emerald-100 text-emerald-800' },
-    Psychomotor: { btn: 'bg-violet-50 border-violet-300 text-violet-700 hover:bg-violet-100 hover:border-violet-400 shadow-xs',  active: 'bg-violet-600 text-white border-violet-600 shadow-sm',  row: 'hover:bg-violet-50',  badge: 'bg-violet-100 text-violet-800' },
+    Cognitive:   { btn: 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600 shadow-sm',    active: 'bg-blue-700 text-white border-blue-700 ring-2 ring-blue-300 shadow-md',    row: 'hover:bg-blue-50',    badge: 'bg-white/25 text-white' },
+    Affective:   { btn: 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-sm', active: 'bg-emerald-700 text-white border-emerald-700 ring-2 ring-emerald-300 shadow-md', row: 'hover:bg-emerald-50', badge: 'bg-white/25 text-white' },
+    Psychomotor: { btn: 'bg-violet-600 hover:bg-violet-700 text-white border-violet-600 shadow-sm',  active: 'bg-violet-700 text-white border-violet-700 ring-2 ring-violet-300 shadow-md',  row: 'hover:bg-violet-50',  badge: 'bg-white/25 text-white' },
   };
   const poolMap: Record<string, typeof cogPool> = { Cognitive: cogPool, Affective: affPool, Psychomotor: psyPool };
   const tableTitle: Record<string, string> = {
@@ -905,11 +905,11 @@ const CoDomainPicker: React.FC<CoDomainPickerProps> = ({ courseOutcomes, onAdd }
               key={domain}
               type="button"
               onClick={() => setOpenDomain(isOpen ? null : domain)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${isOpen ? col.active : col.btn}`}
+              className={`no-glass inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-bold transition-all cursor-pointer ${isOpen ? col.active : col.btn}`}
             >
               {domain}
               {count > 0 && <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${isOpen ? 'bg-white/30' : col.badge}`}>{count}</span>}
-              {domain === 'Cognitive' && <span className={`text-[10px] ${isOpen ? 'opacity-70' : 'text-slate-400'}`}>(max 2)</span>}
+              {domain === 'Cognitive' && <span className="text-[10px] text-white/80 font-medium">(max 2)</span>}
               <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </button>
           );
