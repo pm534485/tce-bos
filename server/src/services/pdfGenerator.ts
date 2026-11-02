@@ -225,6 +225,26 @@ export function buildCourseInnerHtml(course: Course): { headerText: string; body
     <div class="line-space"></div>
   `).join('');
 
+  // Helper for experiment objectives (e.g. 1, 3)
+  const getExperimentObjectives = (exp: any): string => {
+    if (exp.objectiveNos && exp.objectiveNos.length > 0) {
+      return exp.objectiveNos.join(', ');
+    }
+    const objSet = new Set<number>();
+    (exp.coNos || []).forEach((cNo: string) => {
+      const matched = (course.courseOutcomes || []).find(c => c.coNo === cNo);
+      if (matched?.objectiveNo) objSet.add(matched.objectiveNo);
+    });
+    const sorted = Array.from(objSet).sort((a, b) => a - b);
+    return sorted.length > 0 ? sorted.join(', ') : '—';
+  };
+
+  const getExperimentLevelNumber = (exp: any): string => {
+    const raw = String(exp.level || 1);
+    const match = raw.match(/\d+/);
+    return match ? match[0] : '1';
+  };
+
   // 4b. Laboratory Experiments formatting
   const experimentsList = course.experiments || [];
   const experimentsRowsHtml = experimentsList.length > 0
@@ -232,13 +252,14 @@ export function buildCourseInnerHtml(course: Course): { headerText: string; body
       <tr>
         <td class="center">${exp.slNo || idx + 1}</td>
         <td class="left">${exp.name || ''}</td>
-        <td class="center">Level ${exp.level || 1}</td>
-        <td class="center">${Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || '')}</td>
+        <td class="center">${getExperimentLevelNumber(exp)}</td>
+        <td class="center">${getExperimentObjectives(exp)}</td>
+        <td class="center font-bold">${Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || '')}</td>
       </tr>
     `).join('')
     : `
       <tr>
-        <td colspan="4" class="center" style="font-style: italic; color: #64748b; padding: 10px;">No laboratory experiments entered yet</td>
+        <td colspan="5" class="center" style="font-style: italic; color: #64748b; padding: 10px;">No laboratory experiments entered yet</td>
       </tr>
     `;
 

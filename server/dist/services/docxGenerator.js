@@ -569,8 +569,20 @@ export function buildCourseDocxElements(course) {
         });
         const expRows = [expHeaderRow];
         experimentsList.forEach((exp, idx) => {
-            const objText = (exp.objectiveNos && exp.objectiveNos.length > 0) ? exp.objectiveNos.join(', ') : '1, 3';
-            const lvlText = String(exp.level || 1).replace(/^Level\s*/i, '');
+            let objText = (exp.objectiveNos && exp.objectiveNos.length > 0) ? exp.objectiveNos.join(', ') : '';
+            if (!objText) {
+                const objSet = new Set();
+                (exp.coNos || []).forEach((cNo) => {
+                    const matched = (course.courseOutcomes || []).find((c) => c.coNo === cNo);
+                    if (matched && matched.objectiveNo !== undefined)
+                        objSet.add(matched.objectiveNo);
+                });
+                const sorted = Array.from(objSet).sort((a, b) => a - b);
+                objText = sorted.length > 0 ? sorted.join(', ') : '—';
+            }
+            const lvlRaw = String(exp.level || 1);
+            const lvlMatch = lvlRaw.match(/\d+/);
+            const lvlText = lvlMatch ? lvlMatch[0] : '1';
             expRows.push(new TableRow({
                 children: [
                     createCell(String(exp.slNo || idx + 1), { widthPercent: 8, align: AlignmentType.CENTER }),
