@@ -61,10 +61,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
   );
 
   const handleDownload = async (format: 'docx' | 'pdf') => {
-    if (format === 'pdf') {
-      handlePrint();
-      return;
-    }
     try {
       setDownloadingFormat(format);
       setDownloadError(null);
@@ -81,6 +77,10 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
       window.URL.revokeObjectURL(url);
     } catch (err: any) {
       console.error('Download error:', err);
+      if (format === 'pdf') {
+        handlePrint();
+        return;
+      }
       setDownloadError(err.message || 'Export failed. Please check network connection.');
     } finally {
       setDownloadingFormat(null);

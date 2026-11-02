@@ -397,10 +397,6 @@ export function buildCourseInnerHtml(course) {
         : 'Faculty Member, <a href="mailto:faculty@tce.edu" style="color: #0000FF; text-decoration: underline;">faculty@tce.edu</a>';
     const bodyHtml = `
   <!-- ==================== PAGE 1 ==================== -->
-  <div style="text-align: right; font-size: 9.5pt; font-family: Arial, Helvetica, sans-serif; margin-bottom: 8px; color: #000;">
-    ${headerText}
-  </div>
-
   <!-- Header Table -->
   <table>
     <tr>
@@ -689,7 +685,7 @@ export function buildCourseInnerHtml(course) {
 const COMMON_PDF_STYLES = `
   @page {
     size: A4 portrait;
-    margin: 12mm 15mm 15mm 15mm;
+    margin: 14mm 15mm 15mm 15mm;
   }
   * {
     box-sizing: border-box;
@@ -791,7 +787,7 @@ const COMMON_PDF_STYLES = `
   }
 `;
 export async function generatePdfDocument(course) {
-    const { bodyHtml, bosMeetingText, acmMeetingText } = buildCourseInnerHtml(course);
+    const { headerText, bodyHtml, bosMeetingText, acmMeetingText } = buildCourseInnerHtml(course);
     const html = `
 <!DOCTYPE html>
 <html>
@@ -814,6 +810,7 @@ ${bodyHtml}
     }
     const browser = await puppeteer.launch({
         headless: true,
+        pipe: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
     try {
@@ -821,11 +818,15 @@ ${bodyHtml}
         await page.setContent(html, { waitUntil: 'networkidle0' });
         const pdfBuffer = await page.pdf({
             format: 'A4',
-            margin: { top: '12mm', bottom: '15mm', left: '15mm', right: '15mm' },
+            margin: { top: '14mm', bottom: '15mm', left: '15mm', right: '15mm' },
             displayHeaderFooter: true,
-            headerTemplate: '<div></div>',
+            headerTemplate: `
+        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 8pt; width: 100%; text-align: right; padding-right: 15mm; color: #000; -webkit-print-color-adjust: exact;">
+          <span>${headerText}</span>
+        </div>
+      `,
             footerTemplate: `
-        <div style="font-family: Arial, sans-serif; font-size: 8pt; width: 100%; display: flex; justify-content: space-between; padding-left: 15mm; padding-right: 15mm; color: #000; -webkit-print-color-adjust: exact;">
+        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 8pt; width: 100%; display: flex; justify-content: space-between; padding-left: 15mm; padding-right: 15mm; color: #000; -webkit-print-color-adjust: exact;">
           <span>${bosMeetingText}</span>
           <span>${acmMeetingText}</span>
         </div>
@@ -843,6 +844,7 @@ export async function generateMergedCoursesPdf(courses, metadata) {
         throw new Error('No courses provided for merged PDF.');
     }
     const firstCourseMeta = buildCourseInnerHtml(courses[0]);
+    const headerText = firstCourseMeta.headerText;
     const bosMeetingText = firstCourseMeta.bosMeetingText;
     const acmMeetingText = firstCourseMeta.acmMeetingText;
     const combinedBodies = courses.map((course, idx) => {
@@ -873,6 +875,7 @@ ${combinedBodies}
     }
     const browser = await puppeteer.launch({
         headless: true,
+        pipe: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
     try {
@@ -880,11 +883,15 @@ ${combinedBodies}
         await page.setContent(html, { waitUntil: 'networkidle0' });
         const pdfBuffer = await page.pdf({
             format: 'A4',
-            margin: { top: '12mm', bottom: '15mm', left: '15mm', right: '15mm' },
+            margin: { top: '14mm', bottom: '15mm', left: '15mm', right: '15mm' },
             displayHeaderFooter: true,
-            headerTemplate: '<div></div>',
+            headerTemplate: `
+        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 8pt; width: 100%; text-align: right; padding-right: 15mm; color: #000; -webkit-print-color-adjust: exact;">
+          <span>${headerText}</span>
+        </div>
+      `,
             footerTemplate: `
-        <div style="font-family: Arial, sans-serif; font-size: 8pt; width: 100%; display: flex; justify-content: space-between; padding-left: 15mm; padding-right: 15mm; color: #000; -webkit-print-color-adjust: exact;">
+        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 8pt; width: 100%; display: flex; justify-content: space-between; padding-left: 15mm; padding-right: 15mm; color: #000; -webkit-print-color-adjust: exact;">
           <span>${bosMeetingText}</span>
           <span>${acmMeetingText}</span>
         </div>
