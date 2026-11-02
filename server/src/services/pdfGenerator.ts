@@ -558,7 +558,7 @@ export function buildCourseInnerHtml(course: Course): { headerText: string; body
 
   ${!isPractical ? `
   <!-- ==================== PAGE 2 (THEORY & TCP) ==================== -->
-  <div class="page-break"></div>
+  <div class="line-space"></div>
 
   <!-- Syllabus -->
   <div class="gray-banner">Syllabus</div>
@@ -605,7 +605,7 @@ export function buildCourseInnerHtml(course: Course): { headerText: string; body
 
   <!-- ==================== PAGE 3 (THEORY & TCP) ==================== -->
   ${(scheduleItems.length > 0 || modules.length > 0 || (isTcp && experimentsList.length > 0)) ? `
-  <div class="page-break"></div>
+  <div class="line-space"></div>
   ` : ''}
   ${(scheduleItems.length > 0 || modules.length > 0) ? `
   <!-- 7. Course Contents and Lecture Schedule -->
@@ -673,7 +673,7 @@ export function buildCourseInnerHtml(course: Course): { headerText: string; body
 const COMMON_PDF_STYLES = `
   @page {
     size: A4 portrait;
-    margin: 18mm 20mm 20mm 20mm;
+    margin: 12mm 15mm 15mm 15mm;
   }
   * {
     box-sizing: border-box;
@@ -728,9 +728,7 @@ const COMMON_PDF_STYLES = `
   thead {
     display: table-header-group;
   }
-  tr {
-    page-break-inside: avoid;
-  }
+  tr { page-break-inside: avoid; break-inside: avoid; }
   th, td {
     border: 1px solid #000;
     padding: 2px 5px;
@@ -810,16 +808,11 @@ ${bodyHtml}
     await page.setContent(html, { waitUntil: 'networkidle0' as any });
     const pdfBuffer = await page.pdf({
       format: 'A4',
-      margin: {
-        top: '15mm',
-        bottom: '15mm',
-        left: '20mm',
-        right: '20mm',
-      },
+      margin: { top: '12mm', bottom: '15mm', left: '15mm', right: '15mm' },
       displayHeaderFooter: true,
       headerTemplate: '<div></div>',
       footerTemplate: `
-        <div style="font-family: Arial, sans-serif; font-size: 8pt; width: 100%; display: flex; justify-content: space-between; padding-left: 20mm; padding-right: 20mm; color: #000; -webkit-print-color-adjust: exact;">
+        <div style="font-family: Arial, sans-serif; font-size: 8pt; width: 100%; display: flex; justify-content: space-between; padding-left: 15mm; padding-right: 15mm; color: #000; -webkit-print-color-adjust: exact;">
           <span>${bosMeetingText}</span>
           <span>${acmMeetingText}</span>
         </div>
@@ -878,16 +871,11 @@ ${combinedBodies}
     await page.setContent(html, { waitUntil: 'networkidle0' as any });
     const pdfBuffer = await page.pdf({
       format: 'A4',
-      margin: {
-        top: '15mm',
-        bottom: '15mm',
-        left: '20mm',
-        right: '20mm',
-      },
+      margin: { top: '12mm', bottom: '15mm', left: '15mm', right: '15mm' },
       displayHeaderFooter: true,
       headerTemplate: '<div></div>',
       footerTemplate: `
-        <div style="font-family: Arial, sans-serif; font-size: 8pt; width: 100%; display: flex; justify-content: space-between; padding-left: 20mm; padding-right: 20mm; color: #000; -webkit-print-color-adjust: exact;">
+        <div style="font-family: Arial, sans-serif; font-size: 8pt; width: 100%; display: flex; justify-content: space-between; padding-left: 15mm; padding-right: 15mm; color: #000; -webkit-print-color-adjust: exact;">
           <span>${bosMeetingText}</span>
           <span>${acmMeetingText}</span>
         </div>

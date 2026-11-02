@@ -642,7 +642,7 @@ export function buildCourseDocxElements(course) {
     }
     else {
         // ==================== PAGE 2 (THEORY & TCP) ====================
-        children.push(createShadedBanner('Syllabus', { pageBreakBefore: true }));
+        children.push(createShadedBanner('Syllabus'));
         children.push(createLineSpace());
         if (modulesList.length > 0) {
             modulesList.forEach(mod => {
@@ -757,7 +757,7 @@ export function buildCourseDocxElements(course) {
         let page3HasContent = false;
         if (hasSchedule) {
             page3HasContent = true;
-            children.push(createShadedBanner('Course Contents and Lecture Schedule', { pageBreakBefore: true }));
+            children.push(createShadedBanner('Course Contents and Lecture Schedule'));
             children.push(createLineSpace());
             const schedHeaderRow = new TableRow({
                 children: [
@@ -832,7 +832,7 @@ export function buildCourseDocxElements(course) {
             children.push(createLineSpace());
         }
         // Course Designer(s) for Theory/TCP
-        children.push(createShadedBanner('Course Designer(s):', (!page3HasContent) ? { pageBreakBefore: true } : {}));
+        children.push(createShadedBanner('Course Designer(s):'));
         children.push(createLineSpace());
         const designers = course.designers || [];
         if (designers.length > 0) {
@@ -894,10 +894,7 @@ export async function generateDocxDocument(course) {
                 properties: {
                     page: {
                         margin: {
-                            top: 1134, // ~20mm
-                            bottom: 1134,
-                            left: 1134,
-                            right: 1134,
+                            top: 850, bottom: 850, left: 850, right: 850,
                         },
                     },
                 },
@@ -923,10 +920,7 @@ export async function generateMergedCoursesDocx(courses, metadata) {
             properties: {
                 page: {
                     margin: {
-                        top: 1134,
-                        bottom: 1134,
-                        left: 1134,
-                        right: 1134,
+                        top: 850, bottom: 850, left: 850, right: 850,
                     },
                 },
             },
