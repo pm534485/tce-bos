@@ -94,6 +94,14 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
       return;
     }
 
+    // Clone sheet element so we can wrap its content in repeating header/footer print structure
+    const clonedSheet = sheetEl.cloneNode(true) as HTMLElement;
+    // Remove inline top header and bottom continuous footer from the cloned body so they don't duplicate
+    const oldHeader = clonedSheet.querySelector('.print-doc-header');
+    if (oldHeader) oldHeader.remove();
+    const oldFooter = clonedSheet.querySelector('.print-doc-footer');
+    if (oldFooter) oldFooter.remove();
+
     const iframe = document.createElement('iframe');
     iframe.style.position = 'fixed';
     iframe.style.right = '0';
@@ -118,7 +126,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
 <style>
   @page {
     size: A4 portrait;
-    margin: 0;
+    margin: 12mm 15mm 12mm 15mm;
   }
   *, *::before, *::after {
     box-sizing: border-box;
@@ -132,8 +140,49 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
     line-height: 1.35;
     color: #000000;
     margin: 0;
-    padding: 15mm 20mm 15mm 20mm;
+    padding: 0;
     background: #FFFFFF;
+  }
+  .print-page-wrapper {
+    width: 100%;
+    border-collapse: collapse;
+    border: none !important;
+  }
+  .print-page-wrapper > thead {
+    display: table-header-group !important;
+  }
+  .print-page-wrapper > tfoot {
+    display: table-footer-group !important;
+  }
+  .print-page-wrapper > thead > tr > th,
+  .print-page-wrapper > tfoot > tr > td,
+  .print-page-wrapper > tbody > tr > td {
+    border: none !important;
+    padding: 0 !important;
+    font-weight: normal;
+    text-align: left;
+  }
+  .running-header-bar {
+    width: 100%;
+    text-align: right;
+    font-size: 8.5pt;
+    color: #000000;
+    padding-bottom: 6px;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  .running-footer-bar {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    font-size: 8pt;
+    color: #000000;
+    border-top: 1px solid #000000;
+    padding-top: 4px;
+    margin-top: 8px;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  .running-footer-spacer {
+    height: 10px;
   }
   .document-sheet {
     width: 100%;
@@ -154,26 +203,27 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  table {
+  table:not(.print-page-wrapper) {
     width: 100%;
     border-collapse: collapse;
     font-size: 9.5pt;
     margin: 0;
   }
-  thead {
+  table:not(.print-page-wrapper) thead {
     display: table-header-group;
   }
   tr {
     page-break-inside: avoid;
+    break-inside: avoid;
   }
-  th, td {
+  table:not(.print-page-wrapper) th, table:not(.print-page-wrapper) td {
     border: 1px solid #000000;
     padding: 2px 5px;
     vertical-align: middle;
     color: #000000;
     line-height: 1.25;
   }
-  th {
+  table:not(.print-page-wrapper) th {
     font-weight: bold;
     background-color: transparent;
   }
@@ -205,7 +255,33 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
 </style>
 </head>
 <body>
-${sheetEl.outerHTML}
+  <table class="print-page-wrapper">
+    <thead>
+      <tr>
+        <th>
+          <div class="running-header-bar">${headerText}</div>
+        </th>
+      </tr>
+    </thead>
+    <tfoot>
+      <tr>
+        <td>
+          <div class="running-footer-bar">
+            <span>${bosMeetingText}</span>
+            <span>Approved in 71<sup>st</sup> Academic council meeting ${course.academicCouncilDate || '27.06.2026'}</span>
+          </div>
+          <div class="running-footer-spacer"></div>
+        </td>
+      </tr>
+    </tfoot>
+    <tbody>
+      <tr>
+        <td>
+          ${clonedSheet.outerHTML}
+        </td>
+      </tr>
+    </tbody>
+  </table>
 </body>
 </html>`);
     doc.close();
@@ -500,7 +576,7 @@ ${sheetEl.outerHTML}
       {/* CONTINUOUS DOCUMENT CONTAINER (Continuous layout matching reference PDF without artificial page gaps) */}
       <div className="document-sheet bg-white p-10 sm:p-14 rounded-xl shadow-lg border border-slate-300 text-slate-900 select-text font-sans text-[10pt] leading-[1.35] w-full max-w-5xl space-y-3.5">
         {/* Running Top Right Header */}
-        <div className="text-right text-xs font-normal text-slate-800 mb-3">
+        <div className="print-doc-header text-right text-xs font-normal text-slate-800 mb-3">
           {headerText}
         </div>
 
@@ -920,7 +996,7 @@ ${sheetEl.outerHTML}
         </div>
 
         {/* Continuous Footer Note */}
-        <div className="pt-6 mt-4 border-t border-slate-200 flex justify-between text-[11px] text-slate-700">
+        <div className="print-doc-footer pt-6 mt-4 border-t border-slate-200 flex justify-between text-[11px] text-slate-700">
           <span>{bosMeetingText}</span>
           <span>{acmMeetingText}</span>
         </div>
