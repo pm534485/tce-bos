@@ -4107,13 +4107,6 @@ export const CourseWizard: React.FC = () => {
                                 </table>
                               </div>
 
-                              {/* Footer Note */}
-                              <div className="mt-3 flex justify-between text-xs text-slate-700 font-sans">
-                                <span>Passed in BoS Meeting {course.bosMeetingDate || '30.05.2026'}</span>
-                                <span>
-                                  Approved in 71<sup>st</sup> Academic council meeting {course.academicCouncilDate || '27.06.2026'}
-                                </span>
-                              </div>
 
                               <div className="mt-3 space-y-1">
                                 <InlineFieldError field="assessmentMatrix" />
