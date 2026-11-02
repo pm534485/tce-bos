@@ -61,6 +61,10 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
   );
 
   const handleDownload = async (format: 'docx' | 'pdf') => {
+    if (format === 'pdf') {
+      handlePrint();
+      return;
+    }
     try {
       setDownloadingFormat(format);
       setDownloadError(null);
@@ -77,10 +81,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
       window.URL.revokeObjectURL(url);
     } catch (err: any) {
       console.error('Download error:', err);
-      if (format === 'pdf') {
-        window.print();
-        return;
-      }
       setDownloadError(err.message || 'Export failed. Please check network connection.');
     } finally {
       setDownloadingFormat(null);
@@ -148,7 +148,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
     font-weight: bold !important;
     font-size: 10pt !important;
     padding: 3px 6px !important;
-    margin: 0 !important;
+    margin: 0 0 6px 0 !important;
     width: 100% !important;
     box-sizing: border-box !important;
     -webkit-print-color-adjust: exact !important;
@@ -538,7 +538,7 @@ ${sheetEl.outerHTML}
 
         {/* Preamble */}
         <div className="section-block">
-          <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
+          <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1.5 print:bg-[#D9D9D9]">
             Preamble
           </div>
           <p className="text-justify text-xs leading-relaxed text-black mt-1.5 mb-0">
@@ -548,7 +548,7 @@ ${sheetEl.outerHTML}
 
         {/* Prerequisite */}
         <div className="section-block">
-          <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
+          <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1.5 print:bg-[#D9D9D9]">
             Prerequisite
           </div>
           {prereqList.length > 0 ? (
@@ -566,7 +566,7 @@ ${sheetEl.outerHTML}
 
         {/* Course Outcomes */}
         <div className="section-block">
-          <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
+          <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1.5 print:bg-[#D9D9D9]">
             Course Outcomes
           </div>
           <p className="text-xs text-black mt-1 mb-1.5">
@@ -654,7 +654,7 @@ ${sheetEl.outerHTML}
           </div>
         ) : (
           <div className="section-block">
-            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1 print:bg-[#D9D9D9]">
+            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1.5 print:bg-[#D9D9D9]">
               Assessment Pattern
             </div>
             <table className="w-full border-collapse border border-black mb-0 text-xs">
@@ -702,7 +702,7 @@ ${sheetEl.outerHTML}
         {/* Syllabus (Theory/TCP) OR List of Experiments with CO Mapping (Practical) */}
         {isPractical ? (
           <div className="section-block">
-            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
+            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1.5 print:bg-[#D9D9D9]">
               List of Experiments with CO Mapping
             </div>
             <div className="h-2" />
@@ -737,7 +737,7 @@ ${sheetEl.outerHTML}
           </div>
         ) : (
           <div className="section-block">
-            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
+            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1.5 print:bg-[#D9D9D9]">
               Syllabus
             </div>
             <div className="h-2" />
@@ -773,14 +773,14 @@ ${sheetEl.outerHTML}
         {/* Learning Resources (ONLY for Theory and TCP) */}
         {!isPractical && (
           <div className="section-block">
-            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
+            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1.5 print:bg-[#D9D9D9]">
               Learning Resources
             </div>
             <div className="h-2" />
 
             {(course.textBooks && course.textBooks.length > 0) && (
               <>
-                <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
+                <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1.5 print:bg-[#D9D9D9]">
                   Text Book
                 </div>
                 <div className="h-1" />
@@ -793,7 +793,7 @@ ${sheetEl.outerHTML}
               </>
             )}
 
-            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
+            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1.5 print:bg-[#D9D9D9]">
               Reference Books &amp; web resources
             </div>
             <div className="h-1" />
@@ -816,7 +816,7 @@ ${sheetEl.outerHTML}
         {/* Course Contents and Lecture Schedule (ONLY for Theory and TCP) */}
         {!isPractical && (scheduleItems.length > 0 || (course.modules && course.modules.length > 0)) && (
           <div className="section-block">
-            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
+            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1.5 print:bg-[#D9D9D9]">
               Course Contents and Lecture Schedule
             </div>
             <div className="h-2" />
@@ -856,7 +856,7 @@ ${sheetEl.outerHTML}
         {/* List of Experiments with CO Mapping table (TCP courses only) */}
         {isTcp && (course.experiments && course.experiments.length > 0) && (
           <div className="section-block">
-            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
+            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1.5 print:bg-[#D9D9D9]">
               List of Experiments with CO Mapping
             </div>
             <div className="h-2" />
@@ -890,7 +890,7 @@ ${sheetEl.outerHTML}
 
         {/* Course Designer(s): Section 6 for Practical, Course Designer(s) for Theory/TCP */}
         <div className="section-block">
-          <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full print:bg-[#D9D9D9]">
+          <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1.5 print:bg-[#D9D9D9]">
             Course Designer(s):
           </div>
           <div className="h-2" />
