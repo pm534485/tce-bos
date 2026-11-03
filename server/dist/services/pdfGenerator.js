@@ -839,6 +839,127 @@ ${bodyHtml}
         await browser.close();
     }
 }
+export function generateMergedCoursesHtml(courses, metadata) {
+    if (!courses || courses.length === 0) {
+        return '<html><body><p>No courses provided.</p></body></html>';
+    }
+    const firstCourseMeta = buildCourseInnerHtml(courses[0]);
+    const headerText = firstCourseMeta.headerText;
+    const bosMeetingText = firstCourseMeta.bosMeetingText;
+    const acmMeetingText = firstCourseMeta.acmMeetingText;
+    // Render all courses, each wrapped in standard print page-wrapper with running headers and footers
+    const renderedCourses = courses.map((course, idx) => {
+        const meta = buildCourseInnerHtml(course);
+        return `
+    <div class="${idx > 0 ? 'course-separator' : ''}">
+      <table class="print-page-wrapper">
+        <thead>
+          <tr>
+            <th>
+              <div class="running-header-bar">${meta.headerText}</div>
+            </th>
+          </tr>
+        </thead>
+        <tfoot>
+          <tr>
+            <td>
+              <div class="running-footer-bar">
+                <span>${meta.bosMeetingText}</span>
+                <span>${meta.acmMeetingText}</span>
+              </div>
+              <div class="running-footer-spacer"></div>
+            </td>
+          </tr>
+        </tfoot>
+        <tbody>
+          <tr>
+            <td>
+              ${meta.bodyHtml}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    `;
+    }).join('\n');
+    return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Curriculum_Bundle_${(metadata.department || 'Curriculum').replace(/[^a-zA-Z0-9_-]/g, '_')}_${metadata.regulationYear || 2026}</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm 12mm 15mm;
+  }
+  *, *::before, *::after {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10pt;
+    line-height: 1.35;
+    color: #000000;
+    margin: 0;
+    padding: 0;
+    background: #FFFFFF;
+  }
+  .print-page-wrapper {
+    width: 100%;
+    border-collapse: collapse;
+    border: none !important;
+  }
+  .print-page-wrapper > thead {
+    display: table-header-group !important;
+  }
+  .print-page-wrapper > tfoot {
+    display: table-footer-group !important;
+  }
+  .print-page-wrapper > thead > tr > th,
+  .print-page-wrapper > tfoot > tr > td,
+  .print-page-wrapper > tbody > tr > td {
+    border: none !important;
+    padding: 0 !important;
+    font-weight: normal;
+    text-align: left;
+  }
+  .running-header-bar {
+    width: 100%;
+    text-align: right;
+    font-size: 8.5pt;
+    color: #000000;
+    padding-bottom: 6px;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  .running-footer-bar {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    font-size: 8pt;
+    color: #000000;
+    border-top: 1px solid #000000;
+    padding-top: 4px;
+    margin-top: 8px;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  .running-footer-spacer {
+    height: 10px;
+  }
+  .course-separator {
+    page-break-before: always;
+    break-before: page;
+  }
+  ${COMMON_PDF_STYLES}
+</style>
+</head>
+<body>
+  ${renderedCourses}
+</body>
+</html>`;
+}
 export async function generateMergedCoursesPdf(courses, metadata) {
     if (!courses || courses.length === 0) {
         throw new Error('No courses provided for merged PDF.');
