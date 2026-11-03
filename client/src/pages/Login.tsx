@@ -368,6 +368,8 @@ export const Login: React.FC = () => {
           <p className="text-sm text-slate-500 mb-6 leading-relaxed">
             {authMode === 'faculty'
               ? 'Authenticate with your official institutional Google account to design courses.'
+              : authMode === 'coordinator'
+              ? 'Department BOS Coordinator portal to review syllabus submissions and merge documents.'
               : 'Administrator login to manage institutional regulations, curriculum, and master collections.'}
           </p>
 
@@ -385,6 +387,19 @@ export const Login: React.FC = () => {
                 }`}
             >
               <span>Faculty</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode('coordinator');
+                setError(null);
+              }}
+              className={`flex-1 py-2.5 rounded-xl flex items-center justify-center transition-all ${authMode === 'coordinator'
+                  ? 'bg-[#7B1113] text-white shadow-sm'
+                  : 'text-slate-500 hover:text-slate-900'
+                }`}
+            >
+              <span>BOS Coordinator</span>
             </button>
             <button
               type="button"
