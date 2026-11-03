@@ -28,25 +28,39 @@ const MODEL_MAP: Record<string, any> = {
   config: ConfigSettingsModel,
 };
 
-// GET /api/master/regulation - Get active institutional regulation
+// GET /api/master/regulation - Get active institutional regulation and history/list
 router.get('/regulation', async (req, res): Promise<void> => {
   try {
     const yearDoc = await ConfigSettingsModel.findOne({ key: 'regulationYear' });
     const codeDoc = await ConfigSettingsModel.findOne({ key: 'regulationCode' });
+    const listDoc = await ConfigSettingsModel.findOne({ key: 'regulationList' });
 
     const regulationYear = yearDoc?.value ? Number(yearDoc.value) : 2026;
     const regulationCode = codeDoc?.value ? String(codeDoc.value).trim() : '26';
+    const regulationList: Array<{ year: number; code: string; label?: string }> =
+      Array.isArray(listDoc?.value) && listDoc.value.length > 0
+        ? listDoc.value
+        : [
+            { year: 2026, code: '26', label: 'Regulation 2026' },
+            { year: 2022, code: '22', label: 'Regulation 2022' },
+            { year: 2018, code: '18', label: 'Regulation 2018' },
+          ];
 
-    res.json({ regulationYear, regulationCode });
+    // Ensure the current active is present in the list
+    if (!regulationList.some(r => Number(r.year) === regulationYear)) {
+      regulationList.unshift({ year: regulationYear, code: regulationCode, label: `Regulation ${regulationYear}` });
+    }
+
+    res.json({ regulationYear, regulationCode, regulationList });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// POST /api/master/regulation - Update active institutional regulation (Admin only)
-router.post('/regulation', authenticate, requireRole(['ADMIN']), async (req: AuthRequest, res: Response): Promise<void> => {
+// POST /api/master/regulation - Update active institutional regulation or add new regulation (Admin / Coordinator)
+router.post('/regulation', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { regulationYear, regulationCode } = req.body;
+    const { regulationYear, regulationCode, label } = req.body;
     if (!regulationYear || !regulationCode) {
       res.status(400).json({ error: 'Both regulationYear and regulationCode are required.' });
       return;
@@ -54,6 +68,7 @@ router.post('/regulation', authenticate, requireRole(['ADMIN']), async (req: Aut
 
     const yearNum = Number(regulationYear);
     const codeStr = String(regulationCode).trim();
+    const labelStr = label ? String(label).trim() : `Regulation ${yearNum}`;
 
     await ConfigSettingsModel.findOneAndUpdate(
       { key: 'regulationYear' },
@@ -67,10 +82,34 @@ router.post('/regulation', authenticate, requireRole(['ADMIN']), async (req: Aut
       { upsert: true, new: true }
     );
 
+    // Update regulations catalog list
+    const listDoc = await ConfigSettingsModel.findOne({ key: 'regulationList' });
+    let existingList: Array<{ year: number; code: string; label?: string }> = Array.isArray(listDoc?.value)
+      ? [...listDoc.value]
+      : [
+          { year: 2026, code: '26', label: 'Regulation 2026' },
+          { year: 2022, code: '22', label: 'Regulation 2022' },
+          { year: 2018, code: '18', label: 'Regulation 2018' },
+        ];
+
+    const idx = existingList.findIndex(r => Number(r.year) === yearNum);
+    if (idx >= 0) {
+      existingList[idx] = { year: yearNum, code: codeStr, label: labelStr };
+    } else {
+      existingList.unshift({ year: yearNum, code: codeStr, label: labelStr });
+    }
+
+    await ConfigSettingsModel.findOneAndUpdate(
+      { key: 'regulationList' },
+      { key: 'regulationList', value: existingList, description: 'Institutional Regulations Catalog' },
+      { upsert: true, new: true }
+    );
+
     res.json({
       message: 'Active regulation updated successfully.',
       regulationYear: yearNum,
       regulationCode: codeStr,
+      regulationList: existingList,
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

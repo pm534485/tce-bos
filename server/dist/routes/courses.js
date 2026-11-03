@@ -23,12 +23,17 @@ router.get('/', authenticate, async (req, res) => {
             // No user restriction
         }
         else if (scope === 'review' && (req.user?.role === 'HOD' || req.user?.role === 'ADMIN' || req.user?.role === 'BOS_COORDINATOR')) {
-            // HoD/Admin institutional review queue: all courses in their department/programme access
+            // HoD/Admin/BOS Coordinator institutional review queue:
+            // Allow filtering by selected department (e.g. when coordinator or admin switches department view)
+            const targetDept = req.query.department ? String(req.query.department).trim() : (req.user.role === 'ADMIN' ? '' : req.user.department);
             const conditions = [];
-            if (req.user.department) {
+            if (targetDept) {
+                conditions.push({ department: targetDept });
+            }
+            else if (req.user.department && req.user.role !== 'ADMIN') {
                 conditions.push({ department: req.user.department });
             }
-            if (req.user.programmeAccess && req.user.programmeAccess.length > 0) {
+            if (req.user.programmeAccess && req.user.programmeAccess.length > 0 && req.user.role !== 'ADMIN') {
                 conditions.push({ programmeCode: { $in: req.user.programmeAccess } });
             }
             if (conditions.length > 0) {

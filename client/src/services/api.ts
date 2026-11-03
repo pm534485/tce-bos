@@ -196,9 +196,18 @@ export const api = {
       method: 'DELETE',
     }),
   getActiveRegulation: () =>
-    request<{ regulationYear: number; regulationCode: string }>('/master/regulation'),
-  updateActiveRegulation: (data: { regulationYear: number; regulationCode: string }) =>
-    request<{ message: string; regulationYear: number; regulationCode: string }>('/master/regulation', {
+    request<{
+      regulationYear: number;
+      regulationCode: string;
+      regulationList?: Array<{ year: number; code: string; label?: string }>;
+    }>('/master/regulation'),
+  updateActiveRegulation: (data: { regulationYear: number; regulationCode: string; label?: string }) =>
+    request<{
+      message: string;
+      regulationYear: number;
+      regulationCode: string;
+      regulationList?: Array<{ year: number; code: string; label?: string }>;
+    }>('/master/regulation', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
