@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -2638,44 +2638,31 @@ export const CourseWizard: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Course Code 7-Component Direct Selector: Department first, then Programme Code */}
-                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2.5 text-center text-xs">
-                        {/* 1. RR: Regulation (Admin Configured, Read-Only) */}
-                        <div className="p-2.5 bg-slate-100/90 rounded-xl border-2 border-slate-200 flex flex-col justify-between min-h-[96px]">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">RR</span>
-                            <span className="text-[9px] text-slate-600 font-bold bg-slate-200/90 px-1 py-0.5 rounded flex items-center space-x-0.5" title="Regulation is set by Administrator and cannot be changed by staff">
-                              <Lock className="w-2.5 h-2.5 inline mr-0.5" />
-                              Fixed
-                            </span>
-                          </div>
-                          <div className="my-1">
-                            <span className="font-black text-base sm:text-lg text-slate-900 block text-center" title="Institutional Regulation (Admin Configured)">
-                              {course.regulationCode || adminRegulation.code}
-                            </span>
-                          </div>
-                          <span className="text-[10px] text-slate-500 block font-medium">Reg. {course.regulationYear || adminRegulation.year}</span>
+                    {/* Course Code 7-Component Direct Selector: Compact & Simple Clean Buttons */}
+                    <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                      <div className="flex flex-wrap items-center gap-2 text-center text-xs">
+                        {/* 1. RR: Regulation — compact box fitting only the number width */}
+                        <div className="p-2 bg-slate-100/90 rounded-xl border border-slate-200 flex flex-col items-center justify-center min-w-[58px] h-[72px]">
+                          <span className="font-black text-lg text-slate-900 block leading-tight" title="Institutional Regulation Code">
+                            {course.regulationCode || adminRegulation.code}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-semibold mt-1">Regulation</span>
                         </div>
 
-                        {/* 2. Dept: Department Selector */}
-                        <div className={`p-2.5 bg-white rounded-xl border-2 transition-all flex flex-col justify-between min-h-[96px] group ${
+                        {/* 2. Dept: Department Selector — says only Department */}
+                        <div className={`p-2 bg-white rounded-xl border transition-all flex flex-col justify-between flex-1 min-w-[140px] h-[72px] ${
                           !(course.department || getDepartmentForProgramme(course.programmeCode))
-                            ? 'border-amber-300 ring-2 ring-amber-200/50'
-                            : 'border-slate-200 hover:border-[#0F2942] hover:shadow-xs'
+                            ? 'border-amber-300 ring-1 ring-amber-200/50'
+                            : 'border-slate-200 hover:border-slate-300'
                         }`}>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Dept</span>
-                            <span className="text-[9px] text-[#0F2942] font-bold bg-[#0F2942]/10 px-1 rounded">Department</span>
-                          </div>
-                          <div className="my-1">
+                          <div className="w-full flex-1 flex items-center justify-center">
                             <select
                               value={course.department || getDepartmentForProgramme(course.programmeCode) || ''}
                               onChange={e => handleDepartmentChange(e.target.value)}
-                              className="w-full text-center font-black text-xs sm:text-sm text-[#0F2942] bg-transparent border-0 focus:ring-2 focus:ring-[#0F2942] rounded cursor-pointer p-0"
-                              title="Step 1: Select Department"
+                              className="w-full text-center font-bold text-xs text-[#0F2942] bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0"
+                              title="Department"
                             >
-                              <option value="" disabled>Select department</option>
+                              <option value="" disabled>Department</option>
                               {DEPARTMENT_OPTIONS.map(d => (
                                 <option key={d} value={d}>
                                   {d}
@@ -2683,33 +2670,24 @@ export const CourseWizard: React.FC = () => {
                               ))}
                             </select>
                           </div>
-                          <span
-                            className="text-[10px] text-slate-600 block font-medium truncate"
-                            title={course.department || getDepartmentForProgramme(course.programmeCode) || 'Select department'}
-                          >
-                            {course.department || getDepartmentForProgramme(course.programmeCode) || 'Select department'}
-                          </span>
+                          <span className="text-[10px] text-slate-400 font-medium block">Department</span>
                         </div>
 
-                        {/* 3. AA: Programme Code (Filtered for Selected Department) */}
-                        <div className={`p-2.5 rounded-xl border-2 transition-all flex flex-col justify-between min-h-[96px] group ${
+                        {/* 3. AA: Programme Code */}
+                        <div className={`p-2 rounded-xl border transition-all flex flex-col justify-between flex-1 min-w-[140px] h-[72px] ${
                           !(course.department || course.programmeCode)
                             ? 'bg-slate-50 border-slate-200 opacity-60'
-                            : 'bg-white border-slate-200 hover:border-[#0F2942] hover:shadow-xs'
+                            : 'bg-white border-slate-200 hover:border-slate-300'
                         }`}>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">AA</span>
-                            <span className="text-[9px] text-[#0F2942] font-bold bg-[#0F2942]/10 px-1 rounded">Prog</span>
-                          </div>
-                          <div className="my-1">
+                          <div className="w-full flex-1 flex items-center justify-center">
                             <select
                               value={course.programmeCode || ''}
                               onChange={e => updateField('programmeCode', e.target.value)}
                               disabled={!(course.department || course.programmeCode)}
-                              className="w-full text-center font-black text-sm sm:text-base text-[#0F2942] bg-transparent border-0 focus:ring-2 focus:ring-[#0F2942] rounded cursor-pointer p-0 disabled:cursor-not-allowed"
-                              title={(course.department || course.programmeCode) ? "Step 2: Choose designated programme code" : "Please select department first"}
+                              className="w-full text-center font-bold text-xs text-[#0F2942] bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0 disabled:cursor-not-allowed"
+                              title="Programme"
                             >
-                              <option value="" disabled>{(course.department || course.programmeCode) ? 'Select prog' : 'Pick dept first'}</option>
+                              <option value="" disabled>{(course.department || course.programmeCode) ? 'Programme' : 'Pick Dept First'}</option>
                               {availableProgrammeCodes.map(p => (
                                 <option key={p.code} value={p.code}>
                                   {p.code} — {p.name}
@@ -2717,97 +2695,66 @@ export const CourseWizard: React.FC = () => {
                               ))}
                             </select>
                           </div>
-                          <span
-                            className="text-[10px] text-slate-600 block font-medium truncate"
-                            title={PROGRAMME_CODES.find(p => p.code === course.programmeCode)?.name || 'Select programme'}
-                          >
-                            {PROGRAMME_CODES.find(p => p.code === course.programmeCode)?.name || ((course.department || course.programmeCode) ? 'Choose programme' : 'Pick dept first')}
-                          </span>
+                          <span className="text-[10px] text-slate-400 font-medium block">Programme</span>
                         </div>
 
-                        {/* 3. Category: Select Category First (PCC, PEC, BSC, etc.) */}
-                        <div className={`p-2.5 bg-white rounded-xl border-2 transition-all flex flex-col justify-between min-h-[96px] group ${
+                        {/* 4. Category (PCC, PEC, BSC, etc.) */}
+                        <div className={`p-2 bg-white rounded-xl border transition-all flex flex-col justify-between flex-1 min-w-[130px] h-[72px] ${
                           !course.categoryAbbr
-                            ? 'border-amber-300 ring-2 ring-amber-200/50'
-                            : 'border-slate-200 hover:border-[#7B1113] hover:shadow-xs'
+                            ? 'border-amber-300 ring-1 ring-amber-200/50'
+                            : 'border-slate-200 hover:border-slate-300'
                         }`}>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Cat</span>
-                            <span className="text-[9px] text-sky-800 font-bold bg-sky-100 px-1 rounded">Category</span>
-                          </div>
-                          <div className="my-1">
+                          <div className="w-full flex-1 flex items-center justify-center">
                             <select
                               value={course.categoryAbbr || ''}
                               onChange={e => updateField('categoryAbbr', e.target.value)}
-                              className="w-full text-center font-black text-sm sm:text-base text-[#0F2942] bg-transparent border-0 focus:ring-2 focus:ring-[#7B1113] rounded cursor-pointer p-0"
-                              title="Step 1: Select Category (PCC, PEC, BSC, etc.)"
+                              className="w-full text-center font-bold text-xs text-[#0F2942] bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0"
+                              title="Category"
                             >
-                              <option value="" disabled>Select category</option>
+                              <option value="" disabled>Category</option>
                               {CATEGORY_OPTIONS.map(cat => (
                                 <option key={cat.abbr} value={cat.abbr}>
-                                  {cat.fullName}
+                                  {cat.abbr} — {cat.name}
                                 </option>
                               ))}
                             </select>
                           </div>
-                          <span
-                            className="text-[10px] text-slate-600 block font-medium truncate"
-                            title={CATEGORY_OPTIONS.find(c => c.abbr === course.categoryAbbr)?.name || 'Select category first'}
-                          >
-                            {course.categoryAbbr
-                              ? (CATEGORY_OPTIONS.find(c => c.abbr === course.categoryAbbr)?.name || course.categoryAbbr)
-                              : 'Select category first'}
-                          </span>
+                          <span className="text-[10px] text-slate-400 font-medium block">Category</span>
                         </div>
 
-                        {/* 4. C: Designated Letter for Selected Category */}
-                        <div className={`p-2.5 rounded-xl border-2 transition-all flex flex-col justify-between min-h-[96px] group ${
+                        {/* 5. C: Letter */}
+                        <div className={`p-2 rounded-xl border transition-all flex flex-col justify-between min-w-[70px] h-[72px] ${
                           !course.categoryAbbr
                             ? 'bg-slate-50 border-slate-200 opacity-60'
-                            : 'bg-white border-slate-200 hover:border-[#7B1113] hover:shadow-xs'
+                            : 'bg-white border-slate-200 hover:border-slate-300'
                         }`}>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">C</span>
-                            <span className="text-[9px] text-[#7B1113] font-bold bg-[#7B1113]/10 px-1 rounded">Letter</span>
-                          </div>
-                          <div className="my-1">
+                          <div className="w-full flex-1 flex items-center justify-center">
                             <select
                               value={course.categoryLetter || ''}
                               onChange={e => updateField('categoryLetter', e.target.value)}
                               disabled={!course.categoryAbbr}
-                              className="w-full text-center font-black text-sm sm:text-base text-[#7B1113] bg-transparent border-0 focus:ring-2 focus:ring-[#7B1113] rounded cursor-pointer p-0 disabled:cursor-not-allowed"
-                              title={course.categoryAbbr ? "Step 2: Choose designated letter for this category" : "Please select category first"}
+                              className="w-full text-center font-bold text-sm text-[#7B1113] bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0 disabled:cursor-not-allowed"
+                              title="Letter"
                             >
-                              <option value="" disabled>{course.categoryAbbr ? 'Select letter' : 'Pick category first'}</option>
+                              <option value="" disabled>Letter</option>
                               {availableCategoryCodes.map(c => (
                                 <option key={c.code} value={c.code}>
-                                  {c.code} — {c.name}
+                                  {c.code}
                                 </option>
                               ))}
                             </select>
                           </div>
-                          <span
-                            className="text-[10px] text-slate-600 block font-medium truncate"
-                            title={availableCategoryCodes.find(c => c.code === course.categoryLetter)?.name || 'Select letter'}
-                          >
-                            {course.categoryLetter
-                              ? (availableCategoryCodes.find(c => c.code === course.categoryLetter)?.name || `Letter ${course.categoryLetter}`)
-                              : (course.categoryAbbr ? 'Choose letter' : 'Select category first')}
-                          </span>
+                          <span className="text-[10px] text-slate-400 font-medium block">Letter</span>
                         </div>
 
-                        {/* 5. U: Unique Letter (Sequence in Category) */}
-                        <div className="p-2.5 bg-amber-50/50 rounded-xl border-2 border-amber-300 hover:border-amber-500 hover:shadow-xs transition-all flex flex-col justify-between min-h-[96px] group">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] text-amber-800 font-bold uppercase tracking-wider">U</span>
-                            <span className="text-[9px] text-amber-900 font-black bg-amber-200 px-1 rounded">Seq</span>
-                          </div>
-                          <div className="my-1">
+                        {/* 6. U: Unique Letter Sequence */}
+                        <div className="p-2 bg-white rounded-xl border border-slate-200 hover:border-slate-300 transition-all flex flex-col justify-between min-w-[65px] h-[72px]">
+                          <div className="w-full flex-1 flex items-center justify-center">
                             <select
                               value={course.uniqueLetter || ''}
                               onChange={e => updateField('uniqueLetter', e.target.value.toUpperCase())}
-                              className="w-full text-center font-black text-base sm:text-lg text-[#0F2942] bg-transparent border-0 focus:ring-2 focus:ring-amber-500 rounded cursor-pointer p-0"
-                              title="Enter the sequence of the course in the category (e.g. A for 1st course, B for 2nd course)"
+                              className="w-full text-center font-bold text-base text-[#0F2942] bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0"
+                              title="Sequence"
                             >
                               <option value="" disabled>Seq</option>
                               {VALID_UNIQUE_LETTERS.map(letter => (
@@ -2817,44 +2764,17 @@ export const CourseWizard: React.FC = () => {
                               ))}
                             </select>
                           </div>
-                          <span className="text-[10px] text-amber-900 block font-bold">Course Seq</span>
+                          <span className="text-[10px] text-slate-400 font-medium block">Sequence</span>
                         </div>
 
-                        {/* 6. V: Version — locked after intent selection */}
-                        <div className={`p-2.5 rounded-xl border-2 flex flex-col justify-between min-h-[96px] transition-all ${versionLocked ? 'bg-slate-50 border-slate-200 cursor-default' : 'bg-white border-slate-200 hover:border-[#7B1113] hover:shadow-xs group'}`}>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">V</span>
-                            <span className={`text-[9px] font-bold px-1 rounded ${versionLocked ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                              {versionLocked ? 'Fixed' : 'Ver'}
+                        {/* 7. V: Version */}
+                        <div className="p-2 rounded-xl border border-slate-200 bg-slate-50 flex flex-col justify-between min-w-[55px] h-[72px]">
+                          <div className="w-full flex-1 flex items-center justify-center">
+                            <span className="w-full text-center font-bold text-base text-slate-900 select-none">
+                              {course.version !== undefined && course.version !== null && course.version !== ('' as any) ? course.version : '0'}
                             </span>
                           </div>
-                          <div className="my-1">
-                            {versionLocked ? (
-                              /* Locked display — read-only */
-                              <p className="w-full text-center font-black text-base sm:text-lg text-slate-900 select-none" title="Version is locked based on your course intent">
-                                {course.version !== undefined && course.version !== null && course.version !== ('' as any) ? course.version : '—'}
-                              </p>
-                            ) : (
-                              <select
-                                value={course.version !== undefined && course.version !== null && course.version !== ('' as any) ? course.version : ''}
-                                onChange={e => updateField('version', e.target.value === '' ? ('' as any) : Number(e.target.value))}
-                                className="w-full text-center font-black text-base sm:text-lg text-slate-900 bg-transparent border-0 focus:ring-2 focus:ring-slate-600 rounded cursor-pointer p-0"
-                                title="Click to select Version"
-                              >
-                                <option value="" disabled>Ver</option>
-                                {[0, 1, 2].map(v => (
-                                  <option key={v} value={v}>
-                                    {v}
-                                  </option>
-                                ))}
-                              </select>
-                            )}
-                          </div>
-                          <span className={`text-[10px] block font-medium ${versionLocked ? 'text-emerald-700 font-bold' : 'text-slate-500'}`}>
-                            {versionLocked
-                              ? (courseIntent === 'revision' ? `Revision → v${course.version}` : `New → v${course.version}`)
-                              : (course.version !== undefined && course.version !== null && course.version !== ('' as any) ? `Version ${course.version}` : 'Version')}
-                          </span>
+                          <span className="text-[10px] text-slate-400 font-medium block">Version</span>
                         </div>
                       </div>
 
