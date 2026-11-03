@@ -2638,28 +2638,28 @@ export const CourseWizard: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Course Code 7-Component Direct Selector: Compact & Simple Clean Buttons */}
-                    <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-                      <div className="flex flex-wrap items-center gap-2 text-center text-xs">
-                        {/* 1. RR: Regulation — compact box fitting only the number width */}
-                        <div className="p-2 bg-slate-100/90 rounded-xl border border-slate-200 flex flex-col items-center justify-center min-w-[58px] h-[72px]">
-                          <span className="font-black text-lg text-slate-900 block leading-tight" title="Institutional Regulation Code">
+                    {/* Course Code 7-Component Direct Selector: Differentiated Colors & Crisp Borders */}
+                    <div className="p-3 bg-white border-2 border-slate-200 rounded-2xl shadow-xs">
+                      <div className="flex flex-wrap items-center gap-2.5 text-center text-xs">
+                        {/* 1. RR: Regulation — Maroon Institutional Theme */}
+                        <div className="p-2 bg-rose-50/70 rounded-xl border-2 border-[#7B1113]/30 hover:border-[#7B1113] transition-all flex flex-col items-center justify-center min-w-[62px] h-[74px] shadow-2xs">
+                          <span className="font-black text-xl text-[#7B1113] block leading-tight" title="Institutional Regulation Code">
                             {course.regulationCode || adminRegulation.code}
                           </span>
-                          <span className="text-[10px] text-slate-500 font-semibold mt-1">Regulation</span>
+                          <span className="text-[10px] text-[#7B1113] font-bold mt-1 tracking-wide">Regulation</span>
                         </div>
 
-                        {/* 2. Dept: Department Selector — says only Department */}
-                        <div className={`p-2 bg-white rounded-xl border transition-all flex flex-col justify-between flex-1 min-w-[140px] h-[72px] ${
+                        {/* 2. Dept: Department Selector — Blue / Navy Theme */}
+                        <div className={`p-2 bg-sky-50/50 rounded-xl border-2 transition-all flex flex-col justify-between flex-1 min-w-[150px] h-[74px] shadow-2xs ${
                           !(course.department || getDepartmentForProgramme(course.programmeCode))
-                            ? 'border-amber-300 ring-1 ring-amber-200/50'
-                            : 'border-slate-200 hover:border-slate-300'
+                            ? 'border-amber-400 ring-2 ring-amber-200/50'
+                            : 'border-sky-300 hover:border-sky-500'
                         }`}>
                           <div className="w-full flex-1 flex items-center justify-center">
                             <select
                               value={course.department || getDepartmentForProgramme(course.programmeCode) || ''}
                               onChange={e => handleDepartmentChange(e.target.value)}
-                              className="w-full text-center font-bold text-xs text-[#0F2942] bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0"
+                              className="w-full text-center font-bold text-xs text-sky-950 bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0"
                               title="Department"
                             >
                               <option value="" disabled>Department</option>
@@ -2670,21 +2670,21 @@ export const CourseWizard: React.FC = () => {
                               ))}
                             </select>
                           </div>
-                          <span className="text-[10px] text-slate-400 font-medium block">Department</span>
+                          <span className="text-[10px] text-sky-800 font-bold block tracking-wide">Department</span>
                         </div>
 
-                        {/* 3. AA: Programme Code */}
-                        <div className={`p-2 rounded-xl border transition-all flex flex-col justify-between flex-1 min-w-[140px] h-[72px] ${
+                        {/* 3. AA: Programme Code — Indigo Theme */}
+                        <div className={`p-2 rounded-xl border-2 transition-all flex flex-col justify-between flex-1 min-w-[150px] h-[74px] shadow-2xs ${
                           !(course.department || course.programmeCode)
-                            ? 'bg-slate-50 border-slate-200 opacity-60'
-                            : 'bg-white border-slate-200 hover:border-slate-300'
+                            ? 'bg-slate-50 border-slate-300 opacity-60'
+                            : 'bg-indigo-50/50 border-indigo-300 hover:border-indigo-500'
                         }`}>
                           <div className="w-full flex-1 flex items-center justify-center">
                             <select
                               value={course.programmeCode || ''}
                               onChange={e => updateField('programmeCode', e.target.value)}
                               disabled={!(course.department || course.programmeCode)}
-                              className="w-full text-center font-bold text-xs text-[#0F2942] bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0 disabled:cursor-not-allowed"
+                              className="w-full text-center font-bold text-xs text-indigo-950 bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0 disabled:cursor-not-allowed"
                               title="Programme"
                             >
                               <option value="" disabled>{(course.department || course.programmeCode) ? 'Programme' : 'Pick Dept First'}</option>
@@ -2695,20 +2695,20 @@ export const CourseWizard: React.FC = () => {
                               ))}
                             </select>
                           </div>
-                          <span className="text-[10px] text-slate-400 font-medium block">Programme</span>
+                          <span className="text-[10px] text-indigo-800 font-bold block tracking-wide">Programme</span>
                         </div>
 
-                        {/* 4. Category (PCC, PEC, BSC, etc.) */}
-                        <div className={`p-2 bg-white rounded-xl border transition-all flex flex-col justify-between flex-1 min-w-[130px] h-[72px] ${
+                        {/* 4. Category (PCC, PEC, BSC, etc.) — Emerald Green Theme */}
+                        <div className={`p-2 bg-emerald-50/50 rounded-xl border-2 transition-all flex flex-col justify-between flex-1 min-w-[140px] h-[74px] shadow-2xs ${
                           !course.categoryAbbr
-                            ? 'border-amber-300 ring-1 ring-amber-200/50'
-                            : 'border-slate-200 hover:border-slate-300'
+                            ? 'border-amber-400 ring-2 ring-amber-200/50'
+                            : 'border-emerald-300 hover:border-emerald-500'
                         }`}>
                           <div className="w-full flex-1 flex items-center justify-center">
                             <select
                               value={course.categoryAbbr || ''}
                               onChange={e => updateField('categoryAbbr', e.target.value)}
-                              className="w-full text-center font-bold text-xs text-[#0F2942] bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0"
+                              className="w-full text-center font-bold text-xs text-emerald-950 bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0"
                               title="Category"
                             >
                               <option value="" disabled>Category</option>
@@ -2719,21 +2719,21 @@ export const CourseWizard: React.FC = () => {
                               ))}
                             </select>
                           </div>
-                          <span className="text-[10px] text-slate-400 font-medium block">Category</span>
+                          <span className="text-[10px] text-emerald-800 font-bold block tracking-wide">Category</span>
                         </div>
 
-                        {/* 5. C: Letter */}
-                        <div className={`p-2 rounded-xl border transition-all flex flex-col justify-between min-w-[70px] h-[72px] ${
+                        {/* 5. C: Letter — Purple Theme */}
+                        <div className={`p-2 rounded-xl border-2 transition-all flex flex-col justify-between min-w-[76px] h-[74px] shadow-2xs ${
                           !course.categoryAbbr
-                            ? 'bg-slate-50 border-slate-200 opacity-60'
-                            : 'bg-white border-slate-200 hover:border-slate-300'
+                            ? 'bg-slate-50 border-slate-300 opacity-60'
+                            : 'bg-purple-50/50 border-purple-300 hover:border-purple-500'
                         }`}>
                           <div className="w-full flex-1 flex items-center justify-center">
                             <select
                               value={course.categoryLetter || ''}
                               onChange={e => updateField('categoryLetter', e.target.value)}
                               disabled={!course.categoryAbbr}
-                              className="w-full text-center font-bold text-sm text-[#7B1113] bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0 disabled:cursor-not-allowed"
+                              className="w-full text-center font-black text-base text-purple-950 bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0 disabled:cursor-not-allowed"
                               title="Letter"
                             >
                               <option value="" disabled>Letter</option>
@@ -2744,16 +2744,16 @@ export const CourseWizard: React.FC = () => {
                               ))}
                             </select>
                           </div>
-                          <span className="text-[10px] text-slate-400 font-medium block">Letter</span>
+                          <span className="text-[10px] text-purple-800 font-bold block tracking-wide">Letter</span>
                         </div>
 
-                        {/* 6. U: Unique Letter Sequence */}
-                        <div className="p-2 bg-white rounded-xl border border-slate-200 hover:border-slate-300 transition-all flex flex-col justify-between min-w-[65px] h-[72px]">
+                        {/* 6. U: Unique Letter Sequence — Amber / Orange Theme */}
+                        <div className="p-2 bg-amber-50/60 rounded-xl border-2 border-amber-300 hover:border-amber-500 transition-all flex flex-col justify-between min-w-[76px] h-[74px] shadow-2xs">
                           <div className="w-full flex-1 flex items-center justify-center">
                             <select
                               value={course.uniqueLetter || ''}
                               onChange={e => updateField('uniqueLetter', e.target.value.toUpperCase())}
-                              className="w-full text-center font-bold text-base text-[#0F2942] bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0"
+                              className="w-full text-center font-black text-lg text-amber-950 bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0"
                               title="Sequence"
                             >
                               <option value="" disabled>Seq</option>
@@ -2764,17 +2764,17 @@ export const CourseWizard: React.FC = () => {
                               ))}
                             </select>
                           </div>
-                          <span className="text-[10px] text-slate-400 font-medium block">Sequence</span>
+                          <span className="text-[10px] text-amber-800 font-bold block tracking-wide">Sequence</span>
                         </div>
 
-                        {/* 7. V: Version */}
-                        <div className="p-2 rounded-xl border border-slate-200 bg-slate-50 flex flex-col justify-between min-w-[55px] h-[72px]">
+                        {/* 7. V: Version — Slate Theme */}
+                        <div className="p-2 rounded-xl border-2 border-slate-300 bg-slate-100 flex flex-col justify-between min-w-[62px] h-[74px] shadow-2xs">
                           <div className="w-full flex-1 flex items-center justify-center">
-                            <span className="w-full text-center font-bold text-base text-slate-900 select-none">
+                            <span className="w-full text-center font-black text-lg text-slate-900 select-none">
                               {course.version !== undefined && course.version !== null && course.version !== ('' as any) ? course.version : '0'}
                             </span>
                           </div>
-                          <span className="text-[10px] text-slate-400 font-medium block">Version</span>
+                          <span className="text-[10px] text-slate-700 font-bold block tracking-wide">Version</span>
                         </div>
                       </div>
 
