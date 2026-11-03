@@ -669,7 +669,7 @@ export function buildCourseInnerHtml(course: Course): { headerText: string; body
 const COMMON_PDF_STYLES = `
   @page {
     size: A4 portrait;
-    margin: 14mm 15mm 15mm 15mm;
+    margin: 12mm 15mm 12mm 15mm;
   }
   * {
     box-sizing: border-box;
@@ -677,28 +677,29 @@ const COMMON_PDF_STYLES = `
   body {
     font-family: Arial, Helvetica, sans-serif;
     font-size: 10pt;
-    line-height: 1.35;
+    line-height: 1.3;
     color: #000;
     margin: 0;
     padding: 0;
   }
   .line-space {
-    height: 14px;
-    clear: both;
-  }
-  .line-space-sm {
     height: 8px;
     clear: both;
   }
+  .line-space-sm {
+    height: 5px;
+    clear: both;
+  }
   .plain-heading {
-    font-size: 10.5pt;
+    font-size: 10pt;
     font-weight: bold;
     color: #000;
-    margin-bottom: 4px;
+    margin-top: 4px;
+    margin-bottom: 2px;
   }
   .section-p {
     font-size: 10pt;
-    line-height: 1.35;
+    line-height: 1.3;
     text-align: justify;
     margin: 0;
     color: #000;
@@ -708,7 +709,7 @@ const COMMON_PDF_STYLES = `
     color: #000;
     font-weight: bold;
     font-size: 10pt;
-    padding: 3px 6px;
+    padding: 2.5px 5px;
     margin: 0;
     width: 100%;
     box-sizing: border-box;
@@ -718,7 +719,7 @@ const COMMON_PDF_STYLES = `
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 9.5pt;
+    font-size: 9pt;
     margin: 0;
   }
   thead {
@@ -727,10 +728,10 @@ const COMMON_PDF_STYLES = `
   tr { page-break-inside: avoid; break-inside: avoid; }
   th, td {
     border: 1px solid #000;
-    padding: 2px 5px;
+    padding: 1.5px 4px;
     vertical-align: middle;
     color: #000;
-    line-height: 1.25;
+    line-height: 1.2;
   }
   th {
     font-weight: bold;
@@ -745,20 +746,20 @@ const COMMON_PDF_STYLES = `
     font-weight: bold;
   }
   .syllabus-topic {
-    font-size: 10pt;
-    line-height: 1.35;
+    font-size: 9.5pt;
+    line-height: 1.3;
     text-align: justify;
     margin: 0;
   }
   .bullet-list {
     margin: 0;
-    padding-left: 20px;
+    padding-left: 18px;
     list-style-type: disc;
-    font-size: 10pt;
-    line-height: 1.35;
+    font-size: 9.5pt;
+    line-height: 1.3;
   }
   .bullet-list li {
-    margin-bottom: 4px;
+    margin-bottom: 2px;
     text-align: justify;
   }
   .page-break {
