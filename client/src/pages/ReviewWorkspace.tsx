@@ -124,16 +124,48 @@ export const ReviewWorkspace: React.FC = () => {
       if (format === 'docx') setMergingDocx(true);
       if (format === 'pdf') setMergingPdf(true);
 
-      const blob = await api.mergeCourses(selectedForMerge, format, activeReg.regulationYear);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      const deptSlug = (user?.department || 'Curriculum').replace(/[^a-zA-Z0-9]/g, '_');
-      a.download = `Merged_Syllabus_${deptSlug}_Reg${activeReg.regulationYear}.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const res = await api.mergeCourses(selectedForMerge, format, activeReg.regulationYear);
+
+      if (res.isHtml && res.html) {
+        // Pixel-perfect client-side printing into PDF (bypasses serverless Chromium issues on Vercel)
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentWindow?.document;
+        if (doc) {
+          doc.open();
+          doc.write(res.html);
+          doc.close();
+
+          setTimeout(() => {
+            iframe.contentWindow?.focus();
+            iframe.contentWindow?.print();
+            setTimeout(() => {
+              if (document.body.contains(iframe)) {
+                document.body.removeChild(iframe);
+              }
+            }, 2000);
+          }, 350);
+        } else {
+          window.print();
+        }
+      } else if (res.blob) {
+        const url = window.URL.createObjectURL(res.blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const deptSlug = (user?.department || 'Curriculum').replace(/[^a-zA-Z0-9]/g, '_');
+        a.download = `Merged_Syllabus_${deptSlug}_Reg${activeReg.regulationYear}.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
     } catch (err: any) {
       alert(`Merge download failed: ${err.message}`);
     } finally {

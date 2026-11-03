@@ -146,7 +146,7 @@ export const api = {
   },
 
   // Merge selected courses in explicit order
-  mergeCourses: async (courseIds: string[], format: 'docx' | 'pdf' = 'docx', regulationYear: number = 2026): Promise<Blob> => {
+  mergeCourses: async (courseIds: string[], format: 'docx' | 'pdf' = 'docx', regulationYear: number = 2026): Promise<{ blob?: Blob; html?: string; isHtml: boolean }> => {
     const headers = {
       'Content-Type': 'application/json',
       ...getAuthHeader(),
@@ -164,7 +164,17 @@ export const api = {
       } catch (_) {}
       throw new Error(errorMsg);
     }
-    return await res.blob();
+
+    const contentType = res.headers.get('content-type') || '';
+    const isFallback = res.headers.get('x-fallback-print') === 'true';
+
+    if (contentType.includes('text/html') || isFallback) {
+      const html = await res.text();
+      return { html, isHtml: true };
+    }
+
+    const blob = await res.blob();
+    return { blob, isHtml: false };
   },
 
   getCoordinators: () => request<Array<{ department: string; email: string; name: string; programmeAccess: string[] }>>('/auth/coordinators'),

@@ -482,7 +482,7 @@ router.get('/:id/export', async (req, res): Promise<void> => {
 });
 
 
-// POST /api/courses/merge - Merge selected courses in explicit order into one DOCX or PDF bundle
+// POST /api/courses/merge - Merge selected courses in explicit order into one DOCX or PDF bundle (or HTML bundle for browser printing)
 router.post('/merge', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { courseIds, format = 'docx', regulationYear = 2026, annexureNo = '01' } = req.body;
@@ -518,14 +518,36 @@ router.post('/merge', authenticate, async (req: AuthRequest, res: Response): Pro
     const deptName = orderedCourses[0]?.department || req.user?.department || 'Curriculum';
     const deptSlug = deptName.replace(/[^a-zA-Z0-9]/g, '_');
 
-    if (format === 'pdf') {
-      const pdfBuffer = await generateMergedCoursesPdf(orderedCourses, {
+    if (format === 'html') {
+      const { generateMergedCoursesHtml } = await import('../services/pdfGenerator.js');
+      const html = generateMergedCoursesHtml(orderedCourses, {
         department: deptName,
         regulationYear: Number(regulationYear),
       });
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="Curriculum_Bundle_${deptSlug}_${regulationYear}.pdf"`);
-      res.send(pdfBuffer);
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(html);
+    } else if (format === 'pdf') {
+      try {
+        const pdfBuffer = await generateMergedCoursesPdf(orderedCourses, {
+          department: deptName,
+          regulationYear: Number(regulationYear),
+        });
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="Curriculum_Bundle_${deptSlug}_${regulationYear}.pdf"`);
+        res.send(pdfBuffer);
+      } catch (pdfErr: any) {
+        // Fallback: If Puppeteer or Chromium is missing in the hosting environment (e.g. AWS Lambda / Vercel),
+        // send back the printable HTML so the client can trigger instant pixel-perfect PDF print dialog!
+        console.warn('Server Puppeteer unavailable, falling back to printable HTML bundle:', pdfErr.message);
+        const { generateMergedCoursesHtml } = await import('../services/pdfGenerator.js');
+        const html = generateMergedCoursesHtml(orderedCourses, {
+          department: deptName,
+          regulationYear: Number(regulationYear),
+        });
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('X-Fallback-Print', 'true');
+        res.send(html);
+      }
     } else {
       const docxBuffer = await generateMergedCoursesDocx(orderedCourses, {
         department: deptName,
