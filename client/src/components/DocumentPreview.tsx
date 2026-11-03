@@ -122,11 +122,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
 <html>
 <head>
 <meta charset="utf-8">
-<title>${(course.courseCode || 'Course').replace(/[^a-zA-Z0-9_-]/g, '_')}_Syllabus</title>
+<title></title>
 <style>
   @page {
     size: A4 portrait;
-    margin: 12mm 15mm 12mm 15mm;
+    margin: 10mm 15mm 12mm 15mm;
   }
   *, *::before, *::after {
     box-sizing: border-box;
@@ -166,8 +166,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
     width: 100%;
     text-align: right;
     font-size: 8.5pt;
+    font-weight: normal;
     color: #000000;
-    padding-bottom: 4px;
+    padding-bottom: 5px;
     font-family: Arial, Helvetica, sans-serif;
   }
   .running-footer-bar {
