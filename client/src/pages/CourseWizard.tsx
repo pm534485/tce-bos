@@ -2394,7 +2394,7 @@ export const CourseWizard: React.FC = () => {
       )}
 
       {/* Main Workspace - Full width to fit all screen sizes without side margins */}
-      <div className="flex-1 w-full px-3 sm:px-6 lg:px-8 py-3 sm:py-4 flex flex-col">
+      <div className="flex-1 w-full px-3 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex flex-col">
         {activeTab === 'preview' ? (
           <div className="flex-1">
             <DocumentPreview course={course} />
@@ -2458,13 +2458,13 @@ export const CourseWizard: React.FC = () => {
               </div>
             </div>
 
-            {/* Center Wizard Form Container */}
-            <div className="flex-1 w-full bg-white border border-slate-200 border-t-4 border-t-[#800020] rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col justify-start">
+            {/* Center Wizard Form Container — Full colored frame around the entire container */}
+            <div className="flex-1 w-full bg-white border-2 border-[#7B1113] rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-start">
               <div>
                 {/* ============================================================== */}
                 {/* PERSISTENT TCE INSTITUTIONAL COURSE HEADER (OFFICIAL TABLE)   */}
                 {/* ============================================================== */}
-                <div className="mb-6">
+                <div className="mb-4">
                   {/* Official 3-Column Header Table matching TCE Standard */}
                   <div className="border-2 border-slate-900 bg-white shadow-xs overflow-hidden">
                     <div className="grid grid-cols-1 md:grid-cols-12 border-collapse">
