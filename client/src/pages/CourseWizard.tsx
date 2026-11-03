@@ -2796,141 +2796,145 @@ export const CourseWizard: React.FC = () => {
                     </div>
 
                     {/* Course Title and L-T-P-Credits inline row */}
-                    <div className="flex flex-col lg:flex-row items-stretch lg:items-end gap-3.5 pt-1">
-                      {/* Course Title Field (flex-1) */}
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="text-xs font-bold text-slate-700">
-                            Course Title <span className="text-rose-500">*</span>
-                          </label>
-                          <span className="text-[11px] text-slate-400">
-                            {(course.courseName || '').length}/60 characters
-                          </span>
-                        </div>
-                        <input
-                          type="text"
-                          value={course.courseName || ''}
-                          onChange={e => updateField('courseName', e.target.value)}
-                          onBlur={() => {
-                            if (course.courseType === 'PRACTICAL') {
-                              let raw = (course.courseName || '').trim();
-                              if (raw) {
-                                // Strip any variations / misspellings of laboratory/lab from the end
-                                raw = raw.replace(/\s*(?:lab|laboratry|labrotary|laboratary|laborotary|labortory|labratory|laboratorie|laboratories|laboratory)\s*$/i, '').trim();
+                    <div className="pt-1">
+                      <div className="flex flex-col lg:flex-row items-start gap-3.5">
+                        {/* Course Title Field (flex-1) */}
+                        <div className="flex-1 w-full">
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-xs font-bold text-slate-700">
+                              Course Title <span className="text-rose-500">*</span>
+                            </label>
+                            <span className="text-[11px] text-slate-400">
+                              {(course.courseName || '').length}/60 characters
+                            </span>
+                          </div>
+                          <input
+                            type="text"
+                            value={course.courseName || ''}
+                            onChange={e => updateField('courseName', e.target.value)}
+                            onBlur={() => {
+                              if (course.courseType === 'PRACTICAL') {
+                                let raw = (course.courseName || '').trim();
                                 if (raw) {
-                                  updateField('courseName', `${raw} Laboratory`);
+                                  // Strip any variations / misspellings of laboratory/lab from the end
+                                  raw = raw.replace(/\s*(?:lab|laboratry|labrotary|laboratary|laborotary|labortory|labratory|laboratorie|laboratories|laboratory)\s*$/i, '').trim();
+                                  if (raw) {
+                                    updateField('courseName', `${raw} Laboratory`);
+                                  }
                                 }
                               }
-                            }
-                          }}
-                          placeholder={course.courseType === 'PRACTICAL' ? "e.g. Data Structures Laboratory" : "Course Name"}
-                          className={`w-full px-3.5 py-2 border-2 rounded-xl text-sm font-semibold transition-all ${
-                            hasFieldError('courseName')
-                              ? 'border-red-400 bg-red-50/20 text-slate-900 focus:ring-2 focus:ring-red-200 focus:border-red-500'
-                              : 'border-slate-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-100 bg-white'
-                          }`}
-                        />
-                        {course.courseType === 'PRACTICAL' && (
-                          <p className="text-[11px] text-slate-500 mt-1">
-                            Practical course titles must end with the full word <strong className="text-slate-700">"Laboratory"</strong>. (If omitted or misspelled, it will automatically normalize to "Laboratory").
-                          </p>
-                        )}
-                        <InlineFieldError field="courseName" />
-                      </div>
-
-                      {/* Compact & Highlighted L-T-P & Credits Boxes */}
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {/* Lecture (L) - Blue Theme */}
-                        <div className="flex flex-col items-center">
-                          <label className="block text-[10px] font-bold text-sky-800 uppercase tracking-wide mb-1 text-center">
-                            L
-                          </label>
-                          <input
-                            type="number"
-                            min={0}
-                            max={5}
-                            value={course.courseType === 'PRACTICAL' ? 0 : (course.L === ('' as any) ? '' : (course.L ?? ''))}
-                            disabled={course.courseType === 'PRACTICAL'}
-                            onChange={e => updateField('L', e.target.value === '' ? ('' as any) : Math.min(5, parseInt(e.target.value) || 0))}
-                            onBlur={() => touchField('L')}
-                            placeholder="0"
-                            className="w-13 h-10 px-1 border-2 border-sky-300 bg-sky-50/70 hover:border-sky-500 focus:border-sky-600 focus:ring-2 focus:ring-sky-200 rounded-xl text-sm text-center font-black text-sky-950 disabled:bg-slate-100 disabled:border-slate-300 disabled:text-slate-400 disabled:cursor-not-allowed shadow-2xs transition-all"
-                            title={course.courseType === 'PRACTICAL' ? 'Lecture (L) is fixed at 0 for practical courses' : 'Lecture contact hours (L)'}
-                          />
-                        </div>
-
-                        {/* Tutorial (T) - Indigo Theme */}
-                        <div className="flex flex-col items-center">
-                          <label className="block text-[10px] font-bold text-indigo-800 uppercase tracking-wide mb-1 text-center">
-                            T
-                          </label>
-                          <input
-                            type="number"
-                            min={0}
-                            max={5}
-                            value={course.courseType === 'PRACTICAL' ? 0 : (course.T === ('' as any) ? '' : (course.T ?? ''))}
-                            disabled={course.courseType === 'PRACTICAL'}
-                            onChange={e => updateField('T', e.target.value === '' ? ('' as any) : Math.min(5, parseInt(e.target.value) || 0))}
-                            onBlur={() => touchField('T')}
-                            placeholder="0"
-                            className="w-13 h-10 px-1 border-2 border-indigo-300 bg-indigo-50/70 hover:border-indigo-500 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-200 rounded-xl text-sm text-center font-black text-indigo-950 disabled:bg-slate-100 disabled:border-slate-300 disabled:text-slate-400 disabled:cursor-not-allowed shadow-2xs transition-all"
-                            title={course.courseType === 'PRACTICAL' ? 'Tutorial (T) is fixed at 0 for practical courses' : 'Tutorial contact hours (T)'}
-                          />
-                        </div>
-
-                        {/* Practical (P) - Emerald Theme */}
-                        <div className="flex flex-col items-center">
-                          <label className="block text-[10px] font-bold text-emerald-800 uppercase tracking-wide mb-1 text-center">
-                            P
-                          </label>
-                          <input
-                            type="number"
-                            min={course.courseType === 'PRACTICAL' ? 2 : 0}
-                            max={course.courseType === 'PRACTICAL' ? 4 : 5}
-                            value={course.courseType === 'THEORY' ? 0 : (course.P === ('' as any) ? '' : (course.P ?? ''))}
-                            disabled={course.courseType === 'THEORY'}
-                            onChange={e => {
-                              if (e.target.value === '') {
-                                updateField('P', '' as any);
-                                return;
-                              }
-                              const raw = parseInt(e.target.value, 10);
-                              if (isNaN(raw)) return;
-                              if (course.courseType === 'PRACTICAL') {
-                                const clamped = Math.min(4, Math.max(2, raw));
-                                updateField('P', clamped);
-                              } else {
-                                updateField('P', Math.min(5, Math.max(0, raw)));
-                              }
                             }}
-                            onBlur={() => touchField('P')}
-                            placeholder={course.courseType === 'PRACTICAL' ? '2–4' : '0'}
-                            className="w-13 h-10 px-1 border-2 border-emerald-300 bg-emerald-50/70 hover:border-emerald-500 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200 rounded-xl text-sm text-center font-black text-emerald-950 disabled:bg-slate-100 disabled:border-slate-300 disabled:text-slate-400 disabled:cursor-not-allowed shadow-2xs transition-all"
-                            title={
-                              course.courseType === 'THEORY'
-                                ? 'Practical is disabled for theory courses'
-                                : course.courseType === 'PRACTICAL'
-                                ? 'Practical contact hours must be 2, 3, or 4'
-                                : 'Practical contact hours (P)'
-                            }
+                            placeholder={course.courseType === 'PRACTICAL' ? "e.g. Data Structures Laboratory" : "Course Name"}
+                            className={`w-full px-3.5 py-2 border-2 rounded-xl text-sm font-semibold transition-all h-[42px] ${
+                              hasFieldError('courseName')
+                                ? 'border-red-400 bg-red-50/20 text-slate-900 focus:ring-2 focus:ring-red-200 focus:border-red-500'
+                                : 'border-slate-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-100 bg-white'
+                            }`}
                           />
                         </div>
 
-                        {/* Credits Box - Golden / Amber Institutional Highlight */}
-                        <div className="flex flex-col items-center">
-                          <label className="block text-[10px] font-black text-amber-900 uppercase tracking-wide mb-1 text-center">
-                            Credits
-                          </label>
-                          <div 
-                            className="min-w-[62px] h-10 px-2.5 bg-amber-50/80 border-2 border-amber-400 rounded-xl flex items-center justify-center shadow-2xs"
-                            title="Calculated Course Credits"
-                          >
-                            <span className="text-base font-black text-amber-950">
-                              {course.credits !== undefined && course.credits !== null && course.credits !== ('' as any) ? course.credits : '—'}
-                            </span>
+                        {/* Compact & Highlighted L-T-P & Credits Boxes */}
+                        <div className="flex items-start gap-2 flex-shrink-0">
+                          {/* Lecture (L) - Blue Theme */}
+                          <div className="flex flex-col items-center">
+                            <label className="block text-[10px] font-bold text-sky-800 uppercase tracking-wide mb-1 text-center">
+                              L
+                            </label>
+                            <input
+                              type="number"
+                              min={0}
+                              max={5}
+                              value={course.courseType === 'PRACTICAL' ? 0 : (course.L === ('' as any) ? '' : (course.L ?? ''))}
+                              disabled={course.courseType === 'PRACTICAL'}
+                              onChange={e => updateField('L', e.target.value === '' ? ('' as any) : Math.min(5, parseInt(e.target.value) || 0))}
+                              onBlur={() => touchField('L')}
+                              placeholder="0"
+                              className="w-13 h-[42px] px-1 border-2 border-sky-300 bg-sky-50/70 hover:border-sky-500 focus:border-sky-600 focus:ring-2 focus:ring-sky-200 rounded-xl text-sm text-center font-black text-sky-950 disabled:bg-slate-100 disabled:border-slate-300 disabled:text-slate-400 disabled:cursor-not-allowed shadow-2xs transition-all"
+                              title={course.courseType === 'PRACTICAL' ? 'Lecture (L) is fixed at 0 for practical courses' : 'Lecture contact hours (L)'}
+                            />
+                          </div>
+
+                          {/* Tutorial (T) - Indigo Theme */}
+                          <div className="flex flex-col items-center">
+                            <label className="block text-[10px] font-bold text-indigo-800 uppercase tracking-wide mb-1 text-center">
+                              T
+                            </label>
+                            <input
+                              type="number"
+                              min={0}
+                              max={5}
+                              value={course.courseType === 'PRACTICAL' ? 0 : (course.T === ('' as any) ? '' : (course.T ?? ''))}
+                              disabled={course.courseType === 'PRACTICAL'}
+                              onChange={e => updateField('T', e.target.value === '' ? ('' as any) : Math.min(5, parseInt(e.target.value) || 0))}
+                              onBlur={() => touchField('T')}
+                              placeholder="0"
+                              className="w-13 h-[42px] px-1 border-2 border-indigo-300 bg-indigo-50/70 hover:border-indigo-500 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-200 rounded-xl text-sm text-center font-black text-indigo-950 disabled:bg-slate-100 disabled:border-slate-300 disabled:text-slate-400 disabled:cursor-not-allowed shadow-2xs transition-all"
+                              title={course.courseType === 'PRACTICAL' ? 'Tutorial (T) is fixed at 0 for practical courses' : 'Tutorial contact hours (T)'}
+                            />
+                          </div>
+
+                          {/* Practical (P) - Emerald Theme */}
+                          <div className="flex flex-col items-center">
+                            <label className="block text-[10px] font-bold text-emerald-800 uppercase tracking-wide mb-1 text-center">
+                              P
+                            </label>
+                            <input
+                              type="number"
+                              min={course.courseType === 'PRACTICAL' ? 2 : 0}
+                              max={course.courseType === 'PRACTICAL' ? 4 : 5}
+                              value={course.courseType === 'THEORY' ? 0 : (course.P === ('' as any) ? '' : (course.P ?? ''))}
+                              disabled={course.courseType === 'THEORY'}
+                              onChange={e => {
+                                if (e.target.value === '') {
+                                  updateField('P', '' as any);
+                                  return;
+                                }
+                                const raw = parseInt(e.target.value, 10);
+                                if (isNaN(raw)) return;
+                                if (course.courseType === 'PRACTICAL') {
+                                  const clamped = Math.min(4, Math.max(2, raw));
+                                  updateField('P', clamped);
+                                } else {
+                                  updateField('P', Math.min(5, Math.max(0, raw)));
+                                }
+                              }}
+                              onBlur={() => touchField('P')}
+                              placeholder={course.courseType === 'PRACTICAL' ? '2–4' : '0'}
+                              className="w-13 h-[42px] px-1 border-2 border-emerald-300 bg-emerald-50/70 hover:border-emerald-500 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200 rounded-xl text-sm text-center font-black text-emerald-950 disabled:bg-slate-100 disabled:border-slate-300 disabled:text-slate-400 disabled:cursor-not-allowed shadow-2xs transition-all"
+                              title={
+                                course.courseType === 'THEORY'
+                                  ? 'Practical is disabled for theory courses'
+                                  : course.courseType === 'PRACTICAL'
+                                  ? 'Practical contact hours must be 2, 3, or 4'
+                                  : 'Practical contact hours (P)'
+                              }
+                            />
+                          </div>
+
+                          {/* Credits Box - Golden / Amber Institutional Highlight */}
+                          <div className="flex flex-col items-center">
+                            <label className="block text-[10px] font-black text-amber-900 uppercase tracking-wide mb-1 text-center">
+                              Credits
+                            </label>
+                            <div 
+                              className="min-w-[62px] h-[42px] px-2.5 bg-amber-50/80 border-2 border-amber-400 rounded-xl flex items-center justify-center shadow-2xs"
+                              title="Calculated Course Credits"
+                            >
+                              <span className="text-base font-black text-amber-950">
+                                {course.credits !== undefined && course.credits !== null && course.credits !== ('' as any) ? course.credits : '—'}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
+
+                      {/* Helper text and errors underneath */}
+                      {course.courseType === 'PRACTICAL' && (
+                        <p className="text-[11px] text-slate-500 mt-1.5">
+                          Practical course titles must end with the full word <strong className="text-slate-700">"Laboratory"</strong>. (If omitted or misspelled, it will automatically normalize to "Laboratory").
+                        </p>
+                      )}
+                      <InlineFieldError field="courseName" />
                     </div>
 
                     {/* TCP TE Exam Type */}
