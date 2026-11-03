@@ -170,6 +170,8 @@ router.post('/login', async (req, res) => {
                 { email: normalized + '@tce.edu' },
             ],
         });
+        // Check if logging in as predefined BOS Coordinator
+        const matchedCoordinator = PREDEFINED_COORDINATORS.find(c => c.email.toLowerCase() === normalized || c.email.split('@')[0].toLowerCase() === normalized);
         // Auto-seed/ensure admin account exists
         if (!user && isAdminUser) {
             const salt = await bcrypt.genSalt(10);
@@ -185,6 +187,21 @@ router.post('/login', async (req, res) => {
             });
             await user.save();
         }
+        // Auto-seed predefined BOS Coordinator account if logging in with valid coordinator email
+        if (!user && matchedCoordinator) {
+            const salt = await bcrypt.genSalt(10);
+            const passwordHash = await bcrypt.hash(matchedCoordinator.defaultPassword, salt);
+            user = new User({
+                name: matchedCoordinator.name,
+                email: matchedCoordinator.email.toLowerCase(),
+                passwordHash,
+                role: 'BOS_COORDINATOR',
+                department: matchedCoordinator.department,
+                designation: 'BOS Coordinator',
+                programmeAccess: matchedCoordinator.programmeAccess,
+            });
+            await user.save();
+        }
         if (!user) {
             res.status(401).json({ error: 'Invalid email or password.' });
             return;
@@ -195,6 +212,10 @@ router.post('/login', async (req, res) => {
         }
         // Also allow default Admin password if logging into admin role
         if (!isMatch && (user.role === 'ADMIN' || isAdminUser) && (password === 'AdminPassword2026!' || password === 'admin123')) {
+            isMatch = true;
+        }
+        // Also allow predefined coordinator default password if user is coordinator
+        if (!isMatch && matchedCoordinator && password === matchedCoordinator.defaultPassword) {
             isMatch = true;
         }
         if (!isMatch) {
@@ -414,9 +435,13 @@ router.post('/google', async (req, res) => {
             else if (normalizedEmail.includes('.ce') || normalizedEmail.includes('civil')) {
                 department = 'Civil Engineering';
             }
-            let role = 'FACULTY';
-            let designation = 'Assistant Professor';
-            if (normalizedEmail.startsWith('admin') || normalizedEmail.startsWith('dean')) {
+            const isCoord = PREDEFINED_COORDINATORS.find(c => c.email.toLowerCase() === normalizedEmail);
+            let role = isCoord ? 'BOS_COORDINATOR' : 'FACULTY';
+            let designation = isCoord ? 'BOS Coordinator' : 'Assistant Professor';
+            if (isCoord) {
+                department = isCoord.department;
+            }
+            else if (normalizedEmail.startsWith('admin') || normalizedEmail.startsWith('dean')) {
                 role = 'ADMIN';
                 designation = 'Dean Academic';
             }
