@@ -2565,78 +2565,7 @@ export const CourseWizard: React.FC = () => {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <h2 className="text-xl font-bold text-slate-900">Course Code &amp; Credits</h2>
-                      {/* Inline version intent — always switchable for new courses */}
-                      {!id && (
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[11px] text-slate-500 font-medium hidden sm:block">Version:</span>
-                          {/* New (v0) button — always visible, highlighted when active */}
-                          <button
-                            type="button"
-                            onClick={handleIntentNew}
-                            className={`px-3 py-1 text-[11px] font-bold rounded-lg border-2 transition-all cursor-pointer ${courseIntent === 'new' ? 'border-[#7B1113] bg-[#7B1113]/10 text-[#7B1113]' : 'border-slate-200 hover:border-[#7B1113] hover:bg-[#7B1113]/5 text-slate-600'}`}
-                          >
-                            New (v0)
-                          </button>
-                          {/* Existing button — always visible, highlighted when active */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setCourseIntent('pending');
-                              setVersionLocked(false);
-                              setShowRevisionInput(true);
-                              setPrevCodeInput('');
-                              setPrevCodeError('');
-                              setCourse(prev => ({ ...prev, version: '' as any }));
-                            }}
-                            className={`px-3 py-1 text-[11px] font-bold rounded-lg border-2 transition-all cursor-pointer ${(courseIntent === 'revision' || showRevisionInput) ? 'border-[#C59B27] bg-amber-50 text-amber-800' : 'border-slate-200 hover:border-[#C59B27] hover:bg-amber-50/50 text-slate-600'}`}
-                          >
-                            Existing
-                          </button>
-                          {/* Confirmed badge */}
-                          {courseIntent === 'new' && (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">v0</span>
-                          )}
-                          {courseIntent === 'revision' && (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">v{course.version}</span>
-                          )}
-                        </div>
-                      )}
                     </div>
-
-                    {/* Inline revision previous-code input */}
-                    {!id && showRevisionInput && courseIntent === 'pending' && (
-                      <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                        <div className="flex-1 space-y-1.5">
-                          <label className="block text-[11px] font-bold text-amber-900">
-                            Previous course code <span className="font-normal text-amber-700">(e.g. 26CECA0 or 26CECA1)</span>
-                          </label>
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              value={prevCodeInput}
-                              onChange={e => { setPrevCodeInput(e.target.value.toUpperCase()); setPrevCodeError(''); }}
-                              onKeyDown={e => e.key === 'Enter' && handleIntentRevisionConfirm()}
-                              placeholder="e.g. 26CECA0"
-                              maxLength={12}
-                              autoFocus
-                              className="flex-1 px-3 py-1.5 text-xs border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C59B27] font-mono uppercase tracking-wider bg-white"
-                            />
-                            <button
-                              type="button"
-                              onClick={handleIntentRevisionConfirm}
-                              className="px-3 py-1.5 bg-[#7B1113] hover:bg-[#5E0D0E] text-white text-xs font-bold rounded-lg transition-all cursor-pointer"
-                            >
-                              Confirm
-                            </button>
-                          </div>
-                          {prevCodeError && (
-                            <p className="text-[11px] text-rose-600 flex items-center gap-1">
-                              <AlertCircle className="w-3 h-3 flex-shrink-0" />{prevCodeError}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
 
                     {/* Course Code 7-Component Direct Selector: Differentiated Colors & Crisp Borders */}
                     <div className="p-3 bg-white border-2 border-slate-200 rounded-2xl shadow-xs">
