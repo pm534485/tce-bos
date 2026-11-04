@@ -59,6 +59,7 @@ export const Login: React.FC = () => {
   const COORDINATOR_DEPARTMENTS = [
     { department: 'Civil Engineering', email: 'bos.civil@tce.edu', defaultPassword: 'CivilBos@2026' },
     { department: 'Computer Science and Engineering', email: 'bos.cse@tce.edu', defaultPassword: 'CseBos@2026' },
+    { department: 'Artificial Intelligence and Machine Learning', email: 'bos.aiml@tce.edu', defaultPassword: 'AimlBos@2026' },
     { department: 'Electronics and Communication Engineering', email: 'bos.ece@tce.edu', defaultPassword: 'EceBos@2026' },
     { department: 'Electrical and Electronics Engineering', email: 'bos.eee@tce.edu', defaultPassword: 'EeeBos@2026' },
     { department: 'Mechanical Engineering', email: 'bos.mech@tce.edu', defaultPassword: 'MechBos@2026' },

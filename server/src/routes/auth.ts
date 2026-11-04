@@ -55,7 +55,14 @@ export const PREDEFINED_COORDINATORS: PredefinedCoordinator[] = [
     email: 'bos.cse@tce.edu',
     defaultPassword: 'CseBos@2026',
     name: 'BOS Coordinator - CSE',
-    programmeAccess: ['CS', 'PD', 'AM'],
+    programmeAccess: ['CS', 'PD'],
+  },
+  {
+    department: 'Artificial Intelligence and Machine Learning',
+    email: 'bos.aiml@tce.edu',
+    defaultPassword: 'AimlBos@2026',
+    name: 'BOS Coordinator - AIML',
+    programmeAccess: ['AM'],
   },
   {
     department: 'Information Technology',

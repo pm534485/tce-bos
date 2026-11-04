@@ -16,7 +16,7 @@ export function getDegreeProgramHeader(course) {
         'CA': 'MCA',
         'MCA': 'MCA',
         'CB': 'B.Tech. (CSBS)',
-        'AM': 'B.E. (CSE - AIML)',
+        'AM': 'B.E. (AIML)',
         'MT': 'B.E. (Mechatronics)',
         'DS': 'M.Sc. (Data Science)',
         'PA': 'M.E. (Structural Engg)',
