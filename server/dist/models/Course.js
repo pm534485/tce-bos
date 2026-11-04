@@ -124,6 +124,9 @@ const LectureScheduleItemSchema = new Schema({
     topic: { type: String, required: false },
     periods: { type: Schema.Types.Mixed, required: false },
     coMapping: { type: Schema.Types.Mixed, required: false },
+    source: { type: String, enum: ['auto', 'manual'], default: 'auto', required: false },
+    isEdited: { type: Boolean, default: false, required: false },
+    originalTopic: { type: String, required: false },
 }, { _id: false });
 const CourseHistorySchema = new Schema({
     version: { type: Number, required: false },

@@ -81,6 +81,9 @@ export interface LectureScheduleItem {
     topic: string;
     periods?: number | string;
     coMapping?: string[] | string;
+    source?: 'auto' | 'manual';
+    isEdited?: boolean;
+    originalTopic?: string;
 }
 export interface SyllabusModule {
     moduleNo: number;

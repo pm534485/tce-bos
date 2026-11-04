@@ -92,6 +92,99 @@ export const splitSubtopics = (raw: string | string[]): string[] => {
   return out;
 };
 
+// Helper: Synchronize syllabus modules to lectureScheduleItems preserving manual edits and manual rows
+export const syncModulesToSchedule = (
+  modules: SyllabusModule[] = [],
+  currentSchedule: LectureScheduleItem[] = [],
+  courseOutcomes: CourseOutcome[] = []
+): LectureScheduleItem[] => {
+  if (!modules || modules.length === 0) {
+    return (currentSchedule || []).filter(item => item.source === 'manual');
+  }
+
+  const result: LectureScheduleItem[] = [];
+
+  modules.forEach((mod, mIdx) => {
+    const modNo = String(mod.moduleNo || mIdx + 1);
+    const defaultCo = (Array.isArray(mod.coMapping) && mod.coMapping.length > 0)
+      ? mod.coMapping.join(', ')
+      : (courseOutcomes[mIdx]?.coNo || courseOutcomes[0]?.coNo || '');
+
+    const moduleTitle = mod.mainTopic?.trim() || `Module ${modNo}`;
+
+    // 1. Module Header Row
+    const existingHeader = currentSchedule.find(x => x.moduleNo === modNo);
+    if (existingHeader) {
+      result.push({
+        ...existingHeader,
+        moduleNo: modNo,
+        topic: existingHeader.isEdited ? existingHeader.topic : moduleTitle,
+        originalTopic: moduleTitle,
+        source: existingHeader.source || 'auto',
+        coMapping: existingHeader.coMapping || defaultCo,
+      });
+    } else {
+      result.push({
+        moduleNo: modNo,
+        topic: moduleTitle,
+        periods: mod.periods !== undefined && mod.periods !== null ? mod.periods : '',
+        coMapping: defaultCo,
+        source: 'auto',
+        isEdited: false,
+        originalTopic: moduleTitle,
+      });
+    }
+
+    // 2. Subtopic Rows
+    const rawSubtopics = mod.subtopics || [];
+    const subtopics = splitSubtopics(rawSubtopics);
+    subtopics.forEach((sub, sIdx) => {
+      const subNo = `${modNo}.${sIdx + 1}`;
+      const existingSub = currentSchedule.find(x => x.moduleNo === subNo);
+      if (existingSub) {
+        result.push({
+          ...existingSub,
+          moduleNo: subNo,
+          topic: existingSub.isEdited ? existingSub.topic : sub,
+          originalTopic: sub,
+          source: existingSub.source || 'auto',
+          coMapping: existingSub.coMapping || defaultCo,
+        });
+      } else {
+        result.push({
+          moduleNo: subNo,
+          topic: sub,
+          periods: '',
+          coMapping: defaultCo,
+          source: 'auto',
+          isEdited: false,
+          originalTopic: sub,
+        });
+      }
+    });
+
+    // 3. Keep manual rows belonging to this module (e.g. added via "Add Topic")
+    const manualSubtopics = currentSchedule.filter(
+      x => x.source === 'manual' &&
+           x.moduleNo.startsWith(`${modNo}.`) &&
+           !result.some(r => r === x || (r.moduleNo === x.moduleNo && r.topic === x.topic))
+    );
+    manualSubtopics.forEach(m => result.push(m));
+  });
+
+  // 4. Standalone manual rows (custom rows not matching any active module)
+  const standaloneManual = currentSchedule.filter(
+    x => x.source === 'manual' &&
+         !modules.some((m, mIdx) => {
+           const modNo = String(m.moduleNo || mIdx + 1);
+           return x.moduleNo === modNo || x.moduleNo.startsWith(`${modNo}.`);
+         })
+  );
+  standaloneManual.forEach(s => result.push(s));
+
+  return result;
+};
+
 // Performance Indicator (PI) Creatable Multi-Select Combobox Component
 interface PiCheckboxSelectorProps {
   value: string;
@@ -1249,6 +1342,18 @@ export const CourseWizard: React.FC = () => {
   // Active popover for Course Outcome action verbs (holds CO identifier e.g. 'CO1' or null)
   const [openVerbPopoverCo, setOpenVerbPopoverCo] = useState<string | null>(null);
 
+  // Auto-populate lecture schedule items if empty but modules exist when opening syllabus step
+  useEffect(() => {
+    if (activeStepId === 'syllabus' && (course.courseType === 'THEORY' || course.courseType === 'TCP')) {
+      if (course.modules && course.modules.length > 0 && (!course.lectureScheduleItems || course.lectureScheduleItems.length === 0)) {
+        const synced = syncModulesToSchedule(course.modules, [], course.courseOutcomes || []);
+        if (synced.length > 0) {
+          updateField('lectureScheduleItems', synced);
+        }
+      }
+    }
+  }, [activeStepId, course.modules]);
+
   // Track which fields the user has interacted with (to show errors only after interaction)
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
 
@@ -1395,6 +1500,17 @@ export const CourseWizard: React.FC = () => {
           if (!fetched.categoryAbbr && fetched.categoryLetter) {
             const cat = CATEGORY_CODES.find(c => c.code === fetched.categoryLetter);
             if (cat) fetched.categoryAbbr = cat.defaultAbbr as any;
+          }
+          if (
+            (fetched.courseType === 'THEORY' || fetched.courseType === 'TCP') &&
+            fetched.modules && fetched.modules.length > 0 &&
+            (!fetched.lectureScheduleItems || fetched.lectureScheduleItems.length === 0)
+          ) {
+            fetched.lectureScheduleItems = syncModulesToSchedule(
+              fetched.modules,
+              [],
+              fetched.courseOutcomes || []
+            );
           }
           setCourse(fetched);
           setLastSaved(new Date());
@@ -1908,6 +2024,18 @@ export const CourseWizard: React.FC = () => {
       if (field === 'semester') {
         const s = Number(value) || 1;
         updated.semesterType = s % 2 === 0 ? 'EVEN' : 'ODD';
+      }
+
+      // Live sync syllabus modules to lectureScheduleItems
+      if (field === 'modules') {
+        updated.modules = value;
+        if (updated.courseType === 'THEORY' || updated.courseType === 'TCP') {
+          updated.lectureScheduleItems = syncModulesToSchedule(
+            value,
+            updated.lectureScheduleItems || [],
+            updated.courseOutcomes || []
+          );
+        }
       }
 
       return updated;
@@ -4239,12 +4367,47 @@ export const CourseWizard: React.FC = () => {
                                 Module {mod.moduleNo || idx + 1}
                               </span>
                               <button
+                                type="button"
                                 onClick={() => {
+                                  const modNo = String(mod.moduleNo || idx + 1);
+                                  const currentSchedule = course.lectureScheduleItems || [];
+                                  const manualRows = currentSchedule.filter(
+                                    x => (x.moduleNo === modNo || x.moduleNo.startsWith(`${modNo}.`)) &&
+                                         (x.source === 'manual' || x.isEdited)
+                                  );
+                                  if (manualRows.length > 0) {
+                                    const confirmed = window.confirm(
+                                      `Module ${modNo} contains ${manualRows.length} manually added or edited row(s) in the lecture schedule table. Are you sure you want to delete this module and its schedule items?`
+                                    );
+                                    if (!confirmed) return;
+                                  }
+
+                                  const remainingSchedule = currentSchedule.filter(
+                                    x => x.moduleNo !== modNo && !x.moduleNo.startsWith(`${modNo}.`)
+                                  );
+
                                   const updated = (course.modules || []).filter((_, i) => i !== idx);
                                   const renumbered = updated.map((m, i) => ({ ...m, moduleNo: i + 1 }));
-                                  updateField('modules', renumbered);
+
+                                  const renumberedSchedule = remainingSchedule.map(item => {
+                                    const parts = item.moduleNo.split('.');
+                                    const mNum = parseInt(parts[0], 10);
+                                    const delNum = parseInt(modNo, 10);
+                                    if (!isNaN(mNum) && !isNaN(delNum) && mNum > delNum) {
+                                      parts[0] = String(mNum - 1);
+                                      return { ...item, moduleNo: parts.join('.') };
+                                    }
+                                    return item;
+                                  });
+
+                                  setCourse(prev => ({
+                                    ...prev,
+                                    modules: renumbered,
+                                    lectureScheduleItems: syncModulesToSchedule(renumbered, renumberedSchedule, prev.courseOutcomes || [])
+                                  }));
                                 }}
-                                className="p-1 text-slate-400 hover:text-rose-600 rounded"
+                                className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
+                                title={`Delete Module ${mod.moduleNo || idx + 1}`}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -4407,6 +4570,8 @@ export const CourseWizard: React.FC = () => {
                                 topic: '',
                                 periods: '',
                                 coMapping: defaultCo,
+                                source: 'manual',
+                                isEdited: false,
                               });
 
                               for (let i = 1; i <= 3; i++) {
@@ -4415,6 +4580,8 @@ export const CourseWizard: React.FC = () => {
                                   topic: '',
                                   periods: '',
                                   coMapping: defaultCo,
+                                  source: 'manual',
+                                  isEdited: false,
                                 });
                               }
 
@@ -4443,6 +4610,8 @@ export const CourseWizard: React.FC = () => {
                                 topic: '',
                                 periods: '',
                                 coMapping: headerCo,
+                                source: 'manual',
+                                isEdited: false,
                               };
 
                               if (lastIdx !== -1) {
@@ -4597,8 +4766,8 @@ export const CourseWizard: React.FC = () => {
                                   </div>
                                 </div>
 
-                                <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
-                                  <table className="w-full text-xs text-left border-collapse">
+                                <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-sm -mx-1 sm:mx-0">
+                                  <table className="w-full text-xs text-left border-collapse min-w-[620px]">
                                     <thead className="bg-slate-100 text-slate-700 font-bold">
                                       <tr>
                                         <th className="p-2.5 border-b w-28 text-center">Module No.</th>
@@ -4682,7 +4851,12 @@ export const CourseWizard: React.FC = () => {
                                                       value={item.topic || ''}
                                                       onChange={e => {
                                                         const list = [...scheduleItems];
-                                                        list[idx] = { ...list[idx], topic: e.target.value };
+                                                        const wasAuto = !list[idx].source || list[idx].source === 'auto';
+                                                        list[idx] = {
+                                                          ...list[idx],
+                                                          topic: e.target.value,
+                                                          isEdited: wasAuto ? true : list[idx].isEdited,
+                                                        };
                                                         updateField('lectureScheduleItems', list);
                                                       }}
                                                       placeholder={
@@ -4696,6 +4870,38 @@ export const CourseWizard: React.FC = () => {
                                                           : 'text-slate-700 border-slate-200 bg-white'
                                                       }`}
                                                     />
+                                                    {item.isEdited && (
+                                                      <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                                                          ✏️ Edited manually
+                                                        </span>
+                                                        {item.originalTopic !== undefined && item.originalTopic !== item.topic && (
+                                                          <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                              const list = [...scheduleItems];
+                                                              list[idx] = {
+                                                                ...list[idx],
+                                                                topic: item.originalTopic || '',
+                                                                isEdited: false,
+                                                              };
+                                                              updateField('lectureScheduleItems', list);
+                                                            }}
+                                                            className="text-[10px] text-sky-600 hover:text-sky-800 underline font-medium cursor-pointer"
+                                                            title={`Reset to module value: "${item.originalTopic}"`}
+                                                          >
+                                                            ↺ Reset to module value
+                                                          </button>
+                                                        )}
+                                                      </div>
+                                                    )}
+                                                    {item.source === 'manual' && !item.isEdited && (
+                                                      <div className="flex items-center gap-1 pt-0.5">
+                                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                                                          + Manual row
+                                                        </span>
+                                                      </div>
+                                                    )}
                                                   </div>
 
                                                   {/* Module Header Controls: Topics count selector */}
@@ -4865,6 +5071,8 @@ export const CourseWizard: React.FC = () => {
                                         topic: '',
                                         periods: '',
                                         coMapping: '',
+                                        source: 'manual',
+                                        isEdited: false,
                                       });
                                       updateField('lectureScheduleItems', list);
                                     }}
