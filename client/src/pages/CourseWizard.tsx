@@ -2714,8 +2714,8 @@ export const CourseWizard: React.FC = () => {
                       <div className="mt-3 p-3 bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-xl flex items-center space-x-2.5 text-xs text-amber-950 font-bold shadow-xs">
                         <span className="text-base flex-shrink-0">📌</span>
                         <div className="leading-snug">
-                          <span className="text-amber-900 font-extrabold uppercase text-[11px] tracking-wide block">Course Code Guideline (Letter U):</span>
-                          <span>When choosing the letter, <strong>enter the sequence of the course in the category</strong> (e.g., <strong>A</strong> for 1st course, <strong>B</strong> for 2nd course, <strong>C</strong> for 3rd course).</span>
+                          <span className="text-amber-900 font-extrabold uppercase text-[11px] tracking-wide block">Sequence Letter Guideline</span>
+                          <span>Enter the unique letter assigned to the course by the BOS Coordinator. If you are unsure, refer to the course schedule.</span>
                         </div>
                       </div>
 
