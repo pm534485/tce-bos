@@ -1246,6 +1246,9 @@ export const CourseWizard: React.FC = () => {
   // Admin configured active regulation state
   const [adminRegulation, setAdminRegulation] = useState<{ year: number; code: string }>({ year: 2026, code: '26' });
 
+  // Active popover for Course Outcome action verbs (holds CO identifier e.g. 'CO1' or null)
+  const [openVerbPopoverCo, setOpenVerbPopoverCo] = useState<string | null>(null);
+
   // Track which fields the user has interacted with (to show errors only after interaction)
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
 
@@ -1909,6 +1912,52 @@ export const CourseWizard: React.FC = () => {
 
       return updated;
     });
+  };
+
+  // Action verb selector: inserts or replaces the starting action verb of a CO outcome statement
+  const handleSelectVerb = (verb: string, idx: number) => {
+    const cos = course.courseOutcomes || [];
+    const co = cos[idx];
+    if (!co) return;
+
+    const currentStatement = (co.statement || '').trimStart();
+    const currentLevelVerbs = TPS_VERBS[co.tpsLevel] || [];
+    const allTpsVerbs = Object.values(TPS_VERBS).flat();
+    const recognizedVerbs = Array.from(new Set([...currentLevelVerbs, ...allTpsVerbs]));
+
+    let newStatement = '';
+    if (!currentStatement) {
+      newStatement = `${verb} `;
+    } else {
+      // Find if statement currently begins with any recognized TPS verb
+      const matchedExistingVerb = recognizedVerbs
+        .slice()
+        .sort((a, b) => b.length - a.length)
+        .find(v => {
+          const vLower = v.toLowerCase();
+          const sLower = currentStatement.toLowerCase();
+          return (
+            sLower === vLower ||
+            sLower.startsWith(vLower + ' ') ||
+            sLower.startsWith(vLower + ',') ||
+            sLower.startsWith(vLower + '-')
+          );
+        });
+
+      if (matchedExistingVerb) {
+        // Replace existing first verb
+        const rest = currentStatement.slice(matchedExistingVerb.length).replace(/^[\s,\-]+/, '');
+        newStatement = `${verb} ${rest}`;
+      } else {
+        // Prepend verb followed by a space
+        newStatement = `${verb} ${currentStatement}`;
+      }
+    }
+
+    const updated = [...cos];
+    updated[idx] = { ...updated[idx], statement: newStatement };
+    updateField('courseOutcomes', updated);
+    touchField(`courseOutcomes.${idx}.statement`);
   };
 
   // Auto-fill Assessment Pattern table based on Course Outcomes
@@ -3233,9 +3282,53 @@ export const CourseWizard: React.FC = () => {
                                     Outcome Statement (must start with TPS {co.tpsLevel} verb)
                                   </label>
                                   {TPS_VERBS[co.tpsLevel]?.length > 0 && (
-                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-xs">
-                                      Verbs: <span className="ml-1 font-black text-amber-950 underline decoration-amber-400">{TPS_VERBS[co.tpsLevel]?.slice(0, 3).join(', ')}</span>
-                                    </span>
+                                    <div className="relative inline-block">
+                                      <button
+                                        type="button"
+                                        onClick={() => setOpenVerbPopoverCo(openVerbPopoverCo === (co.coNo || `CO${idx + 1}`) ? null : (co.coNo || `CO${idx + 1}`))}
+                                        className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 shadow-2xs cursor-pointer transition-colors"
+                                        title="Click to view and choose from all verbs for this TPS level"
+                                      >
+                                        <span>Verbs:</span>
+                                        <span className="ml-1 font-black text-amber-950 underline decoration-amber-400">
+                                          {TPS_VERBS[co.tpsLevel]?.join(', ')}
+                                        </span>
+                                        <span className="ml-1 text-[9px] text-amber-800">▾</span>
+                                      </button>
+
+                                      {openVerbPopoverCo === (co.coNo || `CO${idx + 1}`) && (
+                                        <div className="absolute left-0 top-full mt-1.5 z-30 w-72 sm:w-80 p-2.5 bg-white border-2 border-amber-300 rounded-xl shadow-xl animate-in fade-in zoom-in-95">
+                                          <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-amber-200 text-xs">
+                                            <span className="font-bold text-amber-900 text-[11px] flex items-center gap-1">
+                                              <span>⚡ Tap verb to insert (TPS {co.tpsLevel})</span>
+                                            </span>
+                                            <button
+                                              type="button"
+                                              onClick={() => setOpenVerbPopoverCo(null)}
+                                              className="text-slate-400 hover:text-slate-700 text-xs px-1 rounded hover:bg-slate-100 cursor-pointer"
+                                            >
+                                              ✕
+                                            </button>
+                                          </div>
+                                          <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto p-0.5">
+                                            {(TPS_VERBS[co.tpsLevel] || []).map(verb => (
+                                              <button
+                                                key={verb}
+                                                type="button"
+                                                onClick={() => {
+                                                  handleSelectVerb(verb, idx);
+                                                  setOpenVerbPopoverCo(null);
+                                                }}
+                                                className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-50 hover:bg-amber-200 text-amber-900 border border-amber-300 hover:border-amber-400 transition-all cursor-pointer shadow-2xs active:scale-95"
+                                                title={`Click to insert "${verb}"`}
+                                              >
+                                                {verb}
+                                              </button>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
                                 <textarea

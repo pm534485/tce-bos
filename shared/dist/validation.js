@@ -450,16 +450,27 @@ export function validateCourseOutcomes(cos, courseType, allowTps1 = false, credi
                 });
             }
             statements.push(stmt.toLowerCase());
-            // First action verb check
-            const firstWord = stmt.split(/\s+/)[0].replace(/[^a-zA-Z]/g, '');
+            // First action verb check (case-insensitive, handles leading spaces, and multi-word verbs like 'Break down')
+            const cleanStmt = stmt.trim();
+            const firstWord = cleanStmt.split(/\s+/)[0]?.replace(/[^a-zA-Z]/g, '') || '';
             const validVerbs = TPS_VERBS[co.tpsLevel] || [];
-            const isVerbApproved = validVerbs.some(v => v.toLowerCase() === firstWord.toLowerCase());
+            const isVerbApproved = validVerbs.some(v => {
+                const vLower = v.toLowerCase();
+                const stmtLower = cleanStmt.toLowerCase();
+                return (
+                    vLower === firstWord.toLowerCase() ||
+                    stmtLower === vLower ||
+                    stmtLower.startsWith(vLower + ' ') ||
+                    stmtLower.startsWith(vLower + ',') ||
+                    stmtLower.startsWith(vLower + '-')
+                );
+            });
             if (!isVerbApproved) {
                 results.push({
                     id: `B5_CO_VERB_MISMATCH_${coId}`,
                     field: `courseOutcomes.${idx}.statement`,
                     severity: 'warning',
-                    message: `${coId}: First verb "${firstWord}" is not in standard action verbs list for TPS Level ${co.tpsLevel}.`,
+                    message: `${coId}: First verb "${firstWord || 'undefined'}" is not in standard action verbs list for TPS Level ${co.tpsLevel}.`,
                     fixHint: `Standard verbs for TPS ${co.tpsLevel} are: ${validVerbs.join(', ')}.`,
                 });
             }
@@ -1404,9 +1415,21 @@ export function evaluateTheoryChecklist(course) {
                 if (cos.length === 0)
                     return false;
                 return cos.every(co => {
-                    const firstWord = (co.statement || '').trim().split(/\s+/)[0]?.replace(/[^a-zA-Z]/g, '') || '';
+                    const cleanStmt = (co.statement || '').trim();
+                    if (!cleanStmt) return false;
+                    const firstWord = cleanStmt.split(/\s+/)[0]?.replace(/[^a-zA-Z]/g, '') || '';
                     const valid = TPS_VERBS[co.tpsLevel] || [];
-                    return valid.some(v => v.toLowerCase() === firstWord.toLowerCase());
+                    return valid.some(v => {
+                        const vLower = v.toLowerCase();
+                        const stmtLower = cleanStmt.toLowerCase();
+                        return (
+                            vLower === firstWord.toLowerCase() ||
+                            stmtLower === vLower ||
+                            stmtLower.startsWith(vLower + ' ') ||
+                            stmtLower.startsWith(vLower + ',') ||
+                            stmtLower.startsWith(vLower + '-')
+                        );
+                    });
                 });
             })(),
             reason: 'Verbs must match the TPS taxonomy dictionary.',
