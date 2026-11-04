@@ -1314,7 +1314,7 @@ export const CourseWizard: React.FC = () => {
     setCourse(prev => ({ ...prev, version: newVer }));
   };
 
-  // Course Form State - Starts empty with no pre-selected values for new courses
+  // Course Form State - Starts empty with no pre-selected values for new courses; version defaults to 0
   const [course, setCourse] = useState<Course>({
     courseType: courseTypeParam,
     regulationYear: 2026,
@@ -1322,7 +1322,7 @@ export const CourseWizard: React.FC = () => {
     programmeCode: '',
     categoryLetter: '',
     uniqueLetter: '',
-    version: '' as any,
+    version: 0,
     courseCode: '',
     courseName: '',
     categoryAbbr: '' as any,
@@ -1399,16 +1399,19 @@ export const CourseWizard: React.FC = () => {
             setBulkExperimentsText(fetched.experiments.map((e, idx) => `${e.slNo || idx + 1}. ${e.name}`).join('\n'));
           }
         } else {
-          // Auto-apply active regulation from admin
+          // Auto-apply active regulation from admin and lock version to 0
           if (regRes && regRes.regulationCode) {
             setCourse(prev => ({
               ...prev,
               regulationYear: regRes.regulationYear,
               regulationCode: regRes.regulationCode,
+              version: 0,
               L: prev.courseType === 'PRACTICAL' ? 0 : prev.L,
               T: prev.courseType === 'PRACTICAL' ? 0 : prev.T,
               P: prev.courseType === 'THEORY' ? 0 : prev.P,
             }));
+          } else {
+            setCourse(prev => ({ ...prev, version: 0 }));
           }
         }
       } catch (err: any) {
