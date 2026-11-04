@@ -62,6 +62,20 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
 
   const handleDownload = async (format: 'docx' | 'pdf') => {
     try {
+      const scheduleItems = course.lectureScheduleItems || [];
+      const invalidRows = scheduleItems.filter((x) => {
+        const isHeader = !x.moduleNo || !x.moduleNo.includes('.');
+        const hasSubtopics = isHeader && scheduleItems.some(sub => sub.moduleNo.startsWith(`${x.moduleNo}.`));
+        if (isHeader && hasSubtopics && (x.periods === '' || x.periods === undefined || x.periods === null)) {
+          return false;
+        }
+        return x.periods !== 1 && x.periods !== 2;
+      });
+      if (invalidRows.length > 0) {
+        setDownloadError(`Export blocked: Some topics need hours (1 or 2) - ${invalidRows.map(r => r.moduleNo ? `Topic ${r.moduleNo}` : 'Custom topic').join(', ')}.`);
+        return;
+      }
+
       setDownloadingFormat(format);
       setDownloadError(null);
       const blob = await api.exportCourseBlob(course, format);

@@ -1512,6 +1512,20 @@ export const CourseWizard: React.FC = () => {
               fetched.courseOutcomes || []
             );
           }
+          if (fetched.lectureScheduleItems && fetched.lectureScheduleItems.length > 0) {
+            fetched.lectureScheduleItems = fetched.lectureScheduleItems.map(item => {
+              const isHeader = !item.moduleNo || !item.moduleNo.includes('.');
+              const hasSubtopics = isHeader && fetched.lectureScheduleItems.some(x => x.moduleNo.startsWith(`${item.moduleNo}.`));
+              if (isHeader && hasSubtopics && (item.periods === '' || item.periods === undefined || item.periods === null)) {
+                return item;
+              }
+              const p = Number(item.periods);
+              if (p !== 1 && p !== 2) {
+                return { ...item, periods: '' };
+              }
+              return item;
+            });
+          }
           setCourse(fetched);
           setLastSaved(new Date());
           if (fetched.experiments && fetched.experiments.length > 0) {
@@ -1727,7 +1741,7 @@ export const CourseWizard: React.FC = () => {
         !validationReport.errors.some(e => e.field.startsWith('experiments'))
       : (course.modules || []).length > 0 &&
         (course.modules || []).every(m => (m.mainTopic || '').trim().length > 0 && (m.subtopics || []).length > 0) &&
-        !validationReport.errors.some(e => e.field.startsWith('modules'))
+        !validationReport.errors.some(e => e.field.startsWith('modules') || e.field.startsWith('lectureScheduleItems'))
   );
 
   // Step 5 validation: Learning Resources
@@ -1793,6 +1807,14 @@ export const CourseWizard: React.FC = () => {
           const expErrs = validationReport.errors.filter(e => e.field.startsWith('experiments'));
           if (expErrs.length > 0) return `${expErrs[0].message} (${expErrs[0].fixHint || 'Map all COs to continue'})`;
           return 'Complete laboratory experiments to continue';
+        }
+        const scheduleErrors = validationReport.errors.filter(e => e.field.startsWith('lectureScheduleItems'));
+        if (scheduleErrors.length > 0) {
+          const rowErrs = scheduleErrors.filter(e => e.id?.includes('B9_SCHEDULE_ROW_PERIODS'));
+          if (rowErrs.length > 0) {
+            return `Some topics need hours (1 or 2): ${rowErrs.map(r => r.message.split(':')[0]).join(', ')}. Enter 1 or 2 hours to continue.`;
+          }
+          return `${scheduleErrors[0].message}`;
         }
         return 'Complete all syllabus modules & topics to continue';
       }
@@ -4744,7 +4766,7 @@ export const CourseWizard: React.FC = () => {
                                   </div>
                                 </div>
 
-                                {/* Bright Notice: Hours cannot be more than 2 for a topic */}
+                                {/* Bright Notice: Hours must be 1 or 2 for a topic */}
                                 <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-amber-950 shadow-xs">
                                   <div className="flex items-center space-x-2.5">
                                     <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-400 text-amber-950 font-black text-sm flex-shrink-0 shadow-xs">
@@ -4752,19 +4774,52 @@ export const CourseWizard: React.FC = () => {
                                     </span>
                                     <div className="text-xs">
                                       <span className="font-extrabold text-amber-950 text-sm tracking-tight block">
-                                        Topic Period Limit: Maximum 2 Hours per Topic
+                                        Topic Period Limit: 1–2 Hours per Topic
                                       </span>
                                       <span className="text-amber-800 font-medium">
-                                        In accordance with TCE guidelines, lecture periods for an individual topic or subtopic <strong>cannot be more than 2 hours</strong> (valid values: 0, 1, or 2 periods).
+                                        In accordance with TCE guidelines, lecture periods for an individual topic or subtopic must be 1 or 2 hours (valid values: 1 or 2 periods).
                                       </span>
                                     </div>
                                   </div>
                                   <div className="flex items-center space-x-1.5 self-start sm:self-center">
                                     <span className="px-2.5 py-1 bg-amber-200 border border-amber-400 text-amber-950 text-[11px] font-black rounded-lg uppercase tracking-wider shadow-xs whitespace-nowrap">
-                                      Limit: ≤ 2 Hrs / Topic
+                                      LIMIT: 1–2 HRS / TOPIC
                                     </span>
                                   </div>
                                 </div>
+
+                                {/* Attention Banner: Some topics need hours (1 or 2) */}
+                                {(() => {
+                                  const invalidScheduleRows = scheduleItems.filter((x) => {
+                                    const isHeader = !x.moduleNo || !x.moduleNo.includes('.');
+                                    const hasSubtopics = isHeader && scheduleItems.some(sub => sub.moduleNo.startsWith(`${x.moduleNo}.`));
+                                    if (isHeader && hasSubtopics && (x.periods === '' || x.periods === undefined || x.periods === null)) {
+                                      return false;
+                                    }
+                                    return x.periods !== 1 && x.periods !== 2;
+                                  });
+
+                                  if (invalidScheduleRows.length === 0) return null;
+
+                                  return (
+                                    <div className="bg-rose-50 border-2 border-rose-300 rounded-xl p-3 flex items-start space-x-2.5 text-rose-950 shadow-xs animate-in fade-in">
+                                      <span className="flex items-center justify-center w-6 h-6 rounded-md bg-rose-200 text-rose-800 font-bold text-xs flex-shrink-0 mt-0.5">
+                                        ⚠️
+                                      </span>
+                                      <div className="text-xs space-y-0.5">
+                                        <span className="font-extrabold text-rose-900 block text-sm">
+                                          Some topics need hours (1 or 2)
+                                        </span>
+                                        <span className="text-rose-700">
+                                          The following topic(s) require 1 or 2 hours to be selected:{' '}
+                                          <strong className="text-rose-900">
+                                            {invalidScheduleRows.map(r => r.moduleNo ? `Topic ${r.moduleNo}` : 'Custom topic').join(', ')}
+                                          </strong>. Please select 1 or 2 hours for each topic row.
+                                        </span>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
 
                                 <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-sm -mx-1 sm:mx-0">
                                   <table className="w-full text-xs text-left border-collapse min-w-[620px]">
@@ -4776,7 +4831,7 @@ export const CourseWizard: React.FC = () => {
                                           <div className="flex flex-col items-center">
                                             <span>No. of Periods</span>
                                             <span className="mt-0.5 px-1.5 py-0.2 bg-amber-200 border border-amber-400 text-amber-950 text-[10px] font-black rounded uppercase tracking-wider">
-                                              Max 2 hrs
+                                              1–2 hrs
                                             </span>
                                           </div>
                                         </th>
@@ -4945,45 +5000,82 @@ export const CourseWizard: React.FC = () => {
                                                 </div>
                                               </td>
 
-                                              {/* Periods column: supports optional/blank, max 2 */}
+                                              {/* Periods column: strictly 1 or 2, toggle buttons */}
                                               <td className="p-2 text-center align-middle">
-                                                <input
-                                                  type="text"
-                                                  inputMode="numeric"
-                                                  pattern="[0-2]?"
-                                                  maxLength={1}
-                                                  value={item.periods !== undefined && item.periods !== null ? String(item.periods) : ''}
-                                                  onChange={e => {
-                                                    const list = [...scheduleItems];
-                                                    const digits = e.target.value.replace(/[^0-9]/g, '');
-                                                    let val: number | '' = '';
-                                                    if (digits !== '') {
-                                                      const parsed = parseInt(digits, 10);
-                                                      val = Math.min(2, Math.max(0, parsed));
-                                                    }
-                                                    list[idx] = { ...list[idx], periods: val };
-                                                    updateField('lectureScheduleItems', list);
-                                                  }}
-                                                  onBlur={() => {
-                                                    if (item.periods !== '' && item.periods !== undefined && item.periods !== null) {
-                                                      const p = Number(item.periods);
-                                                      if (p > 2) {
-                                                        const list = [...scheduleItems];
-                                                        list[idx] = { ...list[idx], periods: 2 };
-                                                        updateField('lectureScheduleItems', list);
-                                                      }
-                                                    }
-                                                  }}
-                                                  placeholder="-"
-                                                  className={`w-16 p-1 border rounded text-center text-xs font-bold transition-colors ${
-                                                    Number(item.periods) > 2
-                                                      ? 'border-red-400 bg-red-50 text-red-700'
-                                                      : isHeader
-                                                        ? 'bg-white border-slate-400 text-slate-900 shadow-sm'
-                                                        : 'border-slate-300 text-slate-800 bg-white'
-                                                  }`}
-                                                  title="Enter periods for this topic (maximum 2 periods)"
-                                                />
+                                                {(() => {
+                                                  const isMissing = (!isHeader || !subtopicsCount) && item.periods !== 1 && item.periods !== 2;
+
+                                                  if (isHeader && subtopicsCount > 0 && (item.periods === '' || item.periods === undefined || item.periods === null)) {
+                                                    return (
+                                                      <div className="flex flex-col items-center">
+                                                        <span className="text-slate-400 text-[11px] font-semibold italic">—</span>
+                                                        <button
+                                                          type="button"
+                                                          onClick={() => {
+                                                            const list = [...scheduleItems];
+                                                            list[idx] = { ...list[idx], periods: 1 };
+                                                            updateField('lectureScheduleItems', list);
+                                                            touchField(`lectureScheduleItems.${idx}.periods`);
+                                                          }}
+                                                          className="text-[9px] text-sky-600 hover:text-sky-800 underline mt-0.5 cursor-pointer"
+                                                          title="Optional: Add periods to module header"
+                                                        >
+                                                          + add hrs
+                                                        </button>
+                                                      </div>
+                                                    );
+                                                  }
+
+                                                  return (
+                                                    <div className="flex flex-col items-center">
+                                                      <div className={`inline-flex items-center rounded-lg p-0.5 border shadow-2xs transition-all ${
+                                                        isMissing
+                                                          ? 'border-rose-400 bg-rose-50/90 ring-2 ring-rose-200'
+                                                          : 'border-slate-300 bg-slate-100'
+                                                      }`}>
+                                                        <button
+                                                          type="button"
+                                                          onClick={() => {
+                                                            const list = [...scheduleItems];
+                                                            list[idx] = { ...list[idx], periods: item.periods === 1 ? '' : 1 };
+                                                            updateField('lectureScheduleItems', list);
+                                                            touchField(`lectureScheduleItems.${idx}.periods`);
+                                                          }}
+                                                          className={`px-2 py-0.5 text-xs font-black rounded-md cursor-pointer transition-all ${
+                                                            item.periods === 1
+                                                              ? 'bg-emerald-600 text-white shadow-xs'
+                                                              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                                                          }`}
+                                                          title="Select 1 hour for this topic"
+                                                        >
+                                                          1 hr
+                                                        </button>
+                                                        <button
+                                                          type="button"
+                                                          onClick={() => {
+                                                            const list = [...scheduleItems];
+                                                            list[idx] = { ...list[idx], periods: item.periods === 2 ? '' : 2 };
+                                                            updateField('lectureScheduleItems', list);
+                                                            touchField(`lectureScheduleItems.${idx}.periods`);
+                                                          }}
+                                                          className={`px-2 py-0.5 text-xs font-black rounded-md cursor-pointer transition-all ${
+                                                            item.periods === 2
+                                                              ? 'bg-emerald-600 text-white shadow-xs'
+                                                              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                                                          }`}
+                                                          title="Select 2 hours for this topic"
+                                                        >
+                                                          2 hrs
+                                                        </button>
+                                                      </div>
+                                                      {isMissing && (
+                                                        <span className="text-[10px] text-rose-600 font-bold block mt-1 whitespace-nowrap">
+                                                          Enter 1 or 2 hours
+                                                        </span>
+                                                      )}
+                                                    </div>
+                                                  );
+                                                })()}
                                               </td>
 
                                               {/* Course Outcomes column */}

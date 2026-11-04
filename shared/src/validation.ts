@@ -1281,7 +1281,10 @@ export function validateLectureSchedule(
     }
 
     if (lectureScheduleItems && lectureScheduleItems.length > 0) {
-      const scheduleTotal = lectureScheduleItems.reduce((sum, item) => sum + (Number(item.periods) || 0), 0);
+      const scheduleTotal = lectureScheduleItems.reduce((sum, item) => {
+        const p = Number(item.periods);
+        return sum + ((p === 1 || p === 2) ? p : 0);
+      }, 0);
       if (scheduleTotal < criteria.minHours || scheduleTotal > criteria.maxHours) {
         const diffText = scheduleTotal < criteria.minHours
           ? `short by ${criteria.minHours - scheduleTotal} hours (min: ${criteria.minHours} hrs)`
@@ -1296,13 +1299,24 @@ export function validateLectureSchedule(
       }
 
       lectureScheduleItems.forEach((item, rIdx) => {
-        if (item.periods && Number(item.periods) > 2) {
+        const isHeader = !item.moduleNo || !item.moduleNo.includes('.');
+        const hasSubtopics = isHeader && lectureScheduleItems.some(x => x.moduleNo.startsWith(`${item.moduleNo}.`));
+
+        // Module heading rows that only act as headings do not require hours if they have subtopics
+        if (isHeader && hasSubtopics && (item.periods === '' || item.periods === undefined || item.periods === null)) {
+          return;
+        }
+
+        const pNum = Number(item.periods);
+        const isValid = !isNaN(pNum) && Number.isInteger(pNum) && (pNum === 1 || pNum === 2) && item.periods !== '' && item.periods !== null && item.periods !== undefined;
+
+        if (!isValid) {
           results.push({
             id: `B9_SCHEDULE_ROW_PERIODS_MAX_${rIdx}`,
             field: `lectureScheduleItems.${rIdx}.periods`,
             severity: 'error',
-            message: `Topic ${item.moduleNo || rIdx + 1}: Number of periods cannot be more than 2 (found ${item.periods}).`,
-            fixHint: 'Reduce periods for this topic to at most 2 periods.',
+            message: `Topic ${item.moduleNo || rIdx + 1}: Enter 1 or 2 hours (found ${item.periods !== undefined && item.periods !== null && item.periods !== '' ? item.periods : 'empty'}).`,
+            fixHint: 'Select 1 or 2 periods for this topic.',
           });
         }
       });
