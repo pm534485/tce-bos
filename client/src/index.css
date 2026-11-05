@@ -75,6 +75,11 @@
 }
 
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
   /* Force exact background colors and banner shading to print in browser dialog */
   *, *::before, *::after {
     -webkit-print-color-adjust: exact !important;
@@ -90,10 +95,42 @@
   /* Completely reset body and html for printing with clean margins */
   body, html {
     background: #FFFFFF !important;
-    padding: 15mm 20mm 15mm 20mm !important;
+    padding: 0 !important;
     margin: 0 !important;
     color: #000000 !important;
     font-family: Arial, Helvetica, sans-serif !important;
+  }
+
+  /* Running Top Header */
+  .print-doc-header {
+    position: fixed !important;
+    top: 8mm !important;
+    left: 15mm !important;
+    right: 15mm !important;
+    text-align: right !important;
+    font-size: 8.5pt !important;
+    color: #000000 !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    z-index: 9999 !important;
+  }
+
+  /* Running Fixed Bottom Footer */
+  .print-doc-footer {
+    position: fixed !important;
+    bottom: 8mm !important;
+    left: 15mm !important;
+    right: 15mm !important;
+    width: calc(100% - 30mm) !important;
+    border-top: 1px solid #000000 !important;
+    padding-top: 3.5px !important;
+    margin-top: 0 !important;
+    background: #FFFFFF !important;
+    font-size: 8pt !important;
+    color: #000000 !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    z-index: 9999 !important;
   }
 
   /* Hide any parent wrappers except the document itself */
@@ -106,7 +143,7 @@
     box-shadow: none !important;
     border: none !important;
     border-radius: 0 !important;
-    padding: 0 !important;
+    padding: 16mm 15mm 16mm 15mm !important;
     margin: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -125,16 +162,15 @@
     print-color-adjust: exact !important;
   }
 
-  /* Prevent awkward splits inside tables, rows, banners, and section blocks */
-  .section-block, table, tr, thead, tbody {
+  /* Prevent awkward splits inside tables, rows, banners, and section blocks, and enforce single line space */
+  .section-block {
+    margin-top: 12pt !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
 
-  /* Ensure footer line is clean */
-  .document-sheet > .border-t {
-    border-top: 1px solid #000000 !important;
-    margin-top: 24px !important;
-    padding-top: 8px !important;
+  table, tr, thead, tbody {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }

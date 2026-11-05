@@ -116,6 +116,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
     const oldFooter = clonedSheet.querySelector('.print-doc-footer');
     if (oldFooter) oldFooter.remove();
 
+    const originalTitle = document.title;
+    document.title = '';
+
     const iframe = document.createElement('iframe');
     iframe.style.position = 'fixed';
     iframe.style.right = '0';
@@ -127,6 +130,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
 
     const doc = iframe.contentWindow?.document;
     if (!doc) {
+      document.title = originalTitle;
       window.print();
       return;
     }
@@ -140,7 +144,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
 <style>
   @page {
     size: A4 portrait;
-    margin: 10mm 15mm 12mm 15mm;
+    margin: 0;
   }
   *, *::before, *::after {
     box-sizing: border-box;
@@ -157,10 +161,42 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
     padding: 0;
     background: #FFFFFF;
   }
+  .fixed-running-header {
+    position: fixed;
+    top: 8mm;
+    left: 15mm;
+    right: 15mm;
+    width: calc(100% - 30mm);
+    text-align: right;
+    font-size: 8.5pt;
+    font-weight: normal;
+    color: #000000;
+    font-family: Arial, Helvetica, sans-serif;
+    z-index: 9999;
+    box-sizing: border-box;
+  }
+  .fixed-running-footer {
+    position: fixed;
+    bottom: 8mm;
+    left: 15mm;
+    right: 15mm;
+    width: calc(100% - 30mm);
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 8pt;
+    color: #000000;
+    border-top: 1px solid #000000;
+    padding-top: 3.5px;
+    display: flex;
+    justify-content: space-between;
+    z-index: 9999;
+    box-sizing: border-box;
+  }
   .print-page-wrapper {
     width: 100%;
     border-collapse: collapse;
     border: none !important;
+    margin: 0;
+    padding: 0;
   }
   .print-page-wrapper > thead {
     display: table-header-group !important;
@@ -168,36 +204,20 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
   .print-page-wrapper > tfoot {
     display: table-footer-group !important;
   }
-  .print-page-wrapper > thead > tr > th,
-  .print-page-wrapper > tfoot > tr > td,
-  .print-page-wrapper > tbody > tr > td {
+  .page-header-spacer {
+    height: 16mm !important;
     border: none !important;
     padding: 0 !important;
-    font-weight: normal;
-    text-align: left;
   }
-  .running-header-bar {
-    width: 100%;
-    text-align: right;
-    font-size: 8.5pt;
-    font-weight: normal;
-    color: #000000;
-    padding-bottom: 5px;
-    font-family: Arial, Helvetica, sans-serif;
+  .page-footer-spacer {
+    height: 16mm !important;
+    border: none !important;
+    padding: 0 !important;
   }
-  .running-footer-bar {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    font-size: 8pt;
-    color: #000000;
-    border-top: 1px solid #000000;
-    padding-top: 3px;
-    margin-top: 6px;
-    font-family: Arial, Helvetica, sans-serif;
-  }
-  .running-footer-spacer {
-    height: 8px;
+  .page-body-cell {
+    border: none !important;
+    padding: 0 15mm !important;
+    vertical-align: top;
   }
   .document-sheet {
     width: 100%;
@@ -205,6 +225,12 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
     padding: 0;
     border: none !important;
     box-shadow: none !important;
+  }
+  .section-block {
+    margin-top: 12pt !important;
+    margin-bottom: 0 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
   .document-banner, [class*="bg-[#D9D9D9]"], [class*="bg-slate-"] {
     background-color: #D9D9D9 !important;
@@ -250,13 +276,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
   .font-medium { font-weight: 500; }
   .uppercase { text-transform: uppercase; }
   .w-full { width: 100%; }
-  .space-y-4 > * + * { margin-top: 8px; }
-  .space-y-3 > * + * { margin-top: 6px; }
-  .space-y-2 > * + * { margin-top: 5px; }
-  .space-y-1 > * + * { margin-top: 3px; }
   .border-t { border-top: 1px solid #000000 !important; }
-  .pt-6 { padding-top: 10px !important; }
-  .mt-4 { margin-top: 10px !important; }
   .flex { display: flex; }
   .justify-between { justify-content: space-between; }
   .leading-relaxed { line-height: 1.3; }
@@ -270,28 +290,25 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
 </style>
 </head>
 <body>
+  <div class="fixed-running-header">${headerText}</div>
+  <div class="fixed-running-footer">
+    <span>${bosMeetingText}</span>
+    <span>Approved in 71<sup>st</sup> Academic council meeting ${course.academicCouncilDate || '27.06.2026'}</span>
+  </div>
   <table class="print-page-wrapper">
     <thead>
       <tr>
-        <th>
-          <div class="running-header-bar">${headerText}</div>
-        </th>
+        <td class="page-header-spacer"></td>
       </tr>
     </thead>
     <tfoot>
       <tr>
-        <td>
-          <div class="running-footer-bar">
-            <span>${bosMeetingText}</span>
-            <span>Approved in 71<sup>st</sup> Academic council meeting ${course.academicCouncilDate || '27.06.2026'}</span>
-          </div>
-          <div class="running-footer-spacer"></div>
-        </td>
+        <td class="page-footer-spacer"></td>
       </tr>
     </tfoot>
     <tbody>
       <tr>
-        <td>
+        <td class="page-body-cell">
           ${clonedSheet.outerHTML}
         </td>
       </tr>
@@ -304,8 +321,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
     setTimeout(() => {
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
+      document.title = originalTitle;
       setTimeout(() => {
-        document.body.removeChild(iframe);
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
       }, 1500);
     }, 250);
   };
