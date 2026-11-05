@@ -1342,17 +1342,7 @@ export const CourseWizard: React.FC = () => {
   // Active popover for Course Outcome action verbs (holds CO identifier e.g. 'CO1' or null)
   const [openVerbPopoverCo, setOpenVerbPopoverCo] = useState<string | null>(null);
 
-  // Auto-populate lecture schedule items if empty but modules exist when opening syllabus step
-  useEffect(() => {
-    if (activeStepId === 'syllabus' && (course.courseType === 'THEORY' || course.courseType === 'TCP')) {
-      if (course.modules && course.modules.length > 0 && (!course.lectureScheduleItems || course.lectureScheduleItems.length === 0)) {
-        const synced = syncModulesToSchedule(course.modules, [], course.courseOutcomes || []);
-        if (synced.length > 0) {
-          updateField('lectureScheduleItems', synced);
-        }
-      }
-    }
-  }, [activeStepId, course.modules]);
+
 
   // Track which fields the user has interacted with (to show errors only after interaction)
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
@@ -1515,7 +1505,7 @@ export const CourseWizard: React.FC = () => {
           if (fetched.lectureScheduleItems && fetched.lectureScheduleItems.length > 0) {
             fetched.lectureScheduleItems = fetched.lectureScheduleItems.map(item => {
               const isHeader = !item.moduleNo || !item.moduleNo.includes('.');
-              const hasSubtopics = isHeader && fetched.lectureScheduleItems.some(x => x.moduleNo.startsWith(`${item.moduleNo}.`));
+              const hasSubtopics = isHeader && fetched.lectureScheduleItems?.some(x => x.moduleNo.startsWith(`${item.moduleNo}.`));
               if (isHeader && hasSubtopics && (item.periods === '' || item.periods === undefined || item.periods === null)) {
                 return item;
               }
@@ -2332,6 +2322,18 @@ export const CourseWizard: React.FC = () => {
 
   // Derive current step id so rendering is index-independent
   const activeStepId = steps[currentStep]?.id ?? '';
+
+  // Auto-populate lecture schedule items if empty but modules exist when opening syllabus step
+  useEffect(() => {
+    if (activeStepId === 'syllabus' && (course.courseType === 'THEORY' || course.courseType === 'TCP')) {
+      if (course.modules && course.modules.length > 0 && (!course.lectureScheduleItems || course.lectureScheduleItems.length === 0)) {
+        const synced = syncModulesToSchedule(course.modules, [], course.courseOutcomes || []);
+        if (synced.length > 0) {
+          updateField('lectureScheduleItems', synced);
+        }
+      }
+    }
+  }, [activeStepId, course.modules]);
 
   // Inline highlighted error component directly below the field
   const InlineFieldError: React.FC<{ field: string; fixHint?: boolean }> = ({ field, fixHint = true }) => {
