@@ -2123,16 +2123,17 @@ export const CourseWizard: React.FC = () => {
     }
 
     if (course.courseType === 'PRACTICAL') {
-      const distribute = (indices: number[]) => {
+      const distribute = (indices: number[], targetTotal: number) => {
         const col = new Array(n).fill(0);
+        if (indices.length === 0) return col;
         const subW = indices.map(i => weights[i]);
         const sum = subW.reduce((a, b) => a + b, 0) || 1;
         let acc = 0;
         indices.forEach((idx, k) => {
           if (k === indices.length - 1) {
-            col[idx] = 100 - acc;
+            col[idx] = targetTotal - acc;
           } else {
-            const v = Math.round((weights[idx] / sum) * 100);
+            const v = Math.round((weights[idx] / sum) * targetTotal);
             col[idx] = v;
             acc += v;
           }
@@ -2140,14 +2141,34 @@ export const CourseWizard: React.FC = () => {
         return col;
       };
 
+      const cogIndices: number[] = [];
+      const affIndices: number[] = [];
+      const psyIndices: number[] = [];
+
+      cos.forEach((c, idx) => {
+        const dom = getDomainForCourseOutcome(c);
+        if (dom === 'Affective') affIndices.push(idx);
+        else if (dom === 'Psychomotor') psyIndices.push(idx);
+        else cogIndices.push(idx);
+      });
+
+      // Target OCR/Continuous Assessment distribution: 60% Cognitive, 20% Affective, 20% Psychomotor
+      const caCol = new Array(n).fill(0);
+      const cogCa = distribute(cogIndices, 60);
+      const affCa = distribute(affIndices, 20);
+      const psyCa = distribute(psyIndices, 20);
+
+      cogIndices.forEach(i => { caCol[i] = cogCa[i]; });
+      affIndices.forEach(i => { caCol[i] = affCa[i]; });
+      psyIndices.forEach(i => { caCol[i] = psyCa[i]; });
+
       const allIndices = Array.from({ length: n }, (_, i) => i);
-      const ca = distribute(allIndices);
-      const model = distribute(allIndices);
-      const term = distribute(allIndices);
+      const model = distribute(allIndices, 100);
+      const term = distribute(allIndices, 100);
 
       const matrix = cos.map((c, i) => ({
         coNo: c.coNo,
-        practicalCa: ca[i],
+        practicalCa: caCol[i],
         practicalModel: model[i],
         terminalExam: term[i],
         tcpTerminal: term[i],
@@ -4001,6 +4022,22 @@ export const CourseWizard: React.FC = () => {
                                         ? rawRow.terminalExam
                                         : (rawRow?.tcpTerminal !== undefined ? rawRow.tcpTerminal : '');
 
+                                      const coDomain = getDomainForCourseOutcome(co);
+                                      const domainBadge = {
+                                        Cognitive: {
+                                          pill: 'bg-blue-600 text-white',
+                                          badge: 'bg-blue-100 text-blue-800 border border-blue-200',
+                                        },
+                                        Affective: {
+                                          pill: 'bg-emerald-600 text-white',
+                                          badge: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+                                        },
+                                        Psychomotor: {
+                                          pill: 'bg-violet-600 text-white',
+                                          badge: 'bg-violet-100 text-violet-800 border border-violet-200',
+                                        },
+                                      }[coDomain];
+
                                       const updateCell = (col: 'practicalCa' | 'practicalModel' | 'terminalExam', valStr: string) => {
                                         const numVal = valStr === '' ? 0 : Math.max(0, Math.min(100, parseInt(valStr, 10) || 0));
                                         const matrix = [...(course.assessmentMatrix || [])];
@@ -4032,9 +4069,16 @@ export const CourseWizard: React.FC = () => {
                                       return (
                                         <tr key={co.coNo} className="hover:bg-slate-50/50">
                                           <td className="border border-black p-2 text-left pl-3 font-normal text-black">
-                                            <span className="font-bold">{co.coNo}</span>
+                                            <div className="flex items-center space-x-2">
+                                              <span className={`font-bold text-xs px-2 py-0.5 rounded shadow-2xs ${domainBadge.pill}`}>
+                                                {co.coNo}
+                                              </span>
+                                              <span className={`text-[10px] font-semibold px-1.5 py-0.2 rounded ${domainBadge.badge}`}>
+                                                {coDomain}
+                                              </span>
+                                            </div>
                                             {co.tpsLevel && (
-                                              <span className="block text-[10px] text-slate-500 font-medium">
+                                              <span className="block text-[10px] text-slate-500 font-medium mt-1">
                                                 TPS {co.tpsLevel}
                                               </span>
                                             )}
@@ -4128,6 +4172,50 @@ export const CourseWizard: React.FC = () => {
                                 </table>
                               </div>
 
+                              {(() => {
+                                const cos = course.courseOutcomes || [];
+                                const cogCos = cos.filter(c => getDomainForCourseOutcome(c) === 'Cognitive');
+                                const affCos = cos.filter(c => getDomainForCourseOutcome(c) === 'Affective');
+                                const psyCos = cos.filter(c => getDomainForCourseOutcome(c) === 'Psychomotor');
+
+                                const cogSum = cogCos.reduce((acc, c) => {
+                                  const r = (course.assessmentMatrix || []).find(x => x.coNo === c.coNo);
+                                  return acc + (Number(r?.practicalCa) || 0);
+                                }, 0);
+                                const affSum = affCos.reduce((acc, c) => {
+                                  const r = (course.assessmentMatrix || []).find(x => x.coNo === c.coNo);
+                                  return acc + (Number(r?.practicalCa) || 0);
+                                }, 0);
+                                const psySum = psyCos.reduce((acc, c) => {
+                                  const r = (course.assessmentMatrix || []).find(x => x.coNo === c.coNo);
+                                  return acc + (Number(r?.practicalCa) || 0);
+                                }, 0);
+
+                                return (
+                                  <div className="mt-2.5 p-3 rounded-lg border border-slate-200 bg-slate-50/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+                                    <span className="font-bold text-slate-700">
+                                      OCR Domain Weightage Distribution (Required: 60% Cognitive, 20% Affective, 20% Psychomotor):
+                                    </span>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                                        cogSum === 60 ? 'bg-blue-100 text-blue-800 border border-blue-300' : 'bg-rose-100 text-rose-800 border border-rose-300'
+                                      }`}>
+                                        Cognitive: {cogSum}% / 60%
+                                      </span>
+                                      <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                                        affSum === 20 ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-rose-100 text-rose-800 border border-rose-300'
+                                      }`}>
+                                        Affective: {affSum}% / 20%
+                                      </span>
+                                      <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                                        psySum === 20 ? 'bg-violet-100 text-violet-800 border border-violet-300' : 'bg-rose-100 text-rose-800 border border-rose-300'
+                                      }`}>
+                                        Psychomotor: {psySum}% / 20%
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
 
                               <div className="mt-3 space-y-1">
                                 <InlineFieldError field="assessmentMatrix" />

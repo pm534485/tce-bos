@@ -923,6 +923,36 @@ export function validateAssessmentPattern(courseType, cos, matrix, tolerance = 3
                 });
             }
         });
+
+        // Domain weightage validation for OCR/Continuous Assessment:
+        // 60% Cognitive, 20% Affective, 20% Psychomotor
+        let ocrCogTotal = 0;
+        let ocrAffTotal = 0;
+        let ocrPsyTotal = 0;
+
+        cos.forEach(co => {
+            const r = matrix.find(m => m.coNo === co.coNo);
+            const val = Number(r?.practicalCa) || 0;
+            let d = co.domain;
+            if (!d && co.objectiveNo) {
+                if (co.objectiveNo >= 1 && co.objectiveNo <= 7) d = 'Cognitive';
+                else if (co.objectiveNo >= 8 && co.objectiveNo <= 9) d = 'Affective';
+                else if (co.objectiveNo >= 10 && co.objectiveNo <= 13) d = 'Psychomotor';
+            }
+            if (d === 'Affective') ocrAffTotal += val;
+            else if (d === 'Psychomotor') ocrPsyTotal += val;
+            else ocrCogTotal += val;
+        });
+
+        if (ocrCogTotal !== 60 || ocrAffTotal !== 20 || ocrPsyTotal !== 20) {
+            results.push({
+                id: 'B6_LAB_OCR_DOMAIN_WEIGHTS',
+                field: 'assessmentMatrix.practicalCa',
+                severity: 'error',
+                message: `OCR/Continuous Assessment must allocate 60% to Cognitive COs, 20% to Affective COs, and 20% to Psychomotor COs (currently: ${ocrCogTotal}% Cognitive, ${ocrAffTotal}% Affective, ${ocrPsyTotal}% Psychomotor).`,
+                fixHint: 'Adjust OCR/Continuous Assessment marks so that Cognitive COs sum to 60%, Affective COs sum to 20%, and Psychomotor COs sum to 20%.',
+            });
+        }
         // Every CO must appear in at least one component
         cos.forEach(co => {
             if (!coAppearance[co.coNo] || coAppearance[co.coNo] <= 0) {
