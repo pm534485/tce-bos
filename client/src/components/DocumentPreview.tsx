@@ -905,14 +905,24 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
                 <li key={idx} className="text-justify">{formatCitation(b)}</li>
               ))}
             </ul>
-            <div className="h-2" />
-
-            <div className="font-bold text-xs text-black mb-1">NPTEL Courses</div>
-            <ul className="list-disc pl-5 space-y-1 text-xs text-black">
-              {(course.webResources || []).map((w, idx) => (
-                <li key={idx} className="text-justify">{formatNptel(w)}</li>
-              ))}
-            </ul>
+            {(() => {
+              const validNptel = (course.webResources || []).filter(w => {
+                const formatted = formatNptel(w);
+                return Boolean(formatted && formatted.trim().length > 0);
+              });
+              if (validNptel.length === 0) return null;
+              return (
+                <>
+                  <div className="h-2" />
+                  <div className="font-bold text-xs text-black mb-1">NPTEL Courses</div>
+                  <ul className="list-disc pl-5 space-y-1 text-xs text-black">
+                    {validNptel.map((w, idx) => (
+                      <li key={idx} className="text-justify">{formatNptel(w)}</li>
+                    ))}
+                  </ul>
+                </>
+              );
+            })()}
           </div>
         )}
 

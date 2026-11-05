@@ -734,19 +734,21 @@ export function buildCourseDocxElements(course) {
                 children: [createText(formatCitation(b))],
             }));
         });
-        children.push(createLineSpace());
-        children.push(createPlainHeading('NPTEL Courses'));
-        children.push(new Paragraph({ spacing: { before: 40, after: 40 }, children: [] }));
-        (course.webResources || []).forEach(w => {
-            const text = formatNptel(w);
-            if (!text)
-                return;
-            children.push(new Paragraph({
-                bullet: { level: 0 },
-                alignment: AlignmentType.JUSTIFIED,
-                children: [createText(text)],
-            }));
-        });
+        const validNptel = (course.webResources || [])
+            .map(w => formatNptel(w))
+            .filter((t) => Boolean(t && t.trim().length > 0));
+        if (validNptel.length > 0) {
+            children.push(createLineSpace());
+            children.push(createPlainHeading('NPTEL Courses'));
+            children.push(new Paragraph({ spacing: { before: 40, after: 40 }, children: [] }));
+            validNptel.forEach((text) => {
+                children.push(new Paragraph({
+                    bullet: { level: 0 },
+                    alignment: AlignmentType.JUSTIFIED,
+                    children: [createText(text)],
+                }));
+            });
+        }
     }
     // ==================== PAGE 3 ====================
     let scheduleItems = course.lectureScheduleItems || [];

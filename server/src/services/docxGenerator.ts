@@ -745,20 +745,23 @@ export function buildCourseDocxElements(course: Course): { header: Header; foote
       }));
     });
 
-    children.push(createLineSpace());
+    const validNptel = (course.webResources || [])
+      .map(w => formatNptel(w))
+      .filter((t: string) => Boolean(t && t.trim().length > 0));
 
-    children.push(createPlainHeading('NPTEL Courses'));
-    children.push(new Paragraph({ spacing: { before: 40, after: 40 }, children: [] }));
+    if (validNptel.length > 0) {
+      children.push(createLineSpace());
+      children.push(createPlainHeading('NPTEL Courses'));
+      children.push(new Paragraph({ spacing: { before: 40, after: 40 }, children: [] }));
 
-    (course.webResources || []).forEach(w => {
-      const text = formatNptel(w);
-      if (!text) return;
-      children.push(new Paragraph({
-        bullet: { level: 0 },
-        alignment: AlignmentType.JUSTIFIED,
-        children: [createText(text)],
-      }));
-    });
+      validNptel.forEach((text: string) => {
+        children.push(new Paragraph({
+          bullet: { level: 0 },
+          alignment: AlignmentType.JUSTIFIED,
+          children: [createText(text)],
+        }));
+      });
+    }
   }
 
   // ==================== PAGE 3 ====================

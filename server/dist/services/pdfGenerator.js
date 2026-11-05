@@ -618,7 +618,7 @@ export function buildCourseInnerHtml(course) {
   ` : ''}
 
   ${webResourcesHtml ? `
-  <div class="plain-heading">Web Resource(s):</div>
+  <div class="plain-heading">NPTEL Courses</div>
   <ol class="bullet-list" style="list-style-type: decimal;">
     ${webResourcesHtml}
   </ol>
