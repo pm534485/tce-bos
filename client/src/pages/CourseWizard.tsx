@@ -1425,6 +1425,7 @@ export const CourseWizard: React.FC = () => {
     version: 0,
     courseCode: '',
     courseName: '',
+    courseSubtitle: '',
     categoryAbbr: '' as any,
     semester: 1,
     semesterType: 'ODD',
@@ -3077,6 +3078,28 @@ export const CourseWizard: React.FC = () => {
                         </p>
                       )}
                       <InlineFieldError field="courseName" />
+                    </div>
+
+                    {/* Course Subtitle / Additional Specification Note (Optional) */}
+                    <div className="pt-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-bold text-slate-700">
+                          Course Subtitle / Offering Note <span className="text-slate-400 font-normal">(Optional)</span>
+                        </label>
+                        <span className="text-[11px] text-slate-400">
+                          {(course.courseSubtitle || '').length}/100 characters
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        value={course.courseSubtitle || ''}
+                        onChange={e => updateField('courseSubtitle', e.target.value)}
+                        placeholder="e.g. Common to all courses"
+                        className="w-full px-3.5 py-2 border-2 border-slate-300 rounded-xl text-sm font-medium transition-all h-[42px] focus:border-sky-500 focus:ring-2 focus:ring-sky-100 bg-white placeholder:text-slate-400"
+                      />
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Optional line added below the course title in the syllabus document (e.g. <span className="font-semibold text-slate-600">Common to all courses</span> or <span className="font-semibold text-slate-600">Common to CSE, IT and AI&DS</span>).
+                      </p>
                     </div>
 
                     {/* TCP TE Exam Type */}

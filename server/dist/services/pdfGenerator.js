@@ -395,13 +395,21 @@ export function buildCourseInnerHtml(course) {
             return `${parts}${d.email ? (parts ? ', ' : '') + `<a href="mailto:${d.email}" style="color: #0000FF; text-decoration: underline;">${d.email}</a>` : ''}`;
         }).join('<br>')
         : 'Faculty Member, <a href="mailto:faculty@tce.edu" style="color: #0000FF; text-decoration: underline;">faculty@tce.edu</a>';
+    const subtitleFormatted = course.courseSubtitle?.trim()
+        ? (course.courseSubtitle.trim().startsWith('(') && course.courseSubtitle.trim().endsWith(')')
+            ? course.courseSubtitle.trim()
+            : `(${course.courseSubtitle.trim()})`)
+        : '';
     const bodyHtml = `
   <!-- ==================== PAGE 1 ==================== -->
   <!-- Header Table -->
   <table>
     <tr>
       <td rowspan="2" class="center font-bold" style="width: ${isTcp ? '16%' : '18%'}; font-size: 10.5pt;">${course.courseCode}</td>
-      <td rowspan="2" class="center font-bold" style="width: ${isTcp ? '38%' : '44%'}; font-size: 10.5pt; text-transform: uppercase;">${titleCaps}</td>
+      <td rowspan="2" class="center font-bold" style="width: ${isTcp ? '38%' : '44%'}; font-size: 10.5pt;">
+        <div style="text-transform: uppercase;">${titleCaps}</div>
+        ${subtitleFormatted ? `<div style="font-weight: normal; font-size: 8.5pt; text-transform: none; margin-top: 3px;">${subtitleFormatted}</div>` : ''}
+      </td>
       <td class="center" style="width: ${isTcp ? '12%' : '14%'};">Category</td>
       <td class="center" style="width: ${isTcp ? '5%' : '6%'};">L</td>
       <td class="center" style="width: ${isTcp ? '5%' : '6%'};">T</td>

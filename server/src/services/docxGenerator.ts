@@ -116,6 +116,11 @@ function createCell(
 export function buildCourseDocxElements(course: Course): { header: Header; footer: Footer; children: any[] } {
   const headerText = getDegreeProgramHeader(course);
   const titleText = (course.courseName || '').toUpperCase();
+  const subtitleFormatted = course.courseSubtitle?.trim()
+    ? (course.courseSubtitle.trim().startsWith('(') && course.courseSubtitle.trim().endsWith(')')
+        ? course.courseSubtitle.trim()
+        : `(${course.courseSubtitle.trim()})`)
+    : '';
 
   // Running Header on every page
   const header = new Header({
@@ -164,13 +169,30 @@ export function buildCourseDocxElements(course: Course): { header: Header; foote
         align: AlignmentType.CENTER,
         size: 21,
       }),
-      createCell(titleText, {
-        bold: true,
-        widthPercent: isTcp ? 38 : 44,
-        verticalMerge: VerticalMergeType.RESTART,
-        align: AlignmentType.CENTER,
-        size: 21,
-      }),
+      subtitleFormatted
+        ? new TableCell({
+            borders: cellBorders,
+            width: { size: isTcp ? 38 : 44, type: WidthType.PERCENTAGE },
+            verticalMerge: VerticalMergeType.RESTART,
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [createText(titleText, { bold: true, size: 21 })],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 40 },
+                children: [createText(subtitleFormatted, { bold: false, size: 17 })],
+              }),
+            ],
+          })
+        : createCell(titleText, {
+            bold: true,
+            widthPercent: isTcp ? 38 : 44,
+            verticalMerge: VerticalMergeType.RESTART,
+            align: AlignmentType.CENTER,
+            size: 21,
+          }),
       createCell('Category', { widthPercent: isTcp ? 12 : 14, align: AlignmentType.CENTER }),
       createCell('L', { widthPercent: isTcp ? 5 : 6, align: AlignmentType.CENTER }),
       createCell('T', { widthPercent: isTcp ? 5 : 6, align: AlignmentType.CENTER }),
@@ -1059,6 +1081,11 @@ export async function generateProgrammeBundleDocx(bundleData: {
   for (const course of courses) {
     unifiedChildren.push(new Paragraph({ pageBreakBefore: true }));
     const titleText = (course.courseName || '').toUpperCase();
+    const subtitleFormatted = course.courseSubtitle?.trim()
+      ? (course.courseSubtitle.trim().startsWith('(') && course.courseSubtitle.trim().endsWith(')')
+          ? course.courseSubtitle.trim()
+          : `(${course.courseSubtitle.trim()})`)
+      : '';
     const isTcp = course.courseType === 'TCP';
     unifiedChildren.push(
       new Table({
@@ -1067,7 +1094,23 @@ export async function generateProgrammeBundleDocx(bundleData: {
           new TableRow({
             children: [
               createCell(course.courseCode, { bold: true, widthPercent: isTcp ? 16 : 18, align: AlignmentType.CENTER }),
-              createCell(titleText, { bold: true, widthPercent: isTcp ? 38 : 44, align: AlignmentType.CENTER }),
+              subtitleFormatted
+                ? new TableCell({
+                    borders: cellBorders,
+                    width: { size: isTcp ? 38 : 44, type: WidthType.PERCENTAGE },
+                    children: [
+                      new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        children: [createText(titleText, { bold: true, size: 21 })],
+                      }),
+                      new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { before: 40 },
+                        children: [createText(subtitleFormatted, { bold: false, size: 17 })],
+                      }),
+                    ],
+                  })
+                : createCell(titleText, { bold: true, widthPercent: isTcp ? 38 : 44, align: AlignmentType.CENTER }),
               createCell('Category', { widthPercent: isTcp ? 12 : 14, align: AlignmentType.CENTER }),
               createCell('L', { widthPercent: isTcp ? 5 : 6, align: AlignmentType.CENTER }),
               createCell('T', { widthPercent: isTcp ? 5 : 6, align: AlignmentType.CENTER }),

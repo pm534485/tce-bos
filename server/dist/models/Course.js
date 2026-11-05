@@ -144,6 +144,7 @@ const CourseSchema = new Schema({
     version: { type: Number, default: 0 },
     courseCode: { type: String, required: false },
     courseName: { type: String, required: false },
+    courseSubtitle: { type: String, required: false },
     categoryAbbr: { type: String, required: false },
     semester: { type: Number, required: false },
     semesterType: { type: String, enum: ['ODD', 'EVEN'], required: false },

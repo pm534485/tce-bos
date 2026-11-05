@@ -178,6 +178,7 @@ export interface Course {
   version: number; // 0
   courseCode: string; // '26EECA0'
   courseName: string; // Stored in Title Case
+  courseSubtitle?: string; // Optional offering note (e.g. "Common to all courses")
   categoryAbbr: CategoryAbbreviation;
   semester?: number;
   semesterType?: 'ODD' | 'EVEN';

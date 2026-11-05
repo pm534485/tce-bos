@@ -596,8 +596,15 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
               <td rowSpan={2} className={`${isTcp ? 'w-[16%]' : 'w-[18%]'} font-bold text-center align-middle border border-black p-2 text-sm`}>
                 {course.courseCode || '______'}
               </td>
-              <td rowSpan={2} className={`${isTcp ? 'w-[38%]' : 'w-[44%]'} font-bold uppercase text-center align-middle border border-black p-2 text-sm`}>
-                {titleCaps || '____________________'}
+              <td rowSpan={2} className={`${isTcp ? 'w-[38%]' : 'w-[44%]'} font-bold text-center align-middle border border-black p-2 text-sm`}>
+                <div className="uppercase">{titleCaps || '____________________'}</div>
+                {course.courseSubtitle && course.courseSubtitle.trim() && (
+                  <div className="text-[11px] font-normal normal-case text-slate-700 mt-0.5 tracking-normal">
+                    {course.courseSubtitle.trim().startsWith('(') && course.courseSubtitle.trim().endsWith(')')
+                      ? course.courseSubtitle.trim()
+                      : `(${course.courseSubtitle.trim()})`}
+                  </div>
+                )}
               </td>
               <td className={`text-center border border-black p-1.5 ${isTcp ? 'w-[12%]' : 'w-[14%]'}`}>Category</td>
               <td className={`text-center border border-black p-1.5 ${isTcp ? 'w-[5%]' : 'w-[6%]'}`}>L</td>
