@@ -1127,9 +1127,14 @@ const CoDomainPicker: React.FC<CoDomainPickerProps> = ({ courseOutcomes, onAdd }
     Psychomotor: 'Table 7.2.2 — Suggested General COs: Psychomotor Domain',
   };
 
+  const domainGuidance: Record<string, string> = {
+    Cognitive:   'Covers Laboratory Objectives 1–5. Select 2–4 COs per course depending on the nature and scope of experiments.',
+    Affective:   'Covers Laboratory Objectives 8–13. 7 COs provided; select 2–3 per course ensuring balanced coverage of ethics, safety, teamwork, and communication.',
+    Psychomotor: 'Covers Objectives 6–7. 6 COs provided; select 2–3 per course ensuring coverage of instrument operation, sensory awareness, and procedural skill.',
+  };
+
   const handleAdd = (g: typeof GENERAL_CO_POOL[0]) => {
     if (addedRefs.includes(g.code)) return;
-    if (g.domain === 'Cognitive' && cogCount >= 2) return;
     const newCo: CourseOutcome = {
       coNo: `CO${courseOutcomes.length + 1}`,
       statement: g.statement,
@@ -1163,7 +1168,7 @@ const CoDomainPicker: React.FC<CoDomainPickerProps> = ({ courseOutcomes, onAdd }
             >
               {domain}
               {count > 0 && <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${isOpen ? 'bg-white/30' : col.badge}`}>{count}</span>}
-              {domain === 'Cognitive' && <span className="text-[10px] text-white/80 font-medium">(max 2)</span>}
+              <span className="text-[10px] text-white/80 font-medium">(min 2)</span>
               <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </button>
           );
@@ -1173,6 +1178,7 @@ const CoDomainPicker: React.FC<CoDomainPickerProps> = ({ courseOutcomes, onAdd }
       {/* Domain table modal dialog */}
       {openDomain && (() => {
         const col = domainColors[openDomain];
+        const currentDomainCount = courseOutcomes.filter(c => c.domain === openDomain).length;
         return (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -1185,18 +1191,19 @@ const CoDomainPicker: React.FC<CoDomainPickerProps> = ({ courseOutcomes, onAdd }
             >
               {/* Modal header with solid domain color */}
               <div className={`flex items-center justify-between px-6 py-4 ${col.modalHeader}`}>
-                <div>
+                <div className="space-y-1 pr-4">
                   <h3 className={`font-bold text-sm tracking-wide ${col.modalHeaderTitle}`}>{tableTitle[openDomain]}</h3>
-                  <p className={`text-xs mt-0.5 ${col.modalHeaderSubtitle}`}>
-                    {openDomain === 'Cognitive'
-                      ? `Select up to 2 — ${cogCount}/2 selected`
-                      : 'Click a row to add it to your course outcomes'}
+                  <p className={`text-xs ${col.modalHeaderSubtitle} opacity-95 leading-relaxed`}>
+                    {domainGuidance[openDomain]}
+                  </p>
+                  <p className={`text-[11px] font-semibold text-white/90`}>
+                    Currently selected: {currentDomainCount} (minimum 2 required)
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setOpenDomain(null)}
-                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${col.modalCloseBtn}`}
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer shrink-0 ${col.modalCloseBtn}`}
                   title="Close modal"
                 >
                   <X className="w-5 h-5" />
@@ -1218,18 +1225,15 @@ const CoDomainPicker: React.FC<CoDomainPickerProps> = ({ courseOutcomes, onAdd }
                   <tbody className={`divide-y ${col.tableDivider}`}>
                     {poolMap[openDomain].map(g => {
                       const alreadyAdded = addedRefs.includes(g.code);
-                      const blocked = openDomain === 'Cognitive' && cogCount >= 2 && !alreadyAdded;
                       return (
                         <tr
                           key={g.code}
                           className={`transition-colors ${
                             alreadyAdded
                               ? `${col.addedRowBg} font-medium`
-                              : blocked
-                              ? 'opacity-40 cursor-not-allowed bg-slate-50'
                               : `${col.rowHover} cursor-pointer bg-white/60`
                           }`}
-                          onClick={() => { if (!alreadyAdded && !blocked) handleAdd(g); }}
+                          onClick={() => { if (!alreadyAdded) handleAdd(g); }}
                         >
                           <td className={`px-4 py-3 font-black align-top ${col.codeText}`}>{g.code}</td>
                           <td className={`px-4 py-3 leading-snug align-top ${col.statementText}`}>{g.statement}</td>
@@ -1240,8 +1244,6 @@ const CoDomainPicker: React.FC<CoDomainPickerProps> = ({ courseOutcomes, onAdd }
                               <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white shadow-xs">
                                 <Check className="w-4 h-4 text-emerald-600" />
                               </span>
-                            ) : blocked ? (
-                              <span className="text-[10px] text-slate-400 font-bold">max</span>
                             ) : (
                               <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/80 hover:bg-white text-slate-500 hover:text-slate-800 shadow-xs transition-all">
                                 <Plus className="w-3.5 h-3.5" />
