@@ -2153,26 +2153,38 @@ export const CourseWizard: React.FC = () => {
         else cogIndices.push(idx);
       });
 
-      // Target OCR/Continuous Assessment distribution: 60% Cognitive, 20% Affective, 20% Psychomotor
+      // Target distribution across all components (OCR CA, Model Test, Terminal Exam):
+      // 60% Cognitive, 20% Affective, 20% Psychomotor
       const caCol = new Array(n).fill(0);
       const cogCa = distribute(cogIndices, 60);
       const affCa = distribute(affIndices, 20);
       const psyCa = distribute(psyIndices, 20);
-
       cogIndices.forEach(i => { caCol[i] = cogCa[i]; });
       affIndices.forEach(i => { caCol[i] = affCa[i]; });
       psyIndices.forEach(i => { caCol[i] = psyCa[i]; });
 
-      const allIndices = Array.from({ length: n }, (_, i) => i);
-      const model = distribute(allIndices, 100);
-      const term = distribute(allIndices, 100);
+      const modelCol = new Array(n).fill(0);
+      const cogModel = distribute(cogIndices, 60);
+      const affModel = distribute(affIndices, 20);
+      const psyModel = distribute(psyIndices, 20);
+      cogIndices.forEach(i => { modelCol[i] = cogModel[i]; });
+      affIndices.forEach(i => { modelCol[i] = affModel[i]; });
+      psyIndices.forEach(i => { modelCol[i] = psyModel[i]; });
+
+      const termCol = new Array(n).fill(0);
+      const cogTerm = distribute(cogIndices, 60);
+      const affTerm = distribute(affIndices, 20);
+      const psyTerm = distribute(psyIndices, 20);
+      cogIndices.forEach(i => { termCol[i] = cogTerm[i]; });
+      affIndices.forEach(i => { termCol[i] = affTerm[i]; });
+      psyIndices.forEach(i => { termCol[i] = psyTerm[i]; });
 
       const matrix = cos.map((c, i) => ({
         coNo: c.coNo,
         practicalCa: caCol[i],
-        practicalModel: model[i],
-        terminalExam: term[i],
-        tcpTerminal: term[i],
+        practicalModel: modelCol[i],
+        terminalExam: termCol[i],
+        tcpTerminal: termCol[i],
       }));
       updateField('assessmentMatrix', matrix);
       return;
@@ -4201,40 +4213,64 @@ export const CourseWizard: React.FC = () => {
                                 const affCos = cos.filter(c => getDomainForCourseOutcome(c) === 'Affective');
                                 const psyCos = cos.filter(c => getDomainForCourseOutcome(c) === 'Psychomotor');
 
-                                const cogSum = cogCos.reduce((acc, c) => {
-                                  const r = (course.assessmentMatrix || []).find(x => x.coNo === c.coNo);
-                                  return acc + (Number(r?.practicalCa) || 0);
-                                }, 0);
-                                const affSum = affCos.reduce((acc, c) => {
-                                  const r = (course.assessmentMatrix || []).find(x => x.coNo === c.coNo);
-                                  return acc + (Number(r?.practicalCa) || 0);
-                                }, 0);
-                                const psySum = psyCos.reduce((acc, c) => {
-                                  const r = (course.assessmentMatrix || []).find(x => x.coNo === c.coNo);
-                                  return acc + (Number(r?.practicalCa) || 0);
-                                }, 0);
+                                const components: Array<{ col: 'practicalCa' | 'practicalModel' | 'terminalExam'; label: string }> = [
+                                  { col: 'practicalCa', label: 'OCR/Continuous Assessment' },
+                                  { col: 'practicalModel', label: 'Model Test CO-wise' },
+                                  { col: 'terminalExam', label: 'Terminal Exam (Practical)' },
+                                ];
 
                                 return (
-                                  <div className="mt-2.5 p-3 rounded-lg border border-slate-200 bg-slate-50/80 flex flex-wrap items-center justify-between gap-2 text-xs">
-                                    <span className="font-bold text-slate-700">
-                                      OCR Domain Weightage Distribution (Required: 60% Cognitive, 20% Affective, 20% Psychomotor):
-                                    </span>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
-                                        cogSum === 60 ? 'bg-blue-100 text-blue-800 border border-blue-300' : 'bg-rose-100 text-rose-800 border border-rose-300'
-                                      }`}>
-                                        Cognitive: {cogSum}% / 60%
-                                      </span>
-                                      <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
-                                        affSum === 20 ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-rose-100 text-rose-800 border border-rose-300'
-                                      }`}>
-                                        Affective: {affSum}% / 20%
-                                      </span>
-                                      <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
-                                        psySum === 20 ? 'bg-violet-100 text-violet-800 border border-violet-300' : 'bg-rose-100 text-rose-800 border border-rose-300'
-                                      }`}>
-                                        Psychomotor: {psySum}% / 20%
-                                      </span>
+                                  <div className="mt-2.5 p-3 rounded-lg border border-slate-200 bg-slate-50/80 space-y-2 text-xs">
+                                    <div className="font-bold text-slate-700">
+                                      Domain Weightage Distribution (Required for all components: 60% Cognitive, 20% Affective, 20% Psychomotor):
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                      {components.map(comp => {
+                                        const cogSum = cogCos.reduce((acc, c) => {
+                                          const r = (course.assessmentMatrix || []).find(x => x.coNo === c.coNo);
+                                          return acc + (Number((r as any)?.[comp.col]) || 0);
+                                        }, 0);
+                                        const affSum = affCos.reduce((acc, c) => {
+                                          const r = (course.assessmentMatrix || []).find(x => x.coNo === c.coNo);
+                                          return acc + (Number((r as any)?.[comp.col]) || 0);
+                                        }, 0);
+                                        const psySum = psyCos.reduce((acc, c) => {
+                                          const r = (course.assessmentMatrix || []).find(x => x.coNo === c.coNo);
+                                          return acc + (Number((r as any)?.[comp.col]) || 0);
+                                        }, 0);
+
+                                        const allValid = cogSum === 60 && affSum === 20 && psySum === 20;
+
+                                        return (
+                                          <div key={comp.col} className="p-2 bg-white rounded-md border border-slate-200 space-y-1.5 shadow-2xs">
+                                            <div className="flex items-center justify-between text-[11px] font-semibold text-slate-800">
+                                              <span>{comp.label}</span>
+                                              {allValid ? (
+                                                <span className="text-[10px] text-emerald-600 font-bold">✓ 60/20/20</span>
+                                              ) : (
+                                                <span className="text-[10px] text-rose-500 font-bold">Pending</span>
+                                              )}
+                                            </div>
+                                            <div className="flex flex-wrap items-center gap-1">
+                                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                                cogSum === 60 ? 'bg-blue-100 text-blue-800 border border-blue-300' : 'bg-rose-100 text-rose-800 border border-rose-300'
+                                              }`}>
+                                                Cog: {cogSum}% / 60%
+                                              </span>
+                                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                                affSum === 20 ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-rose-100 text-rose-800 border border-rose-300'
+                                              }`}>
+                                                Aff: {affSum}% / 20%
+                                              </span>
+                                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                                psySum === 20 ? 'bg-violet-100 text-violet-800 border border-violet-300' : 'bg-rose-100 text-rose-800 border border-rose-300'
+                                              }`}>
+                                                Psy: {psySum}% / 20%
+                                              </span>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
                                     </div>
                                   </div>
                                 );

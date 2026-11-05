@@ -424,6 +424,44 @@ describe('B6: Assessment Pattern Validation', () => {
     expect(res.some(e => e.id.includes('B6_TPS_SPLIT_OWN'))).toBe(true);
     expect(res.some(e => e.id.includes('B6_TPS_SPLIT_LOWER'))).toBe(true);
   });
+
+  describe('B6: Practical Course Assessment Pattern Validation', () => {
+    const labCos: CourseOutcome[] = [
+      { coNo: 'CO1', statement: 'Cog 1', tpsLevel: 3, pi: '1.1.1', domain: 'Cognitive' },
+      { coNo: 'CO2', statement: 'Cog 2', tpsLevel: 4, pi: '1.1.1', domain: 'Cognitive' },
+      { coNo: 'CO3', statement: 'Aff 1', tpsLevel: 3, pi: '8.1.1', domain: 'Affective' },
+      { coNo: 'CO4', statement: 'Aff 2', tpsLevel: 3, pi: '8.1.1', domain: 'Affective' },
+      { coNo: 'CO5', statement: 'Psy 1', tpsLevel: 3, pi: '6.1.1', domain: 'Psychomotor' },
+      { coNo: 'CO6', statement: 'Psy 2', tpsLevel: 3, pi: '6.1.1', domain: 'Psychomotor' },
+    ];
+
+    it('should validate 60% Cognitive, 20% Affective, 20% Psychomotor across all 3 practical columns', () => {
+      const validMatrix = [
+        { coNo: 'CO1', practicalCa: 30, practicalModel: 30, terminalExam: 30 },
+        { coNo: 'CO2', practicalCa: 30, practicalModel: 30, terminalExam: 30 },
+        { coNo: 'CO3', practicalCa: 10, practicalModel: 10, terminalExam: 10 },
+        { coNo: 'CO4', practicalCa: 10, practicalModel: 10, terminalExam: 10 },
+        { coNo: 'CO5', practicalCa: 10, practicalModel: 10, terminalExam: 10 },
+        { coNo: 'CO6', practicalCa: 10, practicalModel: 10, terminalExam: 10 },
+      ];
+      const res = validateAssessmentPattern('PRACTICAL', labCos, validMatrix);
+      expect(res.filter(r => r.severity === 'error')).toHaveLength(0);
+    });
+
+    it('should flag errors when model test or terminal exam do not meet 60/20/20', () => {
+      const badMatrix = [
+        { coNo: 'CO1', practicalCa: 30, practicalModel: 20, terminalExam: 20 },
+        { coNo: 'CO2', practicalCa: 30, practicalModel: 20, terminalExam: 20 },
+        { coNo: 'CO3', practicalCa: 10, practicalModel: 15, terminalExam: 15 },
+        { coNo: 'CO4', practicalCa: 10, practicalModel: 15, terminalExam: 15 },
+        { coNo: 'CO5', practicalCa: 10, practicalModel: 15, terminalExam: 15 },
+        { coNo: 'CO6', practicalCa: 10, practicalModel: 15, terminalExam: 15 },
+      ];
+      const res = validateAssessmentPattern('PRACTICAL', labCos, badMatrix);
+      expect(res.some(e => e.id.includes('B6_LAB_DOMAIN_WEIGHTS_practicalModel'))).toBe(true);
+      expect(res.some(e => e.id.includes('B6_LAB_DOMAIN_WEIGHTS_terminalExam'))).toBe(true);
+    });
+  });
 });
 
 describe('B7: Syllabus Modules Validation', () => {
