@@ -607,7 +607,7 @@ export function buildCourseDocxElements(course: Course): { header: Header; foote
     const designers = course.designers || [];
     if (designers.length > 0) {
       designers.forEach(d => {
-        const parts = [d.name, d.designation].filter(Boolean).join(', ');
+        const parts = [d.name, d.designation, d.department].filter(Boolean).join(', ');
         const runs = [createText(`${parts}${d.email ? (parts ? ', ' : '') : ''}`)];
         if (d.email) {
           runs.push(new TextRun({
@@ -861,7 +861,7 @@ export function buildCourseDocxElements(course: Course): { header: Header; foote
     const designers = course.designers || [];
     if (designers.length > 0) {
       designers.forEach(d => {
-        const parts = [d.name, d.designation].filter(Boolean).join(', ');
+        const parts = [d.name, d.designation, d.department].filter(Boolean).join(', ');
         const runs = [createText(`${parts}${d.email ? (parts ? ', ' : '') : ''}`)];
         if (d.email) {
           runs.push(new TextRun({

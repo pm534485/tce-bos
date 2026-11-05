@@ -974,7 +974,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
           <div className="text-xs text-black leading-relaxed space-y-1">
             {(course.designers && course.designers.length > 0) ? (
               course.designers.map((d, idx) => {
-                const textParts = [d.name, d.designation].filter(Boolean).join(', ');
+                const textParts = [d.name, d.designation, d.department].filter(Boolean).join(', ');
                 return (
                   <div key={idx}>
                     {textParts}
