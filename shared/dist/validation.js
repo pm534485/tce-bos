@@ -892,29 +892,21 @@ export function validateAssessmentPattern(courseType, cos, matrix, tolerance = 3
     if (courseType === 'PRACTICAL') {
         // Columns: Theory CAT1, Theory CAT2, Practical Continuous Assessment, Practical Model Test, Terminal Exam (Practical)
         const colTotals = {
-            theoryCat1: 0,
-            theoryCat2: 0,
             practicalCa: 0,
             practicalModel: 0,
             terminalExam: 0,
         };
         const coAppearance = {};
         matrix.forEach(row => {
-            const c1 = Number(row.theoryCat1 !== undefined ? row.theoryCat1 : row.cat1) || 0;
-            const c2 = Number(row.theoryCat2 !== undefined ? row.theoryCat2 : (row.cat2 || row.assignment1)) || 0;
             const c3 = Number(row.practicalCa) || 0;
             const c4 = Number(row.practicalModel) || 0;
             const c5 = Number(row.terminalExam !== undefined ? row.terminalExam : row.tcpTerminal) || 0;
-            colTotals.theoryCat1 += c1;
-            colTotals.theoryCat2 += c2;
             colTotals.practicalCa += c3;
             colTotals.practicalModel += c4;
             colTotals.terminalExam += c5;
-            coAppearance[row.coNo] = (coAppearance[row.coNo] || 0) + c1 + c2 + c3 + c4 + c5;
+            coAppearance[row.coNo] = (coAppearance[row.coNo] || 0) + c3 + c4 + c5;
         });
         const columns = [
-            { name: 'theoryCat1', label: 'CAT1' },
-            { name: 'theoryCat2', label: 'CAT2' },
             { name: 'practicalCa', label: 'OCR/Continuous Assessment' },
             { name: 'practicalModel', label: 'Model Test CO-wise' },
             { name: 'terminalExam', label: 'Terminal Exam (Practical)' },

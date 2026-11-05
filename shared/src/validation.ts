@@ -399,7 +399,7 @@ export function validatePreamble(preamble: string, coStatements: string[] = []):
     });
   }
 
-  // Cliché phrase checks
+  // Clichï¿½ phrase checks
   const cliches = [
     { pattern: /This course covers important topics/i, phrase: 'This course covers important topics' },
     { pattern: /Students will learn about/i, phrase: 'Students will learn about' },
@@ -1015,8 +1015,6 @@ export function validateAssessmentPattern(
   if (courseType === 'PRACTICAL') {
     // Columns: Theory CAT1, Theory CAT2, Practical Continuous Assessment, Practical Model Test, Terminal Exam (Practical)
     const colTotals = {
-      theoryCat1: 0,
-      theoryCat2: 0,
       practicalCa: 0,
       practicalModel: 0,
       terminalExam: 0,
@@ -1025,24 +1023,18 @@ export function validateAssessmentPattern(
     const coAppearance: Record<string, number> = {};
 
     matrix.forEach(row => {
-      const c1 = Number(row.theoryCat1 !== undefined ? row.theoryCat1 : row.cat1) || 0;
-      const c2 = Number(row.theoryCat2 !== undefined ? row.theoryCat2 : (row.cat2 || row.assignment1)) || 0;
       const c3 = Number(row.practicalCa) || 0;
       const c4 = Number(row.practicalModel) || 0;
       const c5 = Number(row.terminalExam !== undefined ? row.terminalExam : row.tcpTerminal) || 0;
 
-      colTotals.theoryCat1 += c1;
-      colTotals.theoryCat2 += c2;
       colTotals.practicalCa += c3;
       colTotals.practicalModel += c4;
       colTotals.terminalExam += c5;
 
-      coAppearance[row.coNo] = (coAppearance[row.coNo] || 0) + c1 + c2 + c3 + c4 + c5;
+      coAppearance[row.coNo] = (coAppearance[row.coNo] || 0) + c3 + c4 + c5;
     });
 
     const columns: Array<{ name: keyof typeof colTotals; label: string }> = [
-      { name: 'theoryCat1', label: 'CAT1' },
-      { name: 'theoryCat2', label: 'CAT2' },
       { name: 'practicalCa', label: 'OCR/Continuous Assessment' },
       { name: 'practicalModel', label: 'Model Test CO-wise' },
       { name: 'terminalExam', label: 'Terminal Exam (Practical)' },
@@ -1644,7 +1636,7 @@ export function evaluateTheoryChecklist(course: Course): Array<{ id: number; tit
     },
     {
       id: 8,
-      title: 'CO Weightage values are unequal, sum to 100, and range 5–25% per CO.',
+      title: 'CO Weightage values are unequal, sum to 100, and range 5ï¿½25% per CO.',
       passed: (() => {
         const cos = course.courseOutcomes || [];
         if (cos.length === 0) return false;
@@ -1737,7 +1729,7 @@ export function evaluateTheoryChecklist(course: Course): Array<{ id: number; tit
     },
     {
       id: 14,
-      title: '1–2 Text Books listed with chapter references per module.',
+      title: '1ï¿½2 Text Books listed with chapter references per module.',
       passed: course.courseType === 'PRACTICAL' ? true : ((course.textBooks || []).length >= 1 && (course.textBooks || []).length <= 2),
       reason: course.courseType === 'PRACTICAL' ? 'Not applicable for Laboratory courses.' : `Text books count: ${(course.textBooks || []).length} (required: 1-2).`,
     },
@@ -1758,13 +1750,13 @@ export function evaluateTheoryChecklist(course: Course): Array<{ id: number; tit
     },
     {
       id: 16,
-      title: 'Reference books follow standard citation format with year (3–6 titles).',
+      title: 'Reference books follow standard citation format with year (3ï¿½6 titles).',
       passed: course.courseType === 'PRACTICAL' ? true : ((course.referenceBooks || []).length >= 3 && (course.referenceBooks || []).length <= 6 && (course.referenceBooks || []).every(b => !!b.year)),
       reason: course.courseType === 'PRACTICAL' ? 'Not applicable for Laboratory courses.' : `Reference books count: ${(course.referenceBooks || []).length} (required: 3-6) with publication year.`,
     },
     {
       id: 17,
-      title: 'Total number of lecture hours is strictly assigned according to credit criteria (1 credit: 12–14 hrs, 2 credits: 24–28 hrs, 3 credits: 36 hrs, 4 credits: 48 hrs).',
+      title: 'Total number of lecture hours is strictly assigned according to credit criteria (1 credit: 12ï¿½14 hrs, 2 credits: 24ï¿½28 hrs, 3 credits: 36 hrs, 4 credits: 48 hrs).',
       passed: (() => {
         const totalPeriods = (course.modules || []).reduce((sum, m) => sum + (Number(m.periods) || 0), 0);
         if (totalPeriods === 0) return true; // Periods omitted from syllabus modules

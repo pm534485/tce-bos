@@ -352,27 +352,21 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
   let totalCol5 = 0;
 
   // Practical Assessment Pattern (Mark Distribution)
-  let totalLabCat1 = 0;
-  let totalLabCat2 = 0;
   let totalLabCa = 0;
   let totalLabModel = 0;
   let totalLabTerm = 0;
 
   const labAssessmentRows = coList.map((co) => {
     const row = matrix.find(m => m.coNo === co.coNo);
-    const cat1 = row?.theoryCat1 && row.theoryCat1 > 0 ? row.theoryCat1 : (row?.cat1 && row.cat1 > 0 ? row.cat1 : '');
-    const cat2 = row?.theoryCat2 && row.theoryCat2 > 0 ? row.theoryCat2 : (row?.cat2 && row.cat2 > 0 ? row.cat2 : (row?.assignment1 && row.assignment1 > 0 ? row.assignment1 : ''));
     const ca = row?.practicalCa && row.practicalCa > 0 ? row.practicalCa : '';
     const model = row?.practicalModel && row.practicalModel > 0 ? row.practicalModel : '';
     const term = row?.terminalExam && row.terminalExam > 0 ? row.terminalExam : (row?.tcpTerminal && row.tcpTerminal > 0 ? row.tcpTerminal : '');
 
-    if (typeof cat1 === 'number') totalLabCat1 += cat1;
-    if (typeof cat2 === 'number') totalLabCat2 += cat2;
     if (typeof ca === 'number') totalLabCa += ca;
     if (typeof model === 'number') totalLabModel += model;
     if (typeof term === 'number') totalLabTerm += term;
 
-    return { coNo: co.coNo, cat1, cat2, ca, model, term };
+    return { coNo: co.coNo, ca, model, term };
   });
 
   const assessmentRows = coList.map((co, idx) => {
@@ -700,22 +694,17 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
             <table className="w-full border-collapse border border-black mb-0 text-xs table-fixed">
               <thead>
                 <tr>
-                  <th rowSpan={3} className="border border-black p-1.5 text-center align-middle font-bold w-[10%]">CO</th>
-                  <th colSpan={2} className="border border-black p-1.5 text-center font-bold">Theory</th>
+                  <th rowSpan={3} className="border border-black p-1.5 text-center align-middle font-bold w-[16%]">CO</th>
                   <th colSpan={2} className="border border-black p-1.5 text-center font-bold">Practical</th>
-                  <th rowSpan={2} className="border border-black p-1.5 text-center align-middle font-bold w-[18%]">
+                  <th rowSpan={2} className="border border-black p-1.5 text-center align-middle font-bold w-[28%]">
                     Terminal Exam<br />(Practical)
                   </th>
                 </tr>
                 <tr>
-                  <th className="border border-black p-1.5 text-center font-bold w-[18%]">CAT1</th>
-                  <th className="border border-black p-1.5 text-center font-bold w-[18%]">CAT2</th>
-                  <th className="border border-black p-1.5 text-center font-bold w-[18%]">OCR/Continuous Assessment</th>
-                  <th className="border border-black p-1.5 text-center font-bold w-[18%]">Model Test CO-wise</th>
+                  <th className="border border-black p-1.5 text-center font-bold w-[28%]">OCR/Continuous Assessment</th>
+                  <th className="border border-black p-1.5 text-center font-bold w-[28%]">Model Test CO-wise</th>
                 </tr>
                 <tr>
-                  <th className="border border-black p-1 text-center font-bold text-[10px]">% of Marks</th>
-                  <th className="border border-black p-1 text-center font-bold text-[10px]">% of Marks</th>
                   <th className="border border-black p-1 text-center font-bold text-[10px]">% of Marks</th>
                   <th className="border border-black p-1 text-center font-bold text-[10px]">% of Marks</th>
                   <th className="border border-black p-1 text-center font-bold text-[10px]">% of Marks</th>
@@ -725,8 +714,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
                 {labAssessmentRows.map(row => (
                   <tr key={row.coNo} className="border-b border-black">
                     <td className="border border-black p-1.5 text-left font-bold pl-3">{row.coNo}</td>
-                    <td className="border border-black p-1.5 text-center">{row.cat1}</td>
-                    <td className="border border-black p-1.5 text-center">{row.cat2}</td>
                     <td className="border border-black p-1.5 text-center">{row.ca}</td>
                     <td className="border border-black p-1.5 text-center">{row.model}</td>
                     <td className="border border-black p-1.5 text-center">{row.term}</td>
@@ -734,8 +721,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
                 ))}
                 <tr>
                   <td className="border border-black p-1.5 text-left font-bold pl-3">Total</td>
-                  <td className="border border-black p-1.5 text-center font-bold">{totalLabCat1 || 100}%</td>
-                  <td className="border border-black p-1.5 text-center font-bold">{totalLabCat2 || 100}%</td>
                   <td className="border border-black p-1.5 text-center font-bold">{totalLabCa || 100}%</td>
                   <td className="border border-black p-1.5 text-center font-bold">{totalLabModel || 100}%</td>
                   <td className="border border-black p-1.5 text-center font-bold">{totalLabTerm || 100}%</td>
