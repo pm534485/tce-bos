@@ -427,12 +427,12 @@ describe('B6: Assessment Pattern Validation', () => {
 
   describe('B6: Practical Course Assessment Pattern Validation', () => {
     const labCos: CourseOutcome[] = [
-      { coNo: 'CO1', statement: 'Cog 1', tpsLevel: 3, pi: '1.1.1', domain: 'Cognitive' },
-      { coNo: 'CO2', statement: 'Cog 2', tpsLevel: 4, pi: '1.1.1', domain: 'Cognitive' },
-      { coNo: 'CO3', statement: 'Aff 1', tpsLevel: 3, pi: '8.1.1', domain: 'Affective' },
-      { coNo: 'CO4', statement: 'Aff 2', tpsLevel: 3, pi: '8.1.1', domain: 'Affective' },
-      { coNo: 'CO5', statement: 'Psy 1', tpsLevel: 3, pi: '6.1.1', domain: 'Psychomotor' },
-      { coNo: 'CO6', statement: 'Psy 2', tpsLevel: 3, pi: '6.1.1', domain: 'Psychomotor' },
+      { coNo: 'CO1', statement: 'Cog 1', tpsLevel: 3, pi: '1.1.1', domain: 'Cognitive', sdgNo: 'NC', sdgLevel: 0 },
+      { coNo: 'CO2', statement: 'Cog 2', tpsLevel: 4, pi: '1.1.1', domain: 'Cognitive', sdgNo: 'NC', sdgLevel: 0 },
+      { coNo: 'CO3', statement: 'Aff 1', tpsLevel: 3, pi: '8.1.1', domain: 'Affective', sdgNo: 'NC', sdgLevel: 0 },
+      { coNo: 'CO4', statement: 'Aff 2', tpsLevel: 3, pi: '8.1.1', domain: 'Affective', sdgNo: 'NC', sdgLevel: 0 },
+      { coNo: 'CO5', statement: 'Psy 1', tpsLevel: 3, pi: '6.1.1', domain: 'Psychomotor', sdgNo: 'NC', sdgLevel: 0 },
+      { coNo: 'CO6', statement: 'Psy 2', tpsLevel: 3, pi: '6.1.1', domain: 'Psychomotor', sdgNo: 'NC', sdgLevel: 0 },
     ];
 
     it('should validate 60% Cognitive, 20% Affective, 20% Psychomotor across all 3 practical columns', () => {
