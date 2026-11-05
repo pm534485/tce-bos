@@ -110,14 +110,14 @@ export const CATEGORY_CODES: CategoryCode[] = [
   { code: 'C', name: 'Programme Core Courses', defaultAbbr: 'PCC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
   { code: 'S', name: 'Basic Science Courses', defaultAbbr: 'BSC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
   { code: 'E', name: 'Engineering Science Courses', defaultAbbr: 'ESC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
-  { code: 'L', name: 'Employment Enhancement Courses', defaultAbbr: 'EEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
+  { code: 'L', name: 'Employability Enhancement Courses', defaultAbbr: 'EEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
   { code: 'H', name: 'Humanities, including Management Studies/ Research methodology & IPR courses of PG', defaultAbbr: 'HSMC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
   { code: 'P', name: 'Programme Elective Courses', defaultAbbr: 'PEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
   { code: 'Q', name: 'Programme Elective Courses', defaultAbbr: 'PEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
   { code: 'R', name: 'Programme Elective Courses', defaultAbbr: 'PEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
   { code: 'G', name: 'Open Electives', defaultAbbr: 'OEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
   { code: 'F', name: 'Basic Science Electives', defaultAbbr: 'BSC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
-  { code: 'K', name: 'Foundation Courses', defaultAbbr: 'ESC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
+  { code: 'K', name: 'Foundational Courses', defaultAbbr: 'ESC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
   { code: '1', name: 'Industry-Supported Course', defaultAbbr: 'PEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
   { code: '2', name: 'Industry-Supported Course', defaultAbbr: 'PEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
   { code: 'A', name: 'Audit Courses', defaultAbbr: 'AC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
@@ -147,14 +147,14 @@ export interface CategoryOption {
 }
 
 export const CATEGORY_OPTIONS: CategoryOption[] = [
-  { abbr: 'PCC', name: 'Programme Core Courses', fullName: 'PCC — Programme Core Courses' },
-  { abbr: 'PEC', name: 'Programme Elective Courses', fullName: 'PEC — Programme Elective Courses' },
-  { abbr: 'BSC', name: 'Basic Science Courses', fullName: 'BSC — Basic Science Courses' },
-  { abbr: 'ESC', name: 'Engineering Science Courses', fullName: 'ESC — Engineering Science Courses' },
-  { abbr: 'EEC', name: 'Employability Enhancement Courses', fullName: 'EEC — Employability Enhancement Courses' },
-  { abbr: 'HSMC', name: 'Humanities, Social Sciences & Management', fullName: 'HSMC — Humanities & Management' },
-  { abbr: 'OEC', name: 'Open Elective Courses', fullName: 'OEC — Open Elective Courses' },
-  { abbr: 'AC', name: 'Audit Courses', fullName: 'AC — Audit Courses' },
+  { abbr: 'PCC', name: 'Programme Core Courses', fullName: 'PCC ï¿½ Programme Core Courses' },
+  { abbr: 'PEC', name: 'Programme Elective Courses', fullName: 'PEC ï¿½ Programme Elective Courses' },
+  { abbr: 'BSC', name: 'Basic Science Courses', fullName: 'BSC ï¿½ Basic Science Courses' },
+  { abbr: 'ESC', name: 'Engineering Science Courses', fullName: 'ESC ï¿½ Engineering Science Courses' },
+  { abbr: 'EEC', name: 'Employability Enhancement Courses', fullName: 'EEC ï¿½ Employability Enhancement Courses' },
+  { abbr: 'HSMC', name: 'Humanities, Social Sciences & Management', fullName: 'HSMC ï¿½ Humanities & Management' },
+  { abbr: 'OEC', name: 'Open Elective Courses', fullName: 'OEC ï¿½ Open Elective Courses' },
+  { abbr: 'AC', name: 'Audit Courses', fullName: 'AC ï¿½ Audit Courses' },
 ];
 
 export const TPS_VERBS: Record<number, string[]> = {
@@ -542,10 +542,10 @@ export const LAB_ACTIVITY_CHIPS = {
 };
 
 export const SCHWAB_HERRON_LEVELS = [
-  { level: 0, problem: 'Given', waysMeans: 'Given', answers: 'Given', description: 'Level 0 — Fully Given: All three elements provided by teacher/textbook.' },
-  { level: 1, problem: 'Given', waysMeans: 'Given', answers: 'Open', description: 'Level 1 — Open Answers: Problem and methods given; students find answers.' },
-  { level: 2, problem: 'Given', waysMeans: 'Open', answers: 'Open', description: 'Level 2 — Open Methods & Answers: Problem given; students choose how to investigate.' },
-  { level: 3, problem: 'Open', waysMeans: 'Open', answers: 'Open', description: 'Level 3 — Fully Open: Problem, methods, and answers all student-determined inquiry.' },
+  { level: 0, problem: 'Given', waysMeans: 'Given', answers: 'Given', description: 'Level 0 ï¿½ Fully Given: All three elements provided by teacher/textbook.' },
+  { level: 1, problem: 'Given', waysMeans: 'Given', answers: 'Open', description: 'Level 1 ï¿½ Open Answers: Problem and methods given; students find answers.' },
+  { level: 2, problem: 'Given', waysMeans: 'Open', answers: 'Open', description: 'Level 2 ï¿½ Open Methods & Answers: Problem given; students choose how to investigate.' },
+  { level: 3, problem: 'Open', waysMeans: 'Open', answers: 'Open', description: 'Level 3 ï¿½ Fully Open: Problem, methods, and answers all student-determined inquiry.' },
 ];
 
 export const DEFAULT_CONFIG_SETTINGS = {

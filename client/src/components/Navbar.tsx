@@ -116,7 +116,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNewCourse }) => {
 
             {/* Right: Actions + Profile */}
             <div className="flex items-center space-x-3">
-              {!isCourseEditor && (
+              {!isCourseEditor && user?.role !== "ADMIN" && (
                 <button
                   onClick={() => setShowTypeModal(true)}
                   className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#800020] hover:bg-[#660019] text-white text-sm font-medium shadow-sm transition-all"

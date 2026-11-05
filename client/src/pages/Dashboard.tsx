@@ -266,6 +266,7 @@ export const Dashboard: React.FC = () => {
               ? `You have no documents with status "${selectedStatus}".`
               : 'You have not saved or submitted any course syllabi yet.'}
           </p>
+          {user?.role !== "ADMIN" && (
           <button
             onClick={() => setShowTypeModal(true)}
             className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-[#7B1113] hover:bg-[#5E0D0E] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
@@ -273,6 +274,7 @@ export const Dashboard: React.FC = () => {
             <PlusCircle className="w-4 h-4" />
             <span>Create New Course</span>
           </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
