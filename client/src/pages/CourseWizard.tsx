@@ -3920,37 +3920,9 @@ export const CourseWizard: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Practical Component Table (Fixed by guideline & Assessment Pattern Grid) */}
+                    {/* Practical Component Table (Assessment Pattern Grid) */}
                     {course.courseType === 'PRACTICAL' && (
                       <div className="space-y-5">
-                        <div className="p-4 bg-emerald-50/50 border border-emerald-200 rounded-xl space-y-3">
-                          <span className="font-bold text-xs text-emerald-900 block">
-                            Standard Laboratory Assessment Framework (200 Marks Total):
-                          </span>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center text-xs">
-                            <div className="p-3 bg-white rounded-lg border border-emerald-200">
-                              <span className="text-slate-500 block">Continuous Assessment</span>
-                              <span className="text-lg font-extrabold text-emerald-700">75 Marks</span>
-                              <span className="text-[10px] text-slate-400 block">Pre/In/Post lab</span>
-                            </div>
-                            <div className="p-3 bg-white rounded-lg border border-emerald-200">
-                              <span className="text-slate-500 block">Model Test</span>
-                              <span className="text-lg font-extrabold text-emerald-700">25 Marks</span>
-                              <span className="text-[10px] text-slate-400 block">Rubrics 3 domains</span>
-                            </div>
-                            <div className="p-3 bg-white rounded-lg border border-emerald-200">
-                              <span className="text-slate-500 block">Total Internal</span>
-                              <span className="text-lg font-extrabold text-emerald-700">100 Marks</span>
-                              <span className="text-[10px] text-slate-400 block">Continuous + Model</span>
-                            </div>
-                            <div className="p-3 bg-white rounded-lg border border-emerald-200">
-                              <span className="text-slate-500 block">End Semester Exam</span>
-                              <span className="text-lg font-extrabold text-emerald-700">100 Marks</span>
-                              <span className="text-[10px] text-slate-400 block">Rubrics 3 domains</span>
-                            </div>
-                          </div>
-                        </div>
-
                         {/* Laboratory Assessment Pattern Grid */}
                         <div className="space-y-3 pt-1">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
