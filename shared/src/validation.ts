@@ -497,19 +497,6 @@ export function validateCourseOutcomes(
     });
   }
 
-  // Distinct PIs check (warn on duplicates)
-  const piList = cos.map(c => c.pi).filter(Boolean);
-  const duplicatePis = piList.filter((pi, idx) => piList.indexOf(pi) !== idx);
-  if (duplicatePis.length > 0) {
-    results.push({
-      id: 'B5_DUPLICATE_PI',
-      field: 'courseOutcomes',
-      severity: 'warning',
-      message: `Performance Indicators should be distinct per CO. Found duplicates: ${[...new Set(duplicatePis)].join(', ')}.`,
-      fixHint: 'Assign a distinct, measurable Performance Indicator to each CO.',
-    });
-  }
-
   // Check individual COs
   let tpsAtLeast3Count = 0;
   let tps2Count = 0;
