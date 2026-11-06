@@ -15,6 +15,12 @@ export interface CategoryCode {
     allowedTypes: ('THEORY' | 'PRACTICAL' | 'TCP')[];
 }
 export declare const CATEGORY_CODES: CategoryCode[];
+export interface CourseCategoryTable3 {
+    name: string;
+    codes: string[];
+    defaultAbbr: CategoryAbbreviation;
+}
+export declare const COURSE_CATEGORIES_TABLE_3: CourseCategoryTable3[];
 export declare const CATEGORY_ABBREVIATIONS: readonly ["HSMC", "BSC", "ESC", "PCC", "PEC", "OEC", "EEC", "AC"];
 export type CategoryAbbreviation = typeof CATEGORY_ABBREVIATIONS[number];
 export interface CategoryOption {

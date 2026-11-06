@@ -26,6 +26,7 @@ import {
   CATEGORY_CODES,
   CATEGORY_ABBREVIATIONS,
   CATEGORY_OPTIONS,
+  COURSE_CATEGORIES_TABLE_3,
   TPS_VERBS,
   LAB_OBJECTIVES,
   GENERAL_CO_POOL,
@@ -1615,12 +1616,32 @@ export const CourseWizard: React.FC = () => {
     touchField('programmeCode');
   };
 
-  // Filter designated category codes based on the chosen category abbreviation
+  // Active Table 3 Category matching course.categoryLetter or course.categoryAbbr
+  const activeTable3Category = useMemo(() => {
+    if (course.categoryLetter) {
+      const matchByLetter = COURSE_CATEGORIES_TABLE_3.find(c => c.codes.includes(course.categoryLetter));
+      if (matchByLetter) return matchByLetter;
+    }
+    if (course.categoryAbbr) {
+      return COURSE_CATEGORIES_TABLE_3.find(c => c.defaultAbbr === course.categoryAbbr) || null;
+    }
+    return null;
+  }, [course.categoryLetter, course.categoryAbbr]);
+
+  // Available letter codes for the currently selected category
   const availableCategoryCodes = useMemo(() => {
-    if (!course.categoryAbbr) return CATEGORY_CODES;
-    const filtered = CATEGORY_CODES.filter(c => c.defaultAbbr === course.categoryAbbr);
-    return filtered.length > 0 ? filtered : CATEGORY_CODES;
-  }, [course.categoryAbbr]);
+    if (activeTable3Category) {
+      return activeTable3Category.codes.map(code => ({
+        code,
+        name: activeTable3Category.name,
+      }));
+    }
+    if (course.categoryAbbr) {
+      const filtered = CATEGORY_CODES.filter(c => c.defaultAbbr === course.categoryAbbr);
+      if (filtered.length > 0) return filtered;
+    }
+    return CATEGORY_CODES;
+  }, [activeTable3Category, course.categoryAbbr]);
 
   // Descriptive course type metadata for prominent display across all headers
   const courseTypeInfo = useMemo(() => {
@@ -1983,6 +2004,24 @@ export const CourseWizard: React.FC = () => {
           uniqueLetter: updated.uniqueLetter,
           version: updated.version,
         });
+      }
+
+      // Handle Table 3 category selection
+      if (field === 'categoryTable3') {
+        const cat = COURSE_CATEGORIES_TABLE_3.find(c => c.name === value);
+        if (cat) {
+          updated.categoryAbbr = cat.defaultAbbr as any;
+          if (!cat.codes.includes(updated.categoryLetter)) {
+            updated.categoryLetter = cat.codes[0];
+          }
+          updated.courseCode = computeCourseCode({
+            regulationCode: updated.regulationCode,
+            programmeCode: updated.programmeCode,
+            categoryLetter: updated.categoryLetter,
+            uniqueLetter: updated.uniqueLetter,
+            version: updated.version,
+          });
+        }
       }
 
       // Handle category selection: when category abbreviation changes (e.g. PCC, PEC, BSC, etc.)
@@ -2853,33 +2892,35 @@ export const CourseWizard: React.FC = () => {
                           <span className="text-[10px] text-indigo-800 font-bold block tracking-wide">Programme</span>
                         </div>
 
-                        {/* 4. Category (PCC, PEC, BSC, etc.) — Emerald Green Theme */}
-                        <div className={`p-2 bg-emerald-50/50 rounded-xl border-2 transition-all flex flex-col justify-between flex-1 min-w-[140px] h-[74px] shadow-2xs ${
-                          !course.categoryAbbr
+                        {/* 4. Course Category (Table 3) — Emerald Green Theme */}
+                        <div className={`p-2 bg-emerald-50/50 rounded-xl border-2 transition-all flex flex-col justify-between flex-1 min-w-[210px] sm:min-w-[260px] h-[74px] shadow-2xs ${
+                          !activeTable3Category && !course.categoryAbbr
                             ? 'border-amber-400 ring-2 ring-amber-200/50'
                             : 'border-emerald-300 hover:border-emerald-500'
                         }`}>
                           <div className="w-full flex-1 flex items-center justify-center">
                             <select
-                              value={course.categoryAbbr || ''}
-                              onChange={e => updateField('categoryAbbr', e.target.value)}
-                              className="w-full text-center font-bold text-xs text-emerald-950 bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0"
-                              title="Category"
+                              value={activeTable3Category?.name || ''}
+                              onChange={e => updateField('categoryTable3', e.target.value)}
+                              className="w-full text-center font-bold text-xs text-emerald-950 bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0 truncate"
+                              title="Course Category (Table 3)"
                             >
-                              <option value="" disabled>Category</option>
-                              {CATEGORY_OPTIONS.map(cat => (
-                                <option key={cat.abbr} value={cat.abbr}>
-                                  {cat.abbr} — {cat.name}
+                              <option value="" disabled>Select Course Category (Table 3)</option>
+                              {COURSE_CATEGORIES_TABLE_3.map(cat => (
+                                <option key={cat.name} value={cat.name}>
+                                  {cat.name} ({cat.codes.join(', ')})
                                 </option>
                               ))}
                             </select>
                           </div>
-                          <span className="text-[10px] text-emerald-800 font-bold block tracking-wide">Category</span>
+                          <span className="text-[10px] text-emerald-800 font-bold block tracking-wide">
+                            Category {activeTable3Category ? `(${activeTable3Category.defaultAbbr})` : ''}
+                          </span>
                         </div>
 
-                        {/* 5. C: Letter — Purple Theme */}
-                        <div className={`p-2 rounded-xl border-2 transition-all flex flex-col justify-between min-w-[76px] h-[74px] shadow-2xs ${
-                          !course.categoryAbbr
+                        {/* 5. C: Letter Code — Purple Theme */}
+                        <div className={`p-2 rounded-xl border-2 transition-all flex flex-col justify-between min-w-[80px] h-[74px] shadow-2xs ${
+                          !activeTable3Category && !course.categoryLetter
                             ? 'bg-slate-50 border-slate-300 opacity-60'
                             : 'bg-purple-50/50 border-purple-300 hover:border-purple-500'
                         }`}>
@@ -2887,9 +2928,9 @@ export const CourseWizard: React.FC = () => {
                             <select
                               value={course.categoryLetter || ''}
                               onChange={e => updateField('categoryLetter', e.target.value)}
-                              disabled={!course.categoryAbbr}
+                              disabled={!activeTable3Category && !course.categoryLetter}
                               className="w-full text-center font-black text-base text-purple-950 bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0 disabled:cursor-not-allowed"
-                              title="Letter"
+                              title="Category Letter"
                             >
                               <option value="" disabled>Letter</option>
                               {availableCategoryCodes.map(c => (

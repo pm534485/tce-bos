@@ -90,16 +90,17 @@ export function getDepartmentForProgramme(code) {
 }
 export const CATEGORY_CODES = [
     { code: 'C', name: 'Programme Core Courses', defaultAbbr: 'PCC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
+    { code: 'D', name: 'Programme Core Courses', defaultAbbr: 'PCC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
     { code: 'S', name: 'Basic Science Courses', defaultAbbr: 'BSC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
     { code: 'E', name: 'Engineering Science Courses', defaultAbbr: 'ESC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
-    { code: 'L', name: 'Employability Enhancement Courses', defaultAbbr: 'EEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
+    { code: 'L', name: 'Employment Enhancement Courses', defaultAbbr: 'EEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
     { code: 'H', name: 'Humanities, including Management Studies/ Research methodology & IPR courses of PG', defaultAbbr: 'HSMC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
     { code: 'P', name: 'Programme Elective Courses', defaultAbbr: 'PEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
     { code: 'Q', name: 'Programme Elective Courses', defaultAbbr: 'PEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
     { code: 'R', name: 'Programme Elective Courses', defaultAbbr: 'PEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
     { code: 'G', name: 'Open Electives', defaultAbbr: 'OEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
     { code: 'F', name: 'Basic Science Electives', defaultAbbr: 'BSC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
-    { code: 'K', name: 'Foundational Courses', defaultAbbr: 'ESC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
+    { code: 'K', name: 'Foundation Courses', defaultAbbr: 'ESC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
     { code: '1', name: 'Industry-Supported Course', defaultAbbr: 'PEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
     { code: '2', name: 'Industry-Supported Course', defaultAbbr: 'PEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
     { code: 'A', name: 'Audit Courses', defaultAbbr: 'AC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
@@ -107,6 +108,23 @@ export const CATEGORY_CODES = [
     { code: 'N', name: 'NPTEL Courses', defaultAbbr: 'OEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
     { code: 'M', name: 'TCE MOOCS Courses', defaultAbbr: 'OEC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
     { code: 'T', name: 'Internship', defaultAbbr: 'EEC', allowedTypes: ['PRACTICAL'] },
+];
+export const COURSE_CATEGORIES_TABLE_3 = [
+    { name: 'Programme Core Courses', codes: ['C', 'D'], defaultAbbr: 'PCC' },
+    { name: 'Basic Science Courses', codes: ['S'], defaultAbbr: 'BSC' },
+    { name: 'Engineering Science Courses', codes: ['E'], defaultAbbr: 'ESC' },
+    { name: 'Employment Enhancement Courses', codes: ['L'], defaultAbbr: 'EEC' },
+    { name: 'Humanities, including Management Studies/ Research methodology & IPR courses of PG', codes: ['H'], defaultAbbr: 'HSMC' },
+    { name: 'Programme Elective Courses', codes: ['P', 'Q', 'R'], defaultAbbr: 'PEC' },
+    { name: 'Open Electives', codes: ['G'], defaultAbbr: 'OEC' },
+    { name: 'Basic Science Electives', codes: ['F'], defaultAbbr: 'BSC' },
+    { name: 'Foundation Courses', codes: ['K'], defaultAbbr: 'ESC' },
+    { name: 'Industry-Supported Course', codes: ['1', '2'], defaultAbbr: 'PEC' },
+    { name: 'Value-Added Course', codes: ['V'], defaultAbbr: 'AC' },
+    { name: 'Audit Courses', codes: ['A'], defaultAbbr: 'AC' },
+    { name: 'NPTEL Courses', codes: ['N'], defaultAbbr: 'OEC' },
+    { name: 'TCE MOOCS Courses', codes: ['M'], defaultAbbr: 'OEC' },
+    { name: 'Internship', codes: ['T'], defaultAbbr: 'EEC' },
 ];
 export const CATEGORY_ABBREVIATIONS = [
     'HSMC', // Humanities and Social Sciences including Management Courses
