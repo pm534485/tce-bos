@@ -2,9 +2,15 @@ import React, { useState } from 'react';
 import { Course } from '@syllabusforge/shared';
 import { Download, FileText, Printer, Loader2, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 interface DocumentPreviewProps {
   course: Course;
+  footerConfig?: {
+    includeApprovalFooter?: boolean;
+    bosMeetingText?: string;
+    academicCouncilText?: string;
+  };
 }
 
 export function getDegreeProgramHeader(course: Course): string {
@@ -47,18 +53,18 @@ export function getDegreeProgramHeader(course: Course): string {
   return `${degree} Degree Program ${acadYear}`;
 }
 
-export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
+export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footerConfig }) => {
+  const { user } = useAuth();
   const [downloadingFormat, setDownloadingFormat] = useState<'docx' | 'pdf' | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
+  const isCoordinatorOrAdmin = user?.role === 'BOS_COORDINATOR' || user?.role === 'ADMIN';
+  const showApprovalFooter = isCoordinatorOrAdmin && (footerConfig?.includeApprovalFooter ?? true);
+
   const headerText = getDegreeProgramHeader(course);
   const titleCaps = (course.courseName || '').toUpperCase();
-  const bosMeetingText = `Passed in BoS Meeting ${course.bosMeetingDate || '30.05.2026'}`;
-  const acmMeetingText = (
-    <>
-      Approved in 71<sup>st</sup> Academic council meeting {course.academicCouncilDate || '27.06.2026'}
-    </>
-  );
+  const bosMeetingLine = footerConfig?.bosMeetingText || `Passed in BoS Meeting ${course.bosMeetingDate || '30.05.2026'}`;
+  const acmMeetingLine = footerConfig?.academicCouncilText || `Approved in 71st Academic council meeting ${course.academicCouncilDate || '27.06.2026'}`;
 
   const handleDownload = async (format: 'docx' | 'pdf') => {
     try {
@@ -78,7 +84,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
 
       setDownloadingFormat(format);
       setDownloadError(null);
-      const blob = await api.exportCourseBlob(course, format);
+      const blob = await api.exportCourseBlob(course, format, {
+        includeApprovalFooter: showApprovalFooter,
+        bosMeetingText: bosMeetingLine,
+        academicCouncilText: acmMeetingLine,
+      });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -291,21 +301,25 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
 </head>
 <body>
   <div class="fixed-running-header">${headerText}</div>
+  ${showApprovalFooter ? `
   <div class="fixed-running-footer">
-    <span>${bosMeetingText}</span>
-    <span>Approved in 71<sup>st</sup> Academic council meeting ${course.academicCouncilDate || '27.06.2026'}</span>
+    <span>${bosMeetingLine}</span>
+    <span>${acmMeetingLine}</span>
   </div>
+  ` : ''}
   <table class="print-page-wrapper">
     <thead>
       <tr>
         <td class="page-header-spacer"></td>
       </tr>
     </thead>
+    ${showApprovalFooter ? `
     <tfoot>
       <tr>
         <td class="page-footer-spacer"></td>
       </tr>
     </tfoot>
+    ` : ''}
     <tbody>
       <tr>
         <td class="page-body-cell">
@@ -1033,10 +1047,12 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course }) => {
         </div>
 
         {/* Continuous Footer Note */}
-        <div className="print-doc-footer pt-6 mt-4 border-t border-slate-200 flex justify-between text-[11px] text-slate-700">
-          <span>{bosMeetingText}</span>
-          <span>{acmMeetingText}</span>
-        </div>
+        {showApprovalFooter && (
+          <div className="print-doc-footer pt-6 mt-4 border-t border-slate-200 flex justify-between text-[11px] text-slate-700">
+            <span>{bosMeetingLine}</span>
+            <span>{acmMeetingLine}</span>
+          </div>
+        )}
       </div>
     </div>
   );

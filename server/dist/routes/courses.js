@@ -149,17 +149,27 @@ router.post('/export', async (req, res) => {
             res.status(400).json({ error: 'Course data is required for export.' });
             return;
         }
+        const {
+            includeApprovalFooter = false,
+            bosMeetingText,
+            academicCouncilText,
+        } = req.body;
+        const exportOptions = {
+            includeApprovalFooter: Boolean(includeApprovalFooter),
+            bosMeetingText: bosMeetingText ? String(bosMeetingText) : undefined,
+            academicCouncilText: academicCouncilText ? String(academicCouncilText) : undefined,
+        };
         const safeCode = (courseData.courseCode || 'Course').replace(/[^a-zA-Z0-9_-]/g, '_');
         const safeName = (courseData.courseName || 'Syllabus').replace(/[^a-zA-Z0-9_-]/g, '_');
         const filename = `${safeCode}_${safeName}`;
         if (format === 'pdf') {
-            const pdfBuffer = await generatePdfDocument(courseData);
+            const pdfBuffer = await generatePdfDocument(courseData, exportOptions);
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename="${filename}.pdf"`);
             res.send(pdfBuffer);
         }
         else {
-            const docxBuffer = await generateDocxDocument(courseData);
+            const docxBuffer = await generateDocxDocument(courseData, exportOptions);
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
             res.setHeader('Content-Disposition', `attachment; filename="${filename}.docx"`);
             res.send(docxBuffer);
@@ -429,20 +439,30 @@ router.post('/:id/revise', authenticate, async (req, res) => {
 // GET /api/courses/:id/export?format=docx|pdf
 router.get('/:id/export', async (req, res) => {
     try {
-        const { format = 'docx' } = req.query;
+        const {
+            format = 'docx',
+            includeApprovalFooter = 'false',
+            bosMeetingText,
+            academicCouncilText,
+        } = req.query;
         const course = await Course.findById(req.params.id);
         if (!course) {
             res.status(404).json({ error: 'Course not found.' });
             return;
         }
+        const exportOptions = {
+            includeApprovalFooter: includeApprovalFooter === 'true',
+            bosMeetingText: bosMeetingText ? String(bosMeetingText) : undefined,
+            academicCouncilText: academicCouncilText ? String(academicCouncilText) : undefined,
+        };
         if (format === 'pdf') {
-            const pdfBuffer = await generatePdfDocument(course.toObject());
+            const pdfBuffer = await generatePdfDocument(course.toObject(), exportOptions);
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename="${course.courseCode}_${course.courseName.replace(/\s+/g, '_')}.pdf"`);
             res.send(pdfBuffer);
         }
         else {
-            const docxBuffer = await generateDocxDocument(course.toObject());
+            const docxBuffer = await generateDocxDocument(course.toObject(), exportOptions);
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
             res.setHeader('Content-Disposition', `attachment; filename="${course.courseCode}_${course.courseName.replace(/\s+/g, '_')}.docx"`);
             res.send(docxBuffer);
@@ -455,7 +475,15 @@ router.get('/:id/export', async (req, res) => {
 // POST /api/courses/merge - Merge selected courses in explicit order into one DOCX or PDF bundle (or HTML bundle for browser printing)
 router.post('/merge', authenticate, async (req, res) => {
     try {
-        const { courseIds, format = 'docx', regulationYear = 2026, annexureNo = '01' } = req.body;
+        const {
+            courseIds,
+            format = 'docx',
+            regulationYear = 2026,
+            annexureNo = '01',
+            includeApprovalFooter = true,
+            bosMeetingText,
+            academicCouncilText,
+        } = req.body;
         if (!Array.isArray(courseIds) || courseIds.length === 0) {
             res.status(400).json({ error: 'Please select at least one course to merge.' });
             return;
@@ -482,21 +510,22 @@ router.post('/merge', authenticate, async (req, res) => {
         }
         const deptName = orderedCourses[0]?.department || req.user?.department || 'Curriculum';
         const deptSlug = deptName.replace(/[^a-zA-Z0-9]/g, '_');
+        const mergeMetadata = {
+            department: deptName,
+            regulationYear: Number(regulationYear),
+            includeApprovalFooter: Boolean(includeApprovalFooter),
+            bosMeetingText: bosMeetingText ? String(bosMeetingText) : undefined,
+            academicCouncilText: academicCouncilText ? String(academicCouncilText) : undefined,
+        };
         if (format === 'html') {
             const { generateMergedCoursesHtml } = await import('../services/pdfGenerator.js');
-            const html = generateMergedCoursesHtml(orderedCourses, {
-                department: deptName,
-                regulationYear: Number(regulationYear),
-            });
+            const html = generateMergedCoursesHtml(orderedCourses, mergeMetadata);
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
             res.send(html);
         }
         else if (format === 'pdf') {
             try {
-                const pdfBuffer = await generateMergedCoursesPdf(orderedCourses, {
-                    department: deptName,
-                    regulationYear: Number(regulationYear),
-                });
+                const pdfBuffer = await generateMergedCoursesPdf(orderedCourses, mergeMetadata);
                 res.setHeader('Content-Type', 'application/pdf');
                 res.setHeader('Content-Disposition', `attachment; filename="Curriculum_Bundle_${deptSlug}_${regulationYear}.pdf"`);
                 res.send(pdfBuffer);
@@ -506,20 +535,14 @@ router.post('/merge', authenticate, async (req, res) => {
                 // send back the printable HTML so the client can trigger instant pixel-perfect PDF print dialog!
                 console.warn('Server Puppeteer unavailable, falling back to printable HTML bundle:', pdfErr.message);
                 const { generateMergedCoursesHtml } = await import('../services/pdfGenerator.js');
-                const html = generateMergedCoursesHtml(orderedCourses, {
-                    department: deptName,
-                    regulationYear: Number(regulationYear),
-                });
+                const html = generateMergedCoursesHtml(orderedCourses, mergeMetadata);
                 res.setHeader('Content-Type', 'text/html; charset=utf-8');
                 res.setHeader('X-Fallback-Print', 'true');
                 res.send(html);
             }
         }
         else {
-            const docxBuffer = await generateMergedCoursesDocx(orderedCourses, {
-                department: deptName,
-                regulationYear: Number(regulationYear),
-            });
+            const docxBuffer = await generateMergedCoursesDocx(orderedCourses, mergeMetadata);
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
             res.setHeader('Content-Disposition', `attachment; filename="Curriculum_Bundle_${deptSlug}_${regulationYear}.docx"`);
             res.send(docxBuffer);

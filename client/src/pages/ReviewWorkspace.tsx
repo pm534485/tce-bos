@@ -57,6 +57,12 @@ export const ReviewWorkspace: React.FC = () => {
   const [mergingDocx, setMergingDocx] = useState<boolean>(false);
   const [mergingPdf, setMergingPdf] = useState<boolean>(false);
 
+  // BoS Coordinator Approval Footer State
+  const [includeApprovalFooter, setIncludeApprovalFooter] = useState<boolean>(true);
+  const [bosMeetingText, setBosMeetingText] = useState<string>('Passed in BoS Meeting 30.05.2026');
+  const [academicCouncilText, setAcademicCouncilText] = useState<string>('Approved in 71st Academic council meeting 27.06.2026');
+  const [isSavingFooter, setIsSavingFooter] = useState<boolean>(false);
+
   useEffect(() => {
     loadRegulation();
     loadCustomDepartments();
@@ -64,6 +70,7 @@ export const ReviewWorkspace: React.FC = () => {
 
   useEffect(() => {
     loadReviewQueue();
+    loadApprovalFooterConfig();
   }, [selectedDept]);
 
   async function loadCustomDepartments() {
@@ -92,6 +99,36 @@ export const ReviewWorkspace: React.FC = () => {
       // Use defaults
     }
   }
+
+  async function loadApprovalFooterConfig() {
+    try {
+      const config = await api.getApprovalFooterConfig(selectedDept, activeReg.regulationYear);
+      if (config) {
+        setIncludeApprovalFooter(config.includeApprovalFooter ?? true);
+        if (config.bosMeetingText) setBosMeetingText(config.bosMeetingText);
+        if (config.academicCouncilText) setAcademicCouncilText(config.academicCouncilText);
+      }
+    } catch (_) {
+      // Use defaults
+    }
+  }
+
+  const saveApprovalFooterConfig = async (newInclude?: boolean, newBos?: string, newAcm?: string) => {
+    try {
+      setIsSavingFooter(true);
+      await api.updateApprovalFooterConfig({
+        department: selectedDept,
+        regulationYear: activeReg.regulationYear,
+        includeApprovalFooter: newInclude !== undefined ? newInclude : includeApprovalFooter,
+        bosMeetingText: (newBos !== undefined ? newBos : bosMeetingText).trim(),
+        academicCouncilText: (newAcm !== undefined ? newAcm : academicCouncilText).trim(),
+      });
+    } catch (err) {
+      console.error('Failed to save approval footer configuration:', err);
+    } finally {
+      setIsSavingFooter(false);
+    }
+  };
 
   async function loadReviewQueue() {
     try {
@@ -215,7 +252,16 @@ export const ReviewWorkspace: React.FC = () => {
       if (format === 'docx') setMergingDocx(true);
       if (format === 'pdf') setMergingPdf(true);
 
-      const res = await api.mergeCourses(selectedForMerge, format, activeReg.regulationYear);
+      const res = await api.mergeCourses(
+        selectedForMerge,
+        format,
+        activeReg.regulationYear,
+        {
+          includeApprovalFooter,
+          bosMeetingText,
+          academicCouncilText,
+        }
+      );
 
       if (res.isHtml && res.html) {
         // Pixel-perfect client-side printing into PDF (bypasses serverless Chromium issues on Vercel)
@@ -355,6 +401,83 @@ export const ReviewWorkspace: React.FC = () => {
             {courses.length} Total Syllabi
           </span>
         </div>
+      </div>
+
+      {/* Highlighted BoS Approval Footer Controls */}
+      <div className="bg-gradient-to-r from-amber-50/90 to-orange-50/80 border-2 border-amber-300 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3.5 transition-all">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <label className="flex items-start sm:items-center space-x-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={includeApprovalFooter}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setIncludeApprovalFooter(checked);
+                saveApprovalFooterConfig(checked);
+              }}
+              className="w-5 h-5 mt-0.5 sm:mt-0 text-[#7B1113] border-2 border-amber-400 rounded focus:ring-2 focus:ring-amber-500 cursor-pointer accent-[#7B1113]"
+            />
+            <div>
+              <span className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                Include BoS &amp; Academic Council Approval Footer in Exports &amp; Prints
+                <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-amber-200 text-amber-900 rounded-full border border-amber-300">
+                  BoS Coordinator Option
+                </span>
+              </span>
+              <p className="text-xs text-slate-600 mt-0.5">
+                When checked, the footer appears across all pages of your Word, PDF, and print downloads (both single courses &amp; merged bundles). Faculty downloads will <strong>never</strong> include this footer.
+              </p>
+            </div>
+          </label>
+
+          <div className="text-[11px] font-semibold text-amber-800 bg-amber-100/90 px-3 py-1 rounded-xl border border-amber-200 flex items-center gap-1.5 self-start sm:self-auto shrink-0 shadow-2xs">
+            {isSavingFooter ? (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" />
+                <span>Saved for {selectedDept}</span>
+              </>
+            )}
+          </div>
+        </div>
+
+        {includeApprovalFooter && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-2.5 border-t border-amber-200/90">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                BoS Meeting Approved Line:
+              </label>
+              <input
+                type="text"
+                value={bosMeetingText}
+                onChange={(e) => setBosMeetingText(e.target.value)}
+                onBlur={() => saveApprovalFooterConfig(undefined, bosMeetingText, undefined)}
+                placeholder="e.g. BOS meeting approved: 01-06-2022 or Passed in BoS Meeting 30.05.2026"
+                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs font-medium text-slate-800 shadow-xs focus:ring-2 focus:ring-amber-400 focus:outline-none"
+              />
+              <span className="text-[10px] text-slate-500 mt-0.5 block">Left side of running footer (editable per year/session)</span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Academic Council Meeting Line:
+              </label>
+              <input
+                type="text"
+                value={academicCouncilText}
+                onChange={(e) => setAcademicCouncilText(e.target.value)}
+                onBlur={() => saveApprovalFooterConfig(undefined, undefined, academicCouncilText)}
+                placeholder="e.g. Approved in 63rd Academic Council meeting on 25-06-2022"
+                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs font-medium text-slate-800 shadow-xs focus:ring-2 focus:ring-amber-400 focus:outline-none"
+              />
+              <span className="text-[10px] text-slate-500 mt-0.5 block">Right side of running footer (editable per year/session)</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Multi-Document Compilation & Merge Toolbar */}
@@ -567,7 +690,14 @@ export const ReviewWorkspace: React.FC = () => {
 
               {/* Document Preview Rendering */}
               <div className="bg-slate-100 p-4 rounded-2xl border border-slate-200">
-                <DocumentPreview course={selectedCourse} />
+                <DocumentPreview
+                  course={selectedCourse}
+                  footerConfig={{
+                    includeApprovalFooter,
+                    bosMeetingText,
+                    academicCouncilText,
+                  }}
+                />
               </div>
             </>
           ) : (

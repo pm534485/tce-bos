@@ -75,7 +75,7 @@ function createCell(textOrRuns, options = {}) {
         children,
     });
 }
-export function buildCourseDocxElements(course) {
+export function buildCourseDocxElements(course, options) {
     const headerText = getDegreeProgramHeader(course);
     const titleText = (course.courseName || '').toUpperCase();
     const subtitleFormatted = course.courseSubtitle?.trim()
@@ -92,9 +92,12 @@ export function buildCourseDocxElements(course) {
             }),
         ],
     });
+    const shouldIncludeFooter = options?.includeApprovalFooter !== false;
+    const bosMeetingLine = options?.bosMeetingText || ('Passed in BoS Meeting ' + (course.bosMeetingDate || '30.05.2026'));
+    const acmMeetingLine = options?.academicCouncilText || ('Approved in 71st Academic council meeting ' + (course.academicCouncilDate || '27.06.2026'));
     // Running Footer on every page
     const footer = new Footer({
-        children: [
+        children: shouldIncludeFooter ? [
             new Paragraph({
                 alignment: AlignmentType.BOTH,
                 tabStops: [
@@ -104,14 +107,12 @@ export function buildCourseDocxElements(course) {
                     },
                 ],
                 children: [
-                    createText('Passed in BoS Meeting ' + (course.bosMeetingDate || '30.05.2026'), { size: 17 }),
+                    createText(bosMeetingLine, { size: 17 }),
                     new TextRun({ text: '\t' }),
-                    createText('Approved in 71', { size: 17 }),
-                    new TextRun({ text: 'st', superScript: true, font: 'Arial', size: 17 }),
-                    createText(' Academic council meeting ' + (course.academicCouncilDate || '27.06.2026'), { size: 17 }),
+                    createText(acmMeetingLine, { size: 17 }),
                 ],
             }),
-        ],
+        ] : [],
     });
     const children = [];
     // ==================== PAGE 1 ====================
@@ -510,23 +511,23 @@ export function buildCourseDocxElements(course) {
             width: { size: 100, type: WidthType.PERCENTAGE },
             rows: [assessHeader1, assessHeader2, ...assessDataRows, assessTotalRow],
         }));
-        children.push(new Paragraph({
-            spacing: { before: 180, after: 120 },
-            alignment: AlignmentType.BOTH,
-            tabStops: [
-                {
-                    type: 'right',
-                    position: 9500,
-                },
-            ],
-            children: [
-                createText('Passed in BoS Meeting ' + (course.bosMeetingDate || '30.05.2026'), { size: 17 }),
-                new TextRun({ text: '\t' }),
-                createText('Approved in 71', { size: 17 }),
-                new TextRun({ text: 'st', superScript: true, font: 'Arial', size: 17 }),
-                createText(' Academic council meeting ' + (course.academicCouncilDate || '27.06.2026'), { size: 17 }),
-            ],
-        }));
+        if (shouldIncludeFooter) {
+            children.push(new Paragraph({
+                spacing: { before: 180, after: 120 },
+                alignment: AlignmentType.BOTH,
+                tabStops: [
+                    {
+                        type: 'right',
+                        position: 9500,
+                    },
+                ],
+                children: [
+                    createText(bosMeetingLine, { size: 17 }),
+                    new TextRun({ text: '\t' }),
+                    createText(acmMeetingLine, { size: 17 }),
+                ],
+            }));
+        }
     }
     // ==================== PAGE 2 ====================
     const formatCitation = (b) => {
@@ -899,8 +900,8 @@ export function buildCourseDocxElements(course) {
     }
     return { header, footer, children };
 }
-export async function generateDocxDocument(course) {
-    const { header, footer, children } = buildCourseDocxElements(course);
+export async function generateDocxDocument(course, options) {
+    const { header, footer, children } = buildCourseDocxElements(course, options);
     const doc = new Document({
         styles: {
             default: {
@@ -939,7 +940,7 @@ export async function generateMergedCoursesDocx(courses, metadata) {
         throw new Error('No courses provided for merged document.');
     }
     const sections = courses.map((course) => {
-        const { header, footer, children } = buildCourseDocxElements(course);
+        const { header, footer, children } = buildCourseDocxElements(course, metadata);
         return {
             properties: {
                 page: {

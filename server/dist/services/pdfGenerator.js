@@ -34,9 +34,10 @@ export function getDegreeProgramHeader(course) {
     const acadYear = `${regYear}-${nextYearShort}`;
     return `${degree} Degree Program ${acadYear}`;
 }
-export function buildCourseInnerHtml(course) {
-    const bosMeetingText = `Passed in BoS Meeting ${course.bosMeetingDate || '30.05.2026'}`;
-    const acmMeetingText = `Approved in 71<sup>st</sup> Academic council meeting ${course.academicCouncilDate || '27.06.2026'}`;
+export function buildCourseInnerHtml(course, options) {
+    const shouldIncludeFooter = options?.includeApprovalFooter !== false;
+    const bosMeetingText = options?.bosMeetingText || `Passed in BoS Meeting ${course.bosMeetingDate || '30.05.2026'}`;
+    const acmMeetingText = options?.academicCouncilText || `Approved in 71<sup>st</sup> Academic council meeting ${course.academicCouncilDate || '27.06.2026'}`;
     const headerText = getDegreeProgramHeader(course);
     const titleCaps = (course.courseName || '').toUpperCase();
     // 1. Prerequisites formatting
@@ -688,7 +689,7 @@ export function buildCourseInnerHtml(course) {
   </div>
   ` : ''}
   `;
-    return { headerText, bodyHtml, bosMeetingText, acmMeetingText };
+    return { headerText, bodyHtml, bosMeetingText, acmMeetingText, shouldIncludeFooter };
 }
 const COMMON_PDF_STYLES = `
   @page {
@@ -795,8 +796,8 @@ const COMMON_PDF_STYLES = `
     break-before: page;
   }
 `;
-export async function generatePdfDocument(course) {
-    const { headerText, bodyHtml, bosMeetingText, acmMeetingText } = buildCourseInnerHtml(course);
+export async function generatePdfDocument(course, options) {
+    const { headerText, bodyHtml, bosMeetingText, acmMeetingText, shouldIncludeFooter } = buildCourseInnerHtml(course, options);
     const html = `
 <!DOCTYPE html>
 <html>
@@ -834,12 +835,12 @@ ${bodyHtml}
           <span>${headerText}</span>
         </div>
       `,
-            footerTemplate: `
+            footerTemplate: shouldIncludeFooter ? `
         <div style="font-family: Arial, Helvetica, sans-serif; font-size: 8pt; width: 100%; display: flex; justify-content: space-between; padding-left: 15mm; padding-right: 15mm; color: #000; -webkit-print-color-adjust: exact;">
           <span>${bosMeetingText}</span>
           <span>${acmMeetingText}</span>
         </div>
-      `,
+      ` : '<div></div>',
             printBackground: true,
         });
         return Buffer.from(pdfBuffer);
@@ -852,13 +853,10 @@ export function generateMergedCoursesHtml(courses, metadata) {
     if (!courses || courses.length === 0) {
         return '<html><body><p>No courses provided.</p></body></html>';
     }
-    const firstCourseMeta = buildCourseInnerHtml(courses[0]);
-    const headerText = firstCourseMeta.headerText;
-    const bosMeetingText = firstCourseMeta.bosMeetingText;
-    const acmMeetingText = firstCourseMeta.acmMeetingText;
+    const shouldIncludeFooter = metadata.includeApprovalFooter !== false;
     // Render all courses, each wrapped in standard print page-wrapper with running headers and footers
     const renderedCourses = courses.map((course, idx) => {
-        const meta = buildCourseInnerHtml(course);
+        const meta = buildCourseInnerHtml(course, metadata);
         return `
     <div class="${idx > 0 ? 'course-separator' : ''}">
       <table class="print-page-wrapper">
@@ -869,6 +867,7 @@ export function generateMergedCoursesHtml(courses, metadata) {
             </th>
           </tr>
         </thead>
+        ${shouldIncludeFooter ? `
         <tfoot>
           <tr>
             <td>
@@ -879,7 +878,7 @@ export function generateMergedCoursesHtml(courses, metadata) {
               <div class="running-footer-spacer"></div>
             </td>
           </tr>
-        </tfoot>
+        </tfoot>` : ''}
         <tbody>
           <tr>
             <td>
@@ -973,12 +972,13 @@ export async function generateMergedCoursesPdf(courses, metadata) {
     if (!courses || courses.length === 0) {
         throw new Error('No courses provided for merged PDF.');
     }
-    const firstCourseMeta = buildCourseInnerHtml(courses[0]);
+    const shouldIncludeFooter = metadata.includeApprovalFooter !== false;
+    const firstCourseMeta = buildCourseInnerHtml(courses[0], metadata);
     const headerText = firstCourseMeta.headerText;
     const bosMeetingText = firstCourseMeta.bosMeetingText;
     const acmMeetingText = firstCourseMeta.acmMeetingText;
     const combinedBodies = courses.map((course, idx) => {
-        const { bodyHtml } = buildCourseInnerHtml(course);
+        const { bodyHtml } = buildCourseInnerHtml(course, metadata);
         if (idx === 0)
             return bodyHtml;
         return `<div class="course-separator"></div>${bodyHtml}`;
@@ -1020,12 +1020,12 @@ ${combinedBodies}
           <span>${headerText}</span>
         </div>
       `,
-            footerTemplate: `
+            footerTemplate: shouldIncludeFooter ? `
         <div style="font-family: Arial, Helvetica, sans-serif; font-size: 8pt; width: 100%; display: flex; justify-content: space-between; padding-left: 15mm; padding-right: 15mm; color: #000; -webkit-print-color-adjust: exact;">
           <span>${bosMeetingText}</span>
           <span>${acmMeetingText}</span>
         </div>
-      `,
+      ` : '<div></div>',
             printBackground: true,
         });
         return Buffer.from(pdfBuffer);

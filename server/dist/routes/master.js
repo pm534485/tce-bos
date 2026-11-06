@@ -80,6 +80,54 @@ router.post('/regulation', authenticate, async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+// GET /api/master/approval-footer - Get saved approval footer config for department/regulation
+router.get('/approval-footer', async (req, res) => {
+    try {
+        const department = req.query.department || 'General';
+        const regYear = req.query.regulationYear ? Number(req.query.regulationYear) : 2026;
+        const deptKey = `approval_footer_${department.replace(/[^a-zA-Z0-9]/g, '_')}_${regYear}`;
+        const generalKey = `approval_footer_General_${regYear}`;
+        let doc = await ConfigSettingsModel.findOne({ key: deptKey });
+        if (!doc) {
+            doc = await ConfigSettingsModel.findOne({ key: generalKey });
+        }
+        if (!doc) {
+            doc = await ConfigSettingsModel.findOne({ key: 'approval_footer_default' });
+        }
+        if (doc?.value) {
+            res.json(doc.value);
+        }
+        else {
+            res.json({
+                includeApprovalFooter: true,
+                bosMeetingText: 'Passed in BoS Meeting 30.05.2026',
+                academicCouncilText: 'Approved in 71st Academic council meeting 27.06.2026',
+            });
+        }
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+// POST /api/master/approval-footer - Save/update approval footer config
+router.post('/approval-footer', authenticate, async (req, res) => {
+    try {
+        const { department = 'General', regulationYear = 2026, includeApprovalFooter = true, bosMeetingText, academicCouncilText } = req.body;
+        const deptKey = `approval_footer_${String(department).replace(/[^a-zA-Z0-9]/g, '_')}_${Number(regulationYear)}`;
+        const configValue = {
+            includeApprovalFooter: Boolean(includeApprovalFooter),
+            bosMeetingText: bosMeetingText ? String(bosMeetingText).trim() : 'Passed in BoS Meeting 30.05.2026',
+            academicCouncilText: academicCouncilText ? String(academicCouncilText).trim() : 'Approved in 71st Academic council meeting 27.06.2026',
+            updatedAt: new Date(),
+            updatedBy: req.user?.email || 'coordinator',
+        };
+        await ConfigSettingsModel.findOneAndUpdate({ key: deptKey }, { key: deptKey, value: configValue, description: `Approval Footer Configuration for ${department} (Reg ${regulationYear})` }, { upsert: true, new: true });
+        res.json({ message: 'Approval footer configuration saved successfully.', ...configValue });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 // GET /api/master/:collection
 router.get('/:collection', async (req, res) => {
     try {

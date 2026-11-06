@@ -111,7 +111,15 @@ export const api = {
     }),
   getExportUrl: (id: string, format: 'docx' | 'pdf' = 'docx') =>
     `/api/courses/${id}/export?format=${format}`,
-  exportCourseBlob: async (course: Course, format: 'docx' | 'pdf' = 'docx'): Promise<Blob> => {
+  exportCourseBlob: async (
+    course: Course,
+    format: 'docx' | 'pdf' = 'docx',
+    footerOptions?: {
+      includeApprovalFooter?: boolean;
+      bosMeetingText?: string;
+      academicCouncilText?: string;
+    }
+  ): Promise<Blob> => {
     const token = localStorage.getItem('syllabusforge_token');
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -123,7 +131,13 @@ export const api = {
       const res = await fetch(`${API_BASE}/courses/export?format=${format}`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ course, format }),
+        body: JSON.stringify({
+          course,
+          format,
+          includeApprovalFooter: footerOptions?.includeApprovalFooter ?? false,
+          bosMeetingText: footerOptions?.bosMeetingText,
+          academicCouncilText: footerOptions?.academicCouncilText,
+        }),
       });
       if (res.ok) {
         return await res.blob();
@@ -134,7 +148,14 @@ export const api = {
 
     // 2. Fallback to GET /courses/:id/export if _id exists
     if (course._id) {
-      const res = await fetch(`${API_BASE}/courses/${course._id}/export?format=${format}`, {
+      const queryParams = new URLSearchParams({
+        format,
+        includeApprovalFooter: String(footerOptions?.includeApprovalFooter ?? false),
+      });
+      if (footerOptions?.bosMeetingText) queryParams.set('bosMeetingText', footerOptions.bosMeetingText);
+      if (footerOptions?.academicCouncilText) queryParams.set('academicCouncilText', footerOptions.academicCouncilText);
+
+      const res = await fetch(`${API_BASE}/courses/${course._id}/export?${queryParams.toString()}`, {
         headers,
       });
       if (res.ok) {
@@ -146,7 +167,16 @@ export const api = {
   },
 
   // Merge selected courses in explicit order
-  mergeCourses: async (courseIds: string[], format: 'docx' | 'pdf' = 'docx', regulationYear: number = 2026): Promise<{ blob?: Blob; html?: string; isHtml: boolean }> => {
+  mergeCourses: async (
+    courseIds: string[],
+    format: 'docx' | 'pdf' = 'docx',
+    regulationYear: number = 2026,
+    footerOptions?: {
+      includeApprovalFooter?: boolean;
+      bosMeetingText?: string;
+      academicCouncilText?: string;
+    }
+  ): Promise<{ blob?: Blob; html?: string; isHtml: boolean }> => {
     const headers = {
       'Content-Type': 'application/json',
       ...getAuthHeader(),
@@ -154,7 +184,14 @@ export const api = {
     const res = await fetch(`${API_BASE}/courses/merge`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ courseIds, format, regulationYear }),
+      body: JSON.stringify({
+        courseIds,
+        format,
+        regulationYear,
+        includeApprovalFooter: footerOptions?.includeApprovalFooter ?? true,
+        bosMeetingText: footerOptions?.bosMeetingText,
+        academicCouncilText: footerOptions?.academicCouncilText,
+      }),
     });
     if (!res.ok) {
       let errorMsg = 'Failed to merge course documents.';
@@ -208,6 +245,29 @@ export const api = {
       regulationCode: string;
       regulationList?: Array<{ year: number; code: string; label?: string }>;
     }>('/master/regulation', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getApprovalFooterConfig: (department?: string, regulationYear?: number) =>
+    request<{
+      includeApprovalFooter: boolean;
+      bosMeetingText: string;
+      academicCouncilText: string;
+    }>(`/master/approval-footer?department=${encodeURIComponent(department || 'General')}&regulationYear=${regulationYear || 2026}`),
+  updateApprovalFooterConfig: (data: {
+    department?: string;
+    regulationYear?: number;
+    includeApprovalFooter: boolean;
+    bosMeetingText: string;
+    academicCouncilText: string;
+  }) =>
+    request<{
+      message: string;
+      includeApprovalFooter: boolean;
+      bosMeetingText: string;
+      academicCouncilText: string;
+    }>('/master/approval-footer', {
       method: 'POST',
       body: JSON.stringify(data),
     }),

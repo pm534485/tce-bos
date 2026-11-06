@@ -113,7 +113,14 @@ function createCell(
   });
 }
 
-export function buildCourseDocxElements(course: Course): { header: Header; footer: Footer; children: any[] } {
+export function buildCourseDocxElements(
+  course: Course,
+  options?: {
+    includeApprovalFooter?: boolean;
+    bosMeetingText?: string;
+    academicCouncilText?: string;
+  }
+): { header: Header; footer: Footer; children: any[] } {
   const headerText = getDegreeProgramHeader(course);
   const titleText = (course.courseName || '').toUpperCase();
   const subtitleFormatted = course.courseSubtitle?.trim()
@@ -132,9 +139,13 @@ export function buildCourseDocxElements(course: Course): { header: Header; foote
     ],
   });
 
+  const shouldIncludeFooter = options?.includeApprovalFooter !== false;
+  const bosMeetingLine = options?.bosMeetingText || ('Passed in BoS Meeting ' + (course.bosMeetingDate || '30.05.2026'));
+  const acmMeetingLine = options?.academicCouncilText || ('Approved in 71st Academic council meeting ' + (course.academicCouncilDate || '27.06.2026'));
+
   // Running Footer on every page
   const footer = new Footer({
-    children: [
+    children: shouldIncludeFooter ? [
       new Paragraph({
         alignment: AlignmentType.BOTH,
         tabStops: [
@@ -144,14 +155,12 @@ export function buildCourseDocxElements(course: Course): { header: Header; foote
           },
         ],
         children: [
-          createText('Passed in BoS Meeting ' + (course.bosMeetingDate || '30.05.2026'), { size: 17 }),
+          createText(bosMeetingLine, { size: 17 }),
           new TextRun({ text: '\t' }),
-          createText('Approved in 71', { size: 17 }),
-          new TextRun({ text: 'st', superScript: true, font: 'Arial', size: 17 }),
-          createText(' Academic council meeting ' + (course.academicCouncilDate || '27.06.2026'), { size: 17 }),
+          createText(acmMeetingLine, { size: 17 }),
         ],
       }),
-    ],
+    ] : [],
   });
 
   const children: any[] = [];
@@ -504,23 +513,23 @@ export function buildCourseDocxElements(course: Course): { header: Header; foote
       rows: [assessHeader1, assessHeader2, ...assessDataRows, assessTotalRow],
     }));
 
-    children.push(new Paragraph({
-      spacing: { before: 180, after: 120 },
-      alignment: AlignmentType.BOTH,
-      tabStops: [
-        {
-          type: 'right' as any,
-          position: 9500,
-        },
-      ],
-      children: [
-        createText('Passed in BoS Meeting ' + (course.bosMeetingDate || '30.05.2026'), { size: 17 }),
-        new TextRun({ text: '\t' }),
-        createText('Approved in 71', { size: 17 }),
-        new TextRun({ text: 'st', superScript: true, font: 'Arial', size: 17 }),
-        createText(' Academic council meeting ' + (course.academicCouncilDate || '27.06.2026'), { size: 17 }),
-      ],
-    }));
+    if (shouldIncludeFooter) {
+      children.push(new Paragraph({
+        spacing: { before: 180, after: 120 },
+        alignment: AlignmentType.BOTH,
+        tabStops: [
+          {
+            type: 'right' as any,
+            position: 9500,
+          },
+        ],
+        children: [
+          createText(bosMeetingLine, { size: 17 }),
+          new TextRun({ text: '\t' }),
+          createText(acmMeetingLine, { size: 17 }),
+        ],
+      }));
+    }
   }
 
   // ==================== PAGE 2 ====================
@@ -925,8 +934,15 @@ export function buildCourseDocxElements(course: Course): { header: Header; foote
   return { header, footer, children };
 }
 
-export async function generateDocxDocument(course: Course): Promise<Buffer> {
-  const { header, footer, children } = buildCourseDocxElements(course);
+export async function generateDocxDocument(
+  course: Course,
+  options?: {
+    includeApprovalFooter?: boolean;
+    bosMeetingText?: string;
+    academicCouncilText?: string;
+  }
+): Promise<Buffer> {
+  const { header, footer, children } = buildCourseDocxElements(course, options);
   const doc = new Document({
     styles: {
       default: {
@@ -962,13 +978,22 @@ export async function generateDocxDocument(course: Course): Promise<Buffer> {
   return Packer.toBuffer(doc);
 }
 
-export async function generateMergedCoursesDocx(courses: Course[], metadata: { department?: string; regulationYear?: number }): Promise<Buffer> {
+export async function generateMergedCoursesDocx(
+  courses: Course[],
+  metadata: {
+    department?: string;
+    regulationYear?: number;
+    includeApprovalFooter?: boolean;
+    bosMeetingText?: string;
+    academicCouncilText?: string;
+  }
+): Promise<Buffer> {
   if (!courses || courses.length === 0) {
     throw new Error('No courses provided for merged document.');
   }
 
   const sections: any[] = courses.map((course) => {
-    const { header, footer, children } = buildCourseDocxElements(course);
+    const { header, footer, children } = buildCourseDocxElements(course, metadata);
     return {
       properties: {
         page: {
