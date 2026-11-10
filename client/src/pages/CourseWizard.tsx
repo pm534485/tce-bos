@@ -2747,7 +2747,7 @@ export const CourseWizard: React.FC = () => {
                       {/* Column 2: Course Title */}
                       <div
                         onClick={() => setCurrentStep(0)}
-                        className="md:col-span-5 p-3.5 sm:p-4 flex items-center justify-center text-center border-b md:border-b-0 md:border-r border-slate-900 bg-white cursor-pointer hover:bg-slate-50 transition-colors group"
+                        className="md:col-span-5 p-3.5 sm:p-4 flex flex-col items-center justify-center text-center border-b md:border-b-0 md:border-r border-slate-900 bg-white cursor-pointer hover:bg-slate-50 transition-colors group"
                         title="Click to edit Course Title in Step 1"
                       >
                         <span className="font-bold text-sm sm:text-base md:text-lg text-slate-950 uppercase tracking-wide leading-tight group-hover:text-[#7B1113] transition-colors">
@@ -2759,12 +2759,19 @@ export const CourseWizard: React.FC = () => {
                             </span>
                           )}
                         </span>
+                        {course.courseSubtitle && course.courseSubtitle.trim() && (
+                          <span className="text-xs sm:text-sm font-normal normal-case text-slate-600 mt-1 tracking-normal group-hover:text-[#7B1113] transition-colors">
+                            {course.courseSubtitle.trim().startsWith('(') && course.courseSubtitle.trim().endsWith(')')
+                              ? course.courseSubtitle.trim()
+                              : `(${course.courseSubtitle.trim()})`}
+                          </span>
+                        )}
                       </div>
 
                       {/* Column 3: Category, LTP & Credits Table */}
                       <div
                         onClick={() => setCurrentStep(0)}
-                        className="md:col-span-4 grid grid-cols-5 border-collapse text-center cursor-pointer hover:bg-slate-50 transition-colors"
+                        className={`md:col-span-4 grid ${course.courseType === 'TCP' ? 'grid-cols-6' : 'grid-cols-5'} border-collapse text-center cursor-pointer hover:bg-slate-50 transition-colors`}
                         title="Click to edit Category, L-T-P and Credits"
                       >
                         {/* Header Row */}
@@ -2780,9 +2787,14 @@ export const CourseWizard: React.FC = () => {
                         <div className="p-2 text-xs font-semibold text-slate-800 border-b border-r border-slate-900 bg-white">
                           P
                         </div>
-                        <div className="p-2 text-xs font-semibold text-slate-800 border-b border-slate-900 bg-white">
+                        <div className={`p-2 text-xs font-semibold text-slate-800 border-b ${course.courseType === 'TCP' ? 'border-r' : ''} border-slate-900 bg-white`}>
                           Credits
                         </div>
+                        {course.courseType === 'TCP' && (
+                          <div className="p-2 text-xs font-semibold text-slate-800 border-b border-slate-900 bg-white">
+                            TE Type
+                          </div>
+                        )}
 
                         {/* Value Row */}
                         <div className="p-2.5 text-xs sm:text-sm font-bold text-slate-900 border-r border-slate-900 flex items-center justify-center">
@@ -2813,13 +2825,18 @@ export const CourseWizard: React.FC = () => {
                             <span className="text-slate-400 font-bold select-none">—</span>
                           )}
                         </div>
-                        <div className="p-2.5 text-xs sm:text-sm font-black text-slate-950 flex items-center justify-center">
+                        <div className={`p-2.5 text-xs sm:text-sm font-black text-slate-950 flex items-center justify-center ${course.courseType === 'TCP' ? 'border-r border-slate-900' : ''}`}>
                           {course.credits !== undefined && course.credits !== null && course.credits !== ('' as any) && Number(course.credits) > 0 ? (
                             course.credits
                           ) : (
                             <span className="text-slate-400 font-bold select-none">—</span>
                           )}
                         </div>
+                        {course.courseType === 'TCP' && (
+                          <div className="p-2.5 text-xs sm:text-sm font-black text-[#7B1113] flex items-center justify-center">
+                            {course.teExamType || 'TCP-T'}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
