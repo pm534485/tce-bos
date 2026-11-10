@@ -1878,6 +1878,16 @@ export const CourseWizard: React.FC = () => {
 
   // Debounced auto-save (Local + Backend)
   const saveTimeoutRef = useRef<any>(null);
+  const isCreatingDraftRef = useRef<boolean>(false);
+
+  const canAutoCreateDraft = Boolean(
+    course.courseName &&
+    course.courseName.trim().length >= 3 &&
+    course.programmeCode &&
+    course.categoryLetter &&
+    course.uniqueLetter
+  );
+
   useEffect(() => {
     if (!isAutoSaveEnabled) return;
 
@@ -1900,16 +1910,20 @@ export const CourseWizard: React.FC = () => {
         } catch (e) {
           setIsSaving(false);
         }
-      } else if (isStep0Complete && course.courseName?.trim()) {
+      } else if ((isStep0Complete || canAutoCreateDraft) && course.courseName?.trim()) {
+        if (isCreatingDraftRef.current) return;
         try {
+          isCreatingDraftRef.current = true;
           setIsSaving(true);
           const saved = await api.createCourse(course);
           setCourse(saved);
           setLastSaved(new Date());
           setIsSaving(false);
+          isCreatingDraftRef.current = false;
           navigate(`/courses/${saved._id}`, { replace: true });
         } catch (e) {
           setIsSaving(false);
+          isCreatingDraftRef.current = false;
         }
       }
     }, 2500);
@@ -1917,7 +1931,7 @@ export const CourseWizard: React.FC = () => {
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
-  }, [course, isAutoSaveEnabled, isStep0Complete]);
+  }, [course, isAutoSaveEnabled, isStep0Complete, canAutoCreateDraft]);
 
   // Handle Initial Draft Creation
   const handleSaveDraft = async (): Promise<Course | null> => {

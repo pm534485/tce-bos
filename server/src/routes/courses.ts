@@ -207,6 +207,10 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response): Promise<
       courseData.credits = computeCredits(courseData.L, courseData.T, courseData.P, courseData.courseType);
     }
 
+    if (!courseData.teExamType || courseData.teExamType === '') {
+      delete courseData.teExamType;
+    }
+
     // Auto-compute course code
     courseData.courseCode = computeCourseCode({
       regulationCode: courseData.regulationCode || '26',
@@ -279,6 +283,10 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response): Promis
     // Recalculate credits
     if (updateData.L !== undefined && updateData.T !== undefined && updateData.P !== undefined) {
       updateData.credits = computeCredits(updateData.L, updateData.T, updateData.P, updateData.courseType);
+    }
+
+    if (updateData.teExamType === '') {
+      delete updateData.teExamType;
     }
 
     // Recalculate course code if components changed
