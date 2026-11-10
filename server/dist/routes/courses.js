@@ -149,11 +149,7 @@ router.post('/export', async (req, res) => {
             res.status(400).json({ error: 'Course data is required for export.' });
             return;
         }
-        const {
-            includeApprovalFooter = false,
-            bosMeetingText,
-            academicCouncilText,
-        } = req.body;
+        const { includeApprovalFooter = false, bosMeetingText, academicCouncilText, } = req.body;
         const exportOptions = {
             includeApprovalFooter: Boolean(includeApprovalFooter),
             bosMeetingText: bosMeetingText ? String(bosMeetingText) : undefined,
@@ -445,12 +441,7 @@ router.post('/:id/revise', authenticate, async (req, res) => {
 // GET /api/courses/:id/export?format=docx|pdf
 router.get('/:id/export', async (req, res) => {
     try {
-        const {
-            format = 'docx',
-            includeApprovalFooter = 'false',
-            bosMeetingText,
-            academicCouncilText,
-        } = req.query;
+        const { format = 'docx', includeApprovalFooter = 'false', bosMeetingText, academicCouncilText, } = req.query;
         const course = await Course.findById(req.params.id);
         if (!course) {
             res.status(404).json({ error: 'Course not found.' });
@@ -481,15 +472,7 @@ router.get('/:id/export', async (req, res) => {
 // POST /api/courses/merge - Merge selected courses in explicit order into one DOCX or PDF bundle (or HTML bundle for browser printing)
 router.post('/merge', authenticate, async (req, res) => {
     try {
-        const {
-            courseIds,
-            format = 'docx',
-            regulationYear = 2026,
-            annexureNo = '01',
-            includeApprovalFooter = true,
-            bosMeetingText,
-            academicCouncilText,
-        } = req.body;
+        const { courseIds, format = 'docx', regulationYear = 2026, annexureNo = '01', includeApprovalFooter = true, bosMeetingText, academicCouncilText, } = req.body;
         if (!Array.isArray(courseIds) || courseIds.length === 0) {
             res.status(400).json({ error: 'Please select at least one course to merge.' });
             return;

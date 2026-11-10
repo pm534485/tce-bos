@@ -1989,7 +1989,7 @@ export const CourseWizard: React.FC = () => {
   };
 
   // Update field helpers
-  const updateField = (field: keyof Course, value: any) => {
+  const updateField = (field: keyof Course | 'categoryTable3', value: any) => {
     // Mark field as touched when user changes it
     setTouchedFields(prev => new Set(prev).add(field as string));
     setCourse(prev => {

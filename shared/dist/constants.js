@@ -26,7 +26,7 @@ export const PROGRAMME_CODES = [
     { code: 'CA', name: 'Computer Applications (MCA)', department: 'Computer Applications' },
     // Data Science
     { code: 'DS', name: 'Data Science (Five Years)', department: 'Data Science' },
-    // Artificial Intelligence
+    // Artificial Intelligence and Machine Learning
     { code: 'AM', name: 'Artificial Intelligence and Machine Learning', department: 'Artificial Intelligence and Machine Learning' },
     // Fashion Technology
     { code: 'FT', name: 'Fashion Technology', department: 'Fashion Technology' },
@@ -137,14 +137,14 @@ export const CATEGORY_ABBREVIATIONS = [
     'AC', // Audit Courses
 ];
 export const CATEGORY_OPTIONS = [
-    { abbr: 'PCC', name: 'Programme Core Courses', fullName: 'PCC — Programme Core Courses' },
-    { abbr: 'PEC', name: 'Programme Elective Courses', fullName: 'PEC — Programme Elective Courses' },
-    { abbr: 'BSC', name: 'Basic Science Courses', fullName: 'BSC — Basic Science Courses' },
-    { abbr: 'ESC', name: 'Engineering Science Courses', fullName: 'ESC — Engineering Science Courses' },
-    { abbr: 'EEC', name: 'Employability Enhancement Courses', fullName: 'EEC — Employability Enhancement Courses' },
-    { abbr: 'HSMC', name: 'Humanities, Social Sciences & Management', fullName: 'HSMC — Humanities & Management' },
-    { abbr: 'OEC', name: 'Open Elective Courses', fullName: 'OEC — Open Elective Courses' },
-    { abbr: 'AC', name: 'Audit Courses', fullName: 'AC — Audit Courses' },
+    { abbr: 'PCC', name: 'Programme Core Courses', fullName: 'PCC � Programme Core Courses' },
+    { abbr: 'PEC', name: 'Programme Elective Courses', fullName: 'PEC � Programme Elective Courses' },
+    { abbr: 'BSC', name: 'Basic Science Courses', fullName: 'BSC � Basic Science Courses' },
+    { abbr: 'ESC', name: 'Engineering Science Courses', fullName: 'ESC � Engineering Science Courses' },
+    { abbr: 'EEC', name: 'Employability Enhancement Courses', fullName: 'EEC � Employability Enhancement Courses' },
+    { abbr: 'HSMC', name: 'Humanities, Social Sciences & Management', fullName: 'HSMC � Humanities & Management' },
+    { abbr: 'OEC', name: 'Open Elective Courses', fullName: 'OEC � Open Elective Courses' },
+    { abbr: 'AC', name: 'Audit Courses', fullName: 'AC � Audit Courses' },
 ];
 export const TPS_VERBS = {
     1: ['Define', 'Identify', 'List', 'Name', 'Recall', 'Recognize', 'Record', 'Relate', 'Repeat', 'Underline'],
@@ -466,10 +466,10 @@ export const LAB_ACTIVITY_CHIPS = {
     ],
 };
 export const SCHWAB_HERRON_LEVELS = [
-    { level: 0, problem: 'Given', waysMeans: 'Given', answers: 'Given', description: 'Level 0 — Fully Given: All three elements provided by teacher/textbook.' },
-    { level: 1, problem: 'Given', waysMeans: 'Given', answers: 'Open', description: 'Level 1 — Open Answers: Problem and methods given; students find answers.' },
-    { level: 2, problem: 'Given', waysMeans: 'Open', answers: 'Open', description: 'Level 2 — Open Methods & Answers: Problem given; students choose how to investigate.' },
-    { level: 3, problem: 'Open', waysMeans: 'Open', answers: 'Open', description: 'Level 3 — Fully Open: Problem, methods, and answers all student-determined inquiry.' },
+    { level: 0, problem: 'Given', waysMeans: 'Given', answers: 'Given', description: 'Level 0 � Fully Given: All three elements provided by teacher/textbook.' },
+    { level: 1, problem: 'Given', waysMeans: 'Given', answers: 'Open', description: 'Level 1 � Open Answers: Problem and methods given; students find answers.' },
+    { level: 2, problem: 'Given', waysMeans: 'Open', answers: 'Open', description: 'Level 2 � Open Methods & Answers: Problem given; students choose how to investigate.' },
+    { level: 3, problem: 'Open', waysMeans: 'Open', answers: 'Open', description: 'Level 3 � Fully Open: Problem, methods, and answers all student-determined inquiry.' },
 ];
 export const DEFAULT_CONFIG_SETTINGS = {
     regulationYear: 2026,

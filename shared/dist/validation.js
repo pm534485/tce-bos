@@ -323,7 +323,7 @@ export function validatePreamble(preamble, coStatements = []) {
             fixHint: 'Condense preamble to 90 words or fewer.',
         });
     }
-    // Cliché phrase checks
+    // Clich� phrase checks
     const cliches = [
         { pattern: /This course covers important topics/i, phrase: 'This course covers important topics' },
         { pattern: /Students will learn about/i, phrase: 'Students will learn about' },
@@ -438,27 +438,16 @@ export function validateCourseOutcomes(cos, courseType, allowTps1 = false, credi
                 });
             }
             statements.push(stmt.toLowerCase());
-            // First action verb check (case-insensitive, handles leading spaces, and multi-word verbs like 'Break down')
-            const cleanStmt = stmt.trim();
-            const firstWord = cleanStmt.split(/\s+/)[0]?.replace(/[^a-zA-Z]/g, '') || '';
+            // First action verb check
+            const firstWord = stmt.split(/\s+/)[0].replace(/[^a-zA-Z]/g, '');
             const validVerbs = TPS_VERBS[co.tpsLevel] || [];
-            const isVerbApproved = validVerbs.some(v => {
-                const vLower = v.toLowerCase();
-                const stmtLower = cleanStmt.toLowerCase();
-                return (
-                    vLower === firstWord.toLowerCase() ||
-                    stmtLower === vLower ||
-                    stmtLower.startsWith(vLower + ' ') ||
-                    stmtLower.startsWith(vLower + ',') ||
-                    stmtLower.startsWith(vLower + '-')
-                );
-            });
+            const isVerbApproved = validVerbs.some(v => v.toLowerCase() === firstWord.toLowerCase());
             if (!isVerbApproved) {
                 results.push({
                     id: `B5_CO_VERB_MISMATCH_${coId}`,
                     field: `courseOutcomes.${idx}.statement`,
                     severity: 'warning',
-                    message: `${coId}: First verb "${firstWord || 'undefined'}" is not in standard action verbs list for TPS Level ${co.tpsLevel}.`,
+                    message: `${coId}: First verb "${firstWord}" is not in standard action verbs list for TPS Level ${co.tpsLevel}.`,
                     fixHint: `Standard verbs for TPS ${co.tpsLevel} are: ${validVerbs.join(', ')}.`,
                 });
             }
@@ -911,7 +900,6 @@ export function validateAssessmentPattern(courseType, cos, matrix, tolerance = 3
                 });
             }
         });
-
         // Domain weightage validation for Practical Course assessment components:
         // 60% Cognitive, 20% Affective, 20% Psychomotor
         const compWeights = [
@@ -919,26 +907,29 @@ export function validateAssessmentPattern(courseType, cos, matrix, tolerance = 3
             { col: 'practicalModel', label: 'Model Test CO-wise' },
             { col: 'terminalExam', label: 'Terminal Exam (Practical)' },
         ];
-
         compWeights.forEach(comp => {
             let cogTotal = 0;
             let affTotal = 0;
             let psyTotal = 0;
-
             cos.forEach(co => {
                 const r = matrix.find(m => m.coNo === co.coNo);
                 const val = Number(r?.[comp.col]) || 0;
                 let d = co.domain;
                 if (!d && co.objectiveNo) {
-                    if (co.objectiveNo >= 1 && co.objectiveNo <= 7) d = 'Cognitive';
-                    else if (co.objectiveNo >= 8 && co.objectiveNo <= 9) d = 'Affective';
-                    else if (co.objectiveNo >= 10 && co.objectiveNo <= 13) d = 'Psychomotor';
+                    if (co.objectiveNo >= 1 && co.objectiveNo <= 7)
+                        d = 'Cognitive';
+                    else if (co.objectiveNo >= 8 && co.objectiveNo <= 9)
+                        d = 'Affective';
+                    else if (co.objectiveNo >= 10 && co.objectiveNo <= 13)
+                        d = 'Psychomotor';
                 }
-                if (d === 'Affective') affTotal += val;
-                else if (d === 'Psychomotor') psyTotal += val;
-                else cogTotal += val;
+                if (d === 'Affective')
+                    affTotal += val;
+                else if (d === 'Psychomotor')
+                    psyTotal += val;
+                else
+                    cogTotal += val;
             });
-
             if (cogTotal !== 60 || affTotal !== 20 || psyTotal !== 20) {
                 results.push({
                     id: `B6_LAB_DOMAIN_WEIGHTS_${comp.col}`,
@@ -1150,14 +1141,12 @@ export function validateLectureSchedule(courseType, modules, credits, L = 0, lec
             lectureScheduleItems.forEach((item, rIdx) => {
                 const isHeader = !item.moduleNo || !item.moduleNo.includes('.');
                 const hasSubtopics = isHeader && lectureScheduleItems.some(x => x.moduleNo.startsWith(`${item.moduleNo}.`));
-
+                // Module heading rows that only act as headings do not require hours if they have subtopics
                 if (isHeader && hasSubtopics && (item.periods === '' || item.periods === undefined || item.periods === null)) {
                     return;
                 }
-
                 const pNum = Number(item.periods);
                 const isValid = !isNaN(pNum) && Number.isInteger(pNum) && (pNum === 1 || pNum === 2) && item.periods !== '' && item.periods !== null && item.periods !== undefined;
-
                 if (!isValid) {
                     results.push({
                         id: `B9_SCHEDULE_ROW_PERIODS_MAX_${rIdx}`,
@@ -1446,21 +1435,9 @@ export function evaluateTheoryChecklist(course) {
                 if (cos.length === 0)
                     return false;
                 return cos.every(co => {
-                    const cleanStmt = (co.statement || '').trim();
-                    if (!cleanStmt) return false;
-                    const firstWord = cleanStmt.split(/\s+/)[0]?.replace(/[^a-zA-Z]/g, '') || '';
+                    const firstWord = (co.statement || '').trim().split(/\s+/)[0]?.replace(/[^a-zA-Z]/g, '') || '';
                     const valid = TPS_VERBS[co.tpsLevel] || [];
-                    return valid.some(v => {
-                        const vLower = v.toLowerCase();
-                        const stmtLower = cleanStmt.toLowerCase();
-                        return (
-                            vLower === firstWord.toLowerCase() ||
-                            stmtLower === vLower ||
-                            stmtLower.startsWith(vLower + ' ') ||
-                            stmtLower.startsWith(vLower + ',') ||
-                            stmtLower.startsWith(vLower + '-')
-                        );
-                    });
+                    return valid.some(v => v.toLowerCase() === firstWord.toLowerCase());
                 });
             })(),
             reason: 'Verbs must match the TPS taxonomy dictionary.',
@@ -1476,7 +1453,7 @@ export function evaluateTheoryChecklist(course) {
         },
         {
             id: 8,
-            title: 'CO Weightage values are unequal, sum to 100, and range 5–25% per CO.',
+            title: 'CO Weightage values are unequal, sum to 100, and range 5�25% per CO.',
             passed: (() => {
                 const cos = course.courseOutcomes || [];
                 if (cos.length === 0)
@@ -1576,7 +1553,7 @@ export function evaluateTheoryChecklist(course) {
         },
         {
             id: 14,
-            title: '1–2 Text Books listed with chapter references per module.',
+            title: '1�2 Text Books listed with chapter references per module.',
             passed: course.courseType === 'PRACTICAL' ? true : ((course.textBooks || []).length >= 1 && (course.textBooks || []).length <= 2),
             reason: course.courseType === 'PRACTICAL' ? 'Not applicable for Laboratory courses.' : `Text books count: ${(course.textBooks || []).length} (required: 1-2).`,
         },
@@ -1599,13 +1576,13 @@ export function evaluateTheoryChecklist(course) {
         },
         {
             id: 16,
-            title: 'Reference books follow standard citation format with year (3–6 titles).',
+            title: 'Reference books follow standard citation format with year (3�6 titles).',
             passed: course.courseType === 'PRACTICAL' ? true : ((course.referenceBooks || []).length >= 3 && (course.referenceBooks || []).length <= 6 && (course.referenceBooks || []).every(b => !!b.year)),
             reason: course.courseType === 'PRACTICAL' ? 'Not applicable for Laboratory courses.' : `Reference books count: ${(course.referenceBooks || []).length} (required: 3-6) with publication year.`,
         },
         {
             id: 17,
-            title: 'Total number of lecture hours is strictly assigned according to credit criteria (1 credit: 12–14 hrs, 2 credits: 24–28 hrs, 3 credits: 36 hrs, 4 credits: 48 hrs).',
+            title: 'Total number of lecture hours is strictly assigned according to credit criteria (1 credit: 12�14 hrs, 2 credits: 24�28 hrs, 3 credits: 36 hrs, 4 credits: 48 hrs).',
             passed: (() => {
                 const totalPeriods = (course.modules || []).reduce((sum, m) => sum + (Number(m.periods) || 0), 0);
                 if (totalPeriods === 0)
