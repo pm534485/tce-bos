@@ -1,4 +1,4 @@
-import { Course } from '@syllabusforge/shared';
+import { Course, getDisplayTeType } from '@syllabusforge/shared';
 import { ConfigSettingsModel } from '../models/MasterData.js';
 
 export function getDegreeProgramHeader(course: Course): string {
@@ -403,7 +403,7 @@ export function buildCourseInnerHtml(
       <td class="center">${course.T}</td>
       <td class="center">${course.P}</td>
       <td class="center font-bold">${course.credits}</td>
-      ${isTcp ? `<td class="center font-bold">${course.teExamType || 'TCP-T'}</td>` : ''}
+      ${isTcp ? `<td class="center font-bold">${getDisplayTeType(course.teExamType)}</td>` : ''}
     </tr>
   </table>
 

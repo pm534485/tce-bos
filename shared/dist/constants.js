@@ -411,6 +411,15 @@ export const DOMAIN_TO_SDG_MAP = [
     { domain: 'Computer Science, Software Engineering (general)', suggestedSdgs: [4, 8, 9], rationale: 'Digital education access; decent work via tech; innovation infrastructure' },
     { domain: 'Environmental Science, Ecology, Climate Modelling', suggestedSdgs: [13, 15], rationale: 'Climate action; life on land' },
 ];
+export function getDisplayTeType(teType) {
+    if (!teType)
+        return 'TCP-T';
+    const val = String(teType).trim();
+    if (val === 'TCP-P' || val === '100% Practical' || val.toLowerCase().includes('practical')) {
+        return 'TCP-P';
+    }
+    return 'TCP-T';
+}
 // Table 5: Weightage for Continuous Assessments in TCP Courses / End Semester (Regulation 2026, Page 22/26)
 export const TCP_WEIGHTAGE_TABLE = [
     { ltp: '1-0-2', credits: 2, teType: 'TCP-T', caTheoryPercent: 15, caPracticalPercent: 35, eseTheoryPercent: 50, esePracticalPercent: 0 },

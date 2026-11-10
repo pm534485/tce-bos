@@ -23,6 +23,7 @@ import {
   DEPARTMENT_OPTIONS,
   getProgrammesForDepartment,
   getDepartmentForProgramme,
+  getDisplayTeType,
   CATEGORY_CODES,
   CATEGORY_ABBREVIATIONS,
   CATEGORY_OPTIONS,
@@ -2848,7 +2849,7 @@ export const CourseWizard: React.FC = () => {
                         </div>
                         {course.courseType === 'TCP' && (
                           <div className="p-2.5 text-xs sm:text-sm font-black text-[#7B1113] flex items-center justify-center">
-                            {course.teExamType || 'TCP-T'}
+                            {getDisplayTeType(course.teExamType)}
                           </div>
                         )}
                       </div>
@@ -3199,9 +3200,9 @@ export const CourseWizard: React.FC = () => {
                         >
                           <option value="" disabled>Select TE Exam Type</option>
                           <option value="TCP-T">TCP-T (Theory Examination 50%)</option>
+                          <option value="100% Theory">TCP-T (100% Theory)</option>
                           <option value="TCP-P">TCP-P (Practical Examination 50%)</option>
-                          <option value="100% Theory">100% Theory</option>
-                          <option value="100% Practical">100% Practical</option>
+                          <option value="100% Practical">TCP-P (100% Practical)</option>
                         </select>
                       </div>
                     )}

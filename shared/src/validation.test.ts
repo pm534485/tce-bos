@@ -19,6 +19,7 @@ import {
   suggestCoWeightages,
 } from './validation.js';
 import { Course, CourseOutcome, SyllabusModule, LearningResource, SdgActivity } from './types.js';
+import { getDisplayTeType } from './constants.js';
 
 describe('B1: Course Name Validation', () => {
   it('should accept valid alphanumeric Title Case name <= 60 chars', () => {
@@ -184,6 +185,16 @@ describe('B3: Category, L-T-P, Credits Validation', () => {
     expect(res1.filter(e => e.severity === 'error')).toHaveLength(0);
     const res2 = validateLtpCredits('TCP', 'PCC', 3, 0, 4, 5);
     expect(res2.filter(e => e.severity === 'error')).toHaveLength(0);
+  });
+
+  it('should display TCP-T for theory options and TCP-P for practical options', () => {
+    expect(getDisplayTeType('TCP-T')).toBe('TCP-T');
+    expect(getDisplayTeType('100% Theory')).toBe('TCP-T');
+    expect(getDisplayTeType('Theory Examination 50%')).toBe('TCP-T');
+    expect(getDisplayTeType('TCP-P')).toBe('TCP-P');
+    expect(getDisplayTeType('100% Practical')).toBe('TCP-P');
+    expect(getDisplayTeType('Practical Examination 50%')).toBe('TCP-P');
+    expect(getDisplayTeType(undefined)).toBe('TCP-T');
   });
 
   it('should reject negative L, T, or P', () => {

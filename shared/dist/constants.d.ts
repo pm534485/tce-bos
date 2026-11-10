@@ -75,6 +75,7 @@ export interface TcpWeightageRow {
     eseTheoryPercent: number;
     esePracticalPercent: number;
 }
+export declare function getDisplayTeType(teType?: string): 'TCP-T' | 'TCP-P';
 export declare const TCP_WEIGHTAGE_TABLE: TcpWeightageRow[];
 export interface CourseCategoryWeightage {
     category: string;

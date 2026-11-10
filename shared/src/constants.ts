@@ -501,6 +501,15 @@ export interface TcpWeightageRow {
   esePracticalPercent: number;
 }
 
+export function getDisplayTeType(teType?: string): 'TCP-T' | 'TCP-P' {
+  if (!teType) return 'TCP-T';
+  const val = String(teType).trim();
+  if (val === 'TCP-P' || val === '100% Practical' || val.toLowerCase().includes('practical')) {
+    return 'TCP-P';
+  }
+  return 'TCP-T';
+}
+
 // Table 5: Weightage for Continuous Assessments in TCP Courses / End Semester (Regulation 2026, Page 22/26)
 export const TCP_WEIGHTAGE_TABLE: TcpWeightageRow[] = [
   { ltp: '1-0-2', credits: 2, teType: 'TCP-T', caTheoryPercent: 15, caPracticalPercent: 35, eseTheoryPercent: 50, esePracticalPercent: 0 },

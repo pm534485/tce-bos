@@ -1,3 +1,4 @@
+import { getDisplayTeType } from '@syllabusforge/shared';
 export function getDegreeProgramHeader(course) {
     let progCode = (course.programmeCode || '').toUpperCase();
     if (!progCode && course.courseCode && course.courseCode.length >= 4) {
@@ -412,7 +413,7 @@ export function buildCourseInnerHtml(course, options) {
       <td class="center">${course.T}</td>
       <td class="center">${course.P}</td>
       <td class="center font-bold">${course.credits}</td>
-      ${isTcp ? `<td class="center font-bold">${course.teExamType || 'TCP-T'}</td>` : ''}
+      ${isTcp ? `<td class="center font-bold">${getDisplayTeType(course.teExamType)}</td>` : ''}
     </tr>
   </table>
 

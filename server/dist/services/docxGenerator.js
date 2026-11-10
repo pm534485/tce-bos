@@ -1,4 +1,5 @@
 import { Document, Paragraph, Table, TableRow, TableCell, TextRun, AlignmentType, WidthType, BorderStyle, Footer, Header, Packer, VerticalMergeType, UnderlineType, } from 'docx';
+import { getDisplayTeType } from '@syllabusforge/shared';
 import { getDegreeProgramHeader } from './pdfGenerator.js';
 // Table cell borders helper: clean single solid borders
 const cellBorders = {
@@ -168,7 +169,7 @@ export function buildCourseDocxElements(course, options) {
             createCell(String(course.T), { widthPercent: isTcp ? 5 : 6, align: AlignmentType.CENTER }),
             createCell(String(course.P), { widthPercent: isTcp ? 5 : 6, align: AlignmentType.CENTER }),
             createCell(String(course.credits), { bold: true, widthPercent: isTcp ? 7 : 6, align: AlignmentType.CENTER }),
-            ...(isTcp ? [createCell(course.teExamType || 'TCP-T', { bold: true, widthPercent: 12, align: AlignmentType.CENTER })] : []),
+            ...(isTcp ? [createCell(getDisplayTeType(course.teExamType), { bold: true, widthPercent: 12, align: AlignmentType.CENTER })] : []),
         ],
     });
     children.push(new Table({
@@ -1066,7 +1067,7 @@ export async function generateProgrammeBundleDocx(bundleData) {
                         createCell(String(course.T), { widthPercent: isTcp ? 5 : 6, align: AlignmentType.CENTER }),
                         createCell(String(course.P), { widthPercent: isTcp ? 5 : 6, align: AlignmentType.CENTER }),
                         createCell(String(course.credits), { bold: true, widthPercent: isTcp ? 7 : 6, align: AlignmentType.CENTER }),
-                        ...(isTcp ? [createCell(course.teExamType || 'TCP-T', { bold: true, widthPercent: 12, align: AlignmentType.CENTER })] : []),
+                        ...(isTcp ? [createCell(getDisplayTeType(course.teExamType), { bold: true, widthPercent: 12, align: AlignmentType.CENTER })] : []),
                     ],
                 }),
             ],

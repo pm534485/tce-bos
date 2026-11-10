@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Course } from '@syllabusforge/shared';
+import { Course, getDisplayTeType } from '@syllabusforge/shared';
 import { Download, FileText, Printer, Loader2, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -656,7 +656,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
               <td className="text-center border border-black p-1.5">{course.P !== undefined && course.P !== null ? course.P : '_'}</td>
               <td className="text-center font-bold border border-black p-1.5">{course.credits !== undefined && course.credits !== null ? course.credits : '_'}</td>
               {isTcp && (
-                <td className="text-center font-bold border border-black p-1.5">{course.teExamType || 'TCP-T'}</td>
+                <td className="text-center font-bold border border-black p-1.5">{getDisplayTeType(course.teExamType)}</td>
               )}
             </tr>
           </tbody>
