@@ -3186,6 +3186,8 @@ export const CourseWizard: React.FC = () => {
                           <option value="" disabled>Select TE Exam Type</option>
                           <option value="TCP-T">TCP-T (Theory Examination 50%)</option>
                           <option value="TCP-P">TCP-P (Practical Examination 50%)</option>
+                          <option value="100% Theory">100% Theory</option>
+                          <option value="100% Practical">100% Practical</option>
                         </select>
                       </div>
                     )}

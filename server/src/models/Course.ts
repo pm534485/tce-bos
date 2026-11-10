@@ -172,7 +172,7 @@ const CourseSchema = new Schema<ICourseDocument>(
     T: { type: Number, required: false, default: 0 },
     P: { type: Number, required: false, default: 0 },
     credits: { type: Number, required: false },
-    teExamType: { type: String, enum: ['TCP-T', 'TCP-P'] },
+    teExamType: { type: String, enum: ['TCP-T', 'TCP-P', '100% Theory', '100% Practical'] },
     preamble: { type: String, required: false },
     isAdvanced: { type: Boolean, default: false },
     prerequisites: { type: Schema.Types.Mixed, default: 'Nil' },

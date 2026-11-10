@@ -163,7 +163,7 @@ export interface Course {
     T: number;
     P: number;
     credits: number;
-    teExamType?: 'TCP-T' | 'TCP-P';
+    teExamType?: 'TCP-T' | 'TCP-P' | '100% Theory' | '100% Practical' | string;
     preamble: string;
     isAdvanced?: boolean;
     prerequisites: Prerequisite[] | 'Nil' | string;

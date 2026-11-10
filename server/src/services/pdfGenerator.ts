@@ -114,7 +114,7 @@ export function buildCourseInnerHtml(
   let totalPracticalCa = 0;
   let totalPracticalModel = 0;
   let totalPracticalTerm = 0;
-  const terminalExamBracket = (course.courseType === 'PRACTICAL' || course.teExamType === 'TCP-P') ? '(Practical)' : '(Theory)';
+  const terminalExamBracket = (course.courseType === 'PRACTICAL' || course.teExamType === 'TCP-P' || course.teExamType === '100% Practical') ? '(Practical)' : '(Theory)';
 
   const practicalRowsHtml = isPractical
     ? coList.map((co, idx) => {
