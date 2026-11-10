@@ -3070,10 +3070,10 @@ export const CourseWizard: React.FC = () => {
                             <input
                               type="number"
                               min={0}
-                              max={5}
+                              max={8}
                               value={course.courseType === 'PRACTICAL' ? 0 : (course.L === ('' as any) ? '' : (course.L ?? ''))}
                               disabled={course.courseType === 'PRACTICAL'}
-                              onChange={e => updateField('L', e.target.value === '' ? ('' as any) : Math.min(5, parseInt(e.target.value) || 0))}
+                              onChange={e => updateField('L', e.target.value === '' ? ('' as any) : Math.min(8, Math.max(0, parseInt(e.target.value) || 0)))}
                               onBlur={() => touchField('L')}
                               placeholder="0"
                               className="w-13 h-[42px] px-1 border-2 border-sky-300 bg-sky-50/70 hover:border-sky-500 focus:border-sky-600 focus:ring-2 focus:ring-sky-200 rounded-xl text-sm text-center font-black text-sky-950 disabled:bg-slate-100 disabled:border-slate-300 disabled:text-slate-400 disabled:cursor-not-allowed shadow-2xs transition-all"
@@ -3089,10 +3089,10 @@ export const CourseWizard: React.FC = () => {
                             <input
                               type="number"
                               min={0}
-                              max={5}
+                              max={6}
                               value={course.courseType === 'PRACTICAL' ? 0 : (course.T === ('' as any) ? '' : (course.T ?? ''))}
                               disabled={course.courseType === 'PRACTICAL'}
-                              onChange={e => updateField('T', e.target.value === '' ? ('' as any) : Math.min(5, parseInt(e.target.value) || 0))}
+                              onChange={e => updateField('T', e.target.value === '' ? ('' as any) : Math.min(6, Math.max(0, parseInt(e.target.value) || 0)))}
                               onBlur={() => touchField('T')}
                               placeholder="0"
                               className="w-13 h-[42px] px-1 border-2 border-indigo-300 bg-indigo-50/70 hover:border-indigo-500 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-200 rounded-xl text-sm text-center font-black text-indigo-950 disabled:bg-slate-100 disabled:border-slate-300 disabled:text-slate-400 disabled:cursor-not-allowed shadow-2xs transition-all"
@@ -3108,7 +3108,7 @@ export const CourseWizard: React.FC = () => {
                             <input
                               type="number"
                               min={course.courseType === 'PRACTICAL' ? 2 : 0}
-                              max={course.courseType === 'PRACTICAL' ? 4 : 5}
+                              max={course.courseType === 'PRACTICAL' ? 4 : 10}
                               value={course.courseType === 'THEORY' ? 0 : (course.P === ('' as any) ? '' : (course.P ?? ''))}
                               disabled={course.courseType === 'THEORY'}
                               onChange={e => {
@@ -3122,7 +3122,7 @@ export const CourseWizard: React.FC = () => {
                                   const clamped = Math.min(4, Math.max(2, raw));
                                   updateField('P', clamped);
                                 } else {
-                                  updateField('P', Math.min(5, Math.max(0, raw)));
+                                  updateField('P', Math.min(10, Math.max(0, raw)));
                                 }
                               }}
                               onBlur={() => touchField('P')}

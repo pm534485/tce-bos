@@ -174,7 +174,16 @@ describe('B3: Category, L-T-P, Credits Validation', () => {
     expect(computeCredits(1, 0, 3)).toBe(2.5);
     expect(computeCredits(2, 0, 3)).toBe(3.5);
     expect(computeCredits(1, 0, 6)).toBe(4);
+    expect(computeCredits(2, 0, 6)).toBe(5);
+    expect(computeCredits(3, 0, 4)).toBe(5);
     expect(computeCredits(0, 0, 3)).toBe(1.5);
+  });
+
+  it('should validate TCP courses with L-T-P 2-0-6 and 3-0-4 (5 credits)', () => {
+    const res1 = validateLtpCredits('TCP', 'PCC', 2, 0, 6, 5);
+    expect(res1.filter(e => e.severity === 'error')).toHaveLength(0);
+    const res2 = validateLtpCredits('TCP', 'PCC', 3, 0, 4, 5);
+    expect(res2.filter(e => e.severity === 'error')).toHaveLength(0);
   });
 
   it('should reject negative L, T, or P', () => {
