@@ -823,32 +823,49 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
               List of Experiments with CO Mapping
             </div>
             <div className="h-2" />
-            {(course.experiments && course.experiments.length > 0) ? (
-              <table className="w-full border-collapse border border-black text-xs">
-                <thead>
-                  <tr className="border-b border-black">
-                    <th className="border border-black p-1.5 text-center w-[8%]">Sl. No.</th>
-                    <th className="border border-black p-1.5 text-left w-[50%]">Name of the Experiment</th>
-                    <th className="border border-black p-1.5 text-center w-[14%]">Level of Experiment</th>
-                    <th className="border border-black p-1.5 text-center w-[14%]">Objective(s)</th>
-                    <th className="border border-black p-1.5 text-center w-[14%]">COs Addressed</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(course.experiments || []).map((exp, idx) => (
-                    <tr key={idx} className="border-b border-black">
-                      <td className="border border-black p-1.5 text-center">{exp.slNo || idx + 1}</td>
-                      <td className="border border-black p-1.5 text-left">{exp.name || ''}</td>
-                      <td className="border border-black p-1.5 text-center">{getExperimentLevelNumber(exp)}</td>
-                      <td className="border border-black p-1.5 text-center">{getExperimentObjectives(exp)}</td>
-                      <td className="border border-black p-1.5 text-center font-medium">
-                        {Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || '')}
-                      </td>
+            {(course.experiments && course.experiments.length > 0) ? (() => {
+              const practicalHasHours = (course.experiments || []).some(e => e.hours !== undefined && e.hours !== null);
+              const practicalTotalHours = (course.experiments || []).reduce((sum, e) => sum + (Number(e.hours) || 0), 0);
+              return (
+                <table className="w-full border-collapse border border-black text-xs">
+                  <thead>
+                    <tr className="border-b border-black">
+                      <th className={`border border-black p-1.5 text-center ${practicalHasHours ? 'w-[7%]' : 'w-[8%]'}`}>Sl. No.</th>
+                      <th className={`border border-black p-1.5 text-left ${practicalHasHours ? 'w-[47%]' : 'w-[50%]'}`}>Name of the Experiment</th>
+                      {practicalHasHours && (
+                        <th className="border border-black p-1.5 text-center w-[8%]">Hours</th>
+                      )}
+                      <th className={`border border-black p-1.5 text-center ${practicalHasHours ? 'w-[12%]' : 'w-[14%]'}`}>Level of Experiment</th>
+                      <th className={`border border-black p-1.5 text-center ${practicalHasHours ? 'w-[13%]' : 'w-[14%]'}`}>Objective(s)</th>
+                      <th className={`border border-black p-1.5 text-center ${practicalHasHours ? 'w-[13%]' : 'w-[14%]'}`}>COs Addressed</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
+                  </thead>
+                  <tbody>
+                    {(course.experiments || []).map((exp, idx) => (
+                      <tr key={idx} className="border-b border-black">
+                        <td className="border border-black p-1.5 text-center">{exp.slNo || idx + 1}</td>
+                        <td className="border border-black p-1.5 text-left">{exp.name || ''}</td>
+                        {practicalHasHours && (
+                          <td className="border border-black p-1.5 text-center font-medium">{exp.hours !== undefined && exp.hours !== null ? exp.hours : '-'}</td>
+                        )}
+                        <td className="border border-black p-1.5 text-center">{getExperimentLevelNumber(exp)}</td>
+                        <td className="border border-black p-1.5 text-center">{getExperimentObjectives(exp)}</td>
+                        <td className="border border-black p-1.5 text-center font-medium">
+                          {Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || '')}
+                        </td>
+                      </tr>
+                    ))}
+                    {practicalHasHours && practicalTotalHours > 0 && (
+                      <tr className="border-t-2 border-black font-bold bg-[#F2F2F2]">
+                        <td colSpan={2} className="border border-black p-1.5 text-center font-bold">Total Practical Hours</td>
+                        <td className="border border-black p-1.5 text-center font-bold">{practicalTotalHours}</td>
+                        <td colSpan={3} className="border border-black p-1.5 text-center"></td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              );
+            })() : (
               <div className="text-xs italic text-slate-500 py-1">No experiments added yet.</div>
             )}
           </div>
@@ -875,7 +892,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
                 <div className="font-bold underline text-xs text-black mb-1">Practical:</div>
                 <ol className="list-decimal pl-5 space-y-1 text-xs text-black">
                   {course.experiments.map((exp, idx) => (
-                    <li key={idx} className="text-justify">{exp.name}</li>
+                    <li key={idx} className="text-justify">{exp.name}{exp.hours ? ` (${exp.hours} Hours)` : ''}</li>
                   ))}
                 </ol>
               </div>
@@ -981,39 +998,53 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
         )}
 
         {/* List of Experiments with CO Mapping table (TCP courses only) */}
-        {isTcp && (course.experiments && course.experiments.length > 0) && (
-          <div className="section-block">
-            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1.5 print:bg-[#D9D9D9]">
-              List of Experiments with CO Mapping
-            </div>
-            <div className="h-2" />
+        {isTcp && (course.experiments && course.experiments.length > 0) && (() => {
+          const totalTcpExpHours = (course.experiments || []).reduce((sum, e) => sum + (Number(e.hours) || 0), 0);
+          return (
+            <div className="section-block">
+              <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1.5 print:bg-[#D9D9D9]">
+                List of Experiments with CO Mapping
+              </div>
+              <div className="h-2" />
 
-            <table className="w-full border-collapse border border-black mb-0 text-xs">
-              <thead>
-                <tr className="border-b border-black">
-                  <th className="border border-black p-1.5 text-center w-[8%]">Sl. No.</th>
-                  <th className="border border-black p-1.5 text-left w-[50%]">Name of the Experiment</th>
-                  <th className="border border-black p-1.5 text-center w-[14%]">Level of Experiment</th>
-                  <th className="border border-black p-1.5 text-center w-[14%]">Objective(s)</th>
-                  <th className="border border-black p-1.5 text-center w-[14%]">COs Addressed</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(course.experiments || []).map((exp, idx) => (
-                  <tr key={idx} className="border-b border-black">
-                    <td className="border border-black p-1.5 text-center">{exp.slNo || idx + 1}</td>
-                    <td className="border border-black p-1.5 text-left">{exp.name || ''}</td>
-                    <td className="border border-black p-1.5 text-center">{getExperimentLevelNumber(exp)}</td>
-                    <td className="border border-black p-1.5 text-center">{getExperimentObjectives(exp)}</td>
-                    <td className="border border-black p-1.5 text-center font-medium">
-                      {Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || '')}
-                    </td>
+              <table className="w-full border-collapse border border-black mb-0 text-xs">
+                <thead>
+                  <tr className="border-b border-black">
+                    <th className="border border-black p-1.5 text-center w-[7%]">Sl. No.</th>
+                    <th className="border border-black p-1.5 text-left w-[47%]">Name of the Experiment</th>
+                    <th className="border border-black p-1.5 text-center w-[8%]">Hours</th>
+                    <th className="border border-black p-1.5 text-center w-[12%]">Level of Experiment</th>
+                    <th className="border border-black p-1.5 text-center w-[13%]">Objective(s)</th>
+                    <th className="border border-black p-1.5 text-center w-[13%]">COs Addressed</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody>
+                  {(course.experiments || []).map((exp, idx) => (
+                    <tr key={idx} className="border-b border-black">
+                      <td className="border border-black p-1.5 text-center">{exp.slNo || idx + 1}</td>
+                      <td className="border border-black p-1.5 text-left">{exp.name || ''}</td>
+                      <td className="border border-black p-1.5 text-center font-medium">{exp.hours !== undefined && exp.hours !== null ? exp.hours : '-'}</td>
+                      <td className="border border-black p-1.5 text-center">{getExperimentLevelNumber(exp)}</td>
+                      <td className="border border-black p-1.5 text-center">{getExperimentObjectives(exp)}</td>
+                      <td className="border border-black p-1.5 text-center font-medium">
+                        {Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || '')}
+                      </td>
+                    </tr>
+                  ))}
+                  {totalTcpExpHours > 0 && (
+                    <tr className="border-t-2 border-black font-bold bg-[#F2F2F2]">
+                      <td colSpan={2} className="border border-black p-1.5 text-center font-bold">
+                        Total Practical Hours
+                      </td>
+                      <td className="border border-black p-1.5 text-center font-bold">{totalTcpExpHours}</td>
+                      <td colSpan={3} className="border border-black p-1.5 text-center"></td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          );
+        })()}
 
         {/* Course Designer(s): Section 6 for Practical, Course Designer(s) for Theory/TCP */}
         <div className="section-block">

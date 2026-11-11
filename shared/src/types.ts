@@ -131,6 +131,7 @@ export interface SdgActivity {
 export interface LabExperiment {
   slNo: number;
   name: string;
+  hours?: number; // Contact hours / periods for TCP & Practical experiments
   level: 1 | 2 | 3;
   objectiveNos: number[]; // 1 to 13
   coNos: string[]; // ['CO1', 'CO2']

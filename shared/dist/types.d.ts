@@ -112,6 +112,7 @@ export interface SdgActivity {
 export interface LabExperiment {
     slNo: number;
     name: string;
+    hours?: number;
     level: 1 | 2 | 3;
     objectiveNos: number[];
     coNos: string[];

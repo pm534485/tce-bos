@@ -1524,7 +1524,7 @@ export const CourseWizard: React.FC = () => {
           setCourse(fetched);
           setLastSaved(new Date());
           if (fetched.experiments && fetched.experiments.length > 0) {
-            setBulkExperimentsText(fetched.experiments.map((e, idx) => `${e.slNo || idx + 1}. ${e.name}`).join('\n'));
+            setBulkExperimentsText(fetched.experiments.map((e, idx) => `${e.slNo || idx + 1}. ${e.name}${e.hours ? ` (${e.hours} hrs)` : ''}`).join('\n'));
           }
         } else {
           // Auto-apply active regulation from admin and lock version to 0
@@ -5372,15 +5372,28 @@ export const CourseWizard: React.FC = () => {
 
                         if (items.length === 0) return [];
 
+                        const parsedItems = items.map(itemText => {
+                          const hoursRegex = /(?:[\(\[\-–:]\s*)?(\d{1,2})\s*(?:hours?|hrs?|periods?|h)\b[\)\]]?\s*$/i;
+                          const match = itemText.match(hoursRegex);
+                          let parsedHours: number | undefined;
+                          let cleanedName = itemText;
+                          if (match) {
+                            parsedHours = parseInt(match[1], 10);
+                            cleanedName = itemText.replace(hoursRegex, '').trim();
+                          }
+                          return { name: cleanedName, hours: parsedHours };
+                        });
+
                         const existing = course.experiments || [];
                         const cos = course.courseOutcomes || [];
 
-                        return items.map((name, idx) => {
+                        return parsedItems.map((item, idx) => {
                           const prev = existing[idx];
                           const assignedCo = cos[idx % (cos.length || 1)]?.coNo || 'CO1';
                           return {
                             slNo: idx + 1,
-                            name,
+                            name: item.name,
+                            hours: item.hours !== undefined ? item.hours : prev?.hours,
                             level: prev?.level || 1,
                             objectiveNos: prev?.objectiveNos || [1],
                             coNos: prev?.coNos && prev.coNos.length > 0 ? prev.coNos : [assignedCo],
@@ -5425,13 +5438,13 @@ export const CourseWizard: React.FC = () => {
                               rows={5}
                               value={bulkExperimentsText}
                               onChange={e => handleBulkTextChange(e.target.value)}
-                              placeholder={`Paste entire experiments here. For example:\n1. Implement programs using simple statements and expressions (exchange the values of two variables, distance between two points).\n2. Implement programs using Scientific problems using Conditionals and Iterative loops.\n3. Implement programs using Strings.`}
+                              placeholder={`Paste entire experiments here. For example:\n1. Implement programs using simple statements and expressions - 2 hrs\n2. Implement programs using Scientific problems using Conditionals and Iterative loops - 2 hrs\n3. Implement programs using Strings - 2 hrs`}
                               className="w-full p-3 border border-sky-300 rounded-lg text-xs leading-relaxed font-sans bg-white focus:ring-2 focus:ring-sky-500 text-slate-800 shadow-inner"
                             />
 
                             <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px]">
                               <div className="flex items-center space-x-2 text-slate-500">
-                                <span>✓ Automatically parses <code>1.</code>, <code>2.</code>, <code>1)</code>, etc.</span>
+                                <span>✓ Automatically parses <code>1.</code>, <code>2.</code>, <code>1)</code>, and optional hours like <code>(2 hrs)</code></span>
                               </div>
                               <div className="flex items-center space-x-2">
                                 {bulkExperimentsText && (
@@ -5447,7 +5460,7 @@ export const CourseWizard: React.FC = () => {
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      const text = (course.experiments || []).map((e, idx) => `${e.slNo || idx + 1}. ${e.name}`).join('\n');
+                                      const text = (course.experiments || []).map((e, idx) => `${e.slNo || idx + 1}. ${e.name}${e.hours ? ` (${e.hours} hrs)` : ''}`).join('\n');
                                       setBulkExperimentsText(text);
                                     }}
                                     className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 rounded-md font-semibold transition-colors cursor-pointer"
@@ -5473,41 +5486,58 @@ export const CourseWizard: React.FC = () => {
                           </div>
 
                           {/* List of Experiments Cards */}
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2">
-                            <div>
-                              <span className="font-bold text-xs text-slate-800 block">Divided Experiment Cards (Editable):</span>
-                              <span className="text-[11px] text-slate-500">Review or adjust openness levels (1/2/3) and mapped Course Outcomes for each experiment.</span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const cos = course.courseOutcomes || [];
-                                if (cos.length === 0) return;
-                                const updated = (course.experiments || []).map((exp, i) => {
-                                  const assignedCo = cos[i % cos.length]?.coNo || 'CO1';
-                                  const existing = (exp.coNos || []).filter(c => cos.some(x => x.coNo === c));
-                                  const merged = existing.length > 0 ? existing : [assignedCo];
-                                  return { ...exp, coNos: merged };
-                                });
-                                // Ensure all COs are covered across all experiments
-                                cos.forEach(co => {
-                                  const covered = updated.some(e => (e.coNos || []).includes(co.coNo));
-                                  if (!covered && updated.length > 0) {
-                                    const target = updated[updated.length - 1];
-                                    if (!target.coNos.includes(co.coNo)) {
-                                      target.coNos.push(co.coNo);
-                                    }
-                                  }
-                                });
-                                updateField('experiments', updated);
-                              }}
-                              className="px-2.5 py-1 rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-semibold flex items-center space-x-1.5 transition-colors self-start sm:self-auto cursor-pointer shadow-xs"
-                              title="Automatically distribute Course Outcomes evenly across all experiments"
-                            >
-                              <Sparkles className="w-3.5 h-3.5 text-sky-600" />
-                              <span>Auto-map COs</span>
-                            </button>
-                          </div>
+                          {(() => {
+                            const totalExpHours = (course.experiments || []).reduce((sum, e) => sum + (Number(e.hours) || 0), 0);
+                            const targetPracticalHours = (course.P || 0) * 12;
+
+                            return (
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2">
+                                <div>
+                                  <div className="flex items-center space-x-2">
+                                    <span className="font-bold text-xs text-slate-800">Divided Experiment Cards (Editable):</span>
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                      Total: {totalExpHours} hrs
+                                      {course.courseType === 'TCP' && (course.P || 0) > 0 && (
+                                        <span className="font-normal text-slate-500"> / Target ~{targetPracticalHours} hrs (P={course.P})</span>
+                                      )}
+                                    </span>
+                                  </div>
+                                  <span className="text-[11px] text-slate-500 block mt-0.5">
+                                    Specify contact hours, inquiry openness levels (1/2/3), and mapped Course Outcomes for each experiment.
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const cos = course.courseOutcomes || [];
+                                    if (cos.length === 0) return;
+                                    const updated = (course.experiments || []).map((exp, i) => {
+                                      const assignedCo = cos[i % cos.length]?.coNo || 'CO1';
+                                      const existing = (exp.coNos || []).filter(c => cos.some(x => x.coNo === c));
+                                      const merged = existing.length > 0 ? existing : [assignedCo];
+                                      return { ...exp, coNos: merged };
+                                    });
+                                    // Ensure all COs are covered across all experiments
+                                    cos.forEach(co => {
+                                      const covered = updated.some(e => (e.coNos || []).includes(co.coNo));
+                                      if (!covered && updated.length > 0) {
+                                        const target = updated[updated.length - 1];
+                                        if (!target.coNos.includes(co.coNo)) {
+                                          target.coNos.push(co.coNo);
+                                        }
+                                      }
+                                    });
+                                    updateField('experiments', updated);
+                                  }}
+                                  className="px-2.5 py-1 rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-semibold flex items-center space-x-1.5 transition-colors self-start sm:self-auto cursor-pointer shadow-xs"
+                                  title="Automatically distribute Course Outcomes evenly across all experiments"
+                                >
+                                  <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+                                  <span>Auto-map COs</span>
+                                </button>
+                              </div>
+                            );
+                          })()}
 
                           {(course.experiments || []).map((exp, idx) => (
                             <div key={idx} className="p-3 border border-slate-200 rounded-xl bg-slate-50/50 space-y-2.5">
@@ -5517,7 +5547,7 @@ export const CourseWizard: React.FC = () => {
                                   onClick={() => {
                                     const updated = (course.experiments || []).filter((_, i) => i !== idx).map((e, i) => ({ ...e, slNo: i + 1 }));
                                     updateField('experiments', updated);
-                                    setBulkExperimentsText(updated.map(e => `${e.slNo}. ${e.name}`).join('\n'));
+                                    setBulkExperimentsText(updated.map(e => `${e.slNo}. ${e.name}${e.hours ? ` (${e.hours} hrs)` : ''}`).join('\n'));
                                   }}
                                   className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
                                   title="Delete experiment"
@@ -5527,7 +5557,10 @@ export const CourseWizard: React.FC = () => {
                               </div>
 
                               <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-                                <div className="md:col-span-8">
+                                <div className="md:col-span-7">
+                                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                                    Experiment Title <span className="text-rose-500">*</span>
+                                  </label>
                                   <input
                                     type="text"
                                     value={exp.name || ''}
@@ -5535,14 +5568,36 @@ export const CourseWizard: React.FC = () => {
                                       const updated = [...(course.experiments || [])];
                                       updated[idx] = { ...updated[idx], name: e.target.value };
                                       updateField('experiments', updated);
-                                      setBulkExperimentsText(updated.map((expItem, i) => `${expItem.slNo || i + 1}. ${expItem.name}`).join('\n'));
+                                      setBulkExperimentsText(updated.map((expItem, i) => `${expItem.slNo || i + 1}. ${expItem.name}${expItem.hours ? ` (${expItem.hours} hrs)` : ''}`).join('\n'));
                                     }}
                                     placeholder={`Experiment ${exp.slNo || idx + 1} Title`}
                                     className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white focus:outline-sky-500"
                                   />
                                 </div>
 
-                                <div className="md:col-span-4">
+                                <div className="md:col-span-2">
+                                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                                    Hours {course.courseType === 'TCP' && <span className="text-amber-600 font-bold">*</span>}
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    max={40}
+                                    value={exp.hours ?? ''}
+                                    onChange={e => {
+                                      const val = e.target.value === '' ? undefined : Math.max(1, parseInt(e.target.value, 10) || 0);
+                                      const updated = [...(course.experiments || [])];
+                                      updated[idx] = { ...updated[idx], hours: val };
+                                      updateField('experiments', updated);
+                                      setBulkExperimentsText(updated.map((expItem, i) => `${expItem.slNo || i + 1}. ${expItem.name}${expItem.hours ? ` (${expItem.hours} hrs)` : ''}`).join('\n'));
+                                    }}
+                                    placeholder="e.g. 2"
+                                    className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white focus:outline-sky-500 text-center font-semibold"
+                                  />
+                                </div>
+
+                                <div className="md:col-span-3">
+                                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">Inquiry Level</label>
                                   <select
                                     value={exp.level}
                                     onChange={e => {
@@ -5603,13 +5658,14 @@ export const CourseWizard: React.FC = () => {
                               const newExp: LabExperiment = {
                                 slNo: n,
                                 name: '',
+                                hours: course.courseType === 'TCP' ? 2 : undefined,
                                 level: 1,
                                 objectiveNos: [1],
                                 coNos: [assignedCo],
                               };
                               const updated = [...(course.experiments || []), newExp];
                               updateField('experiments', updated);
-                              setBulkExperimentsText(updated.map((e, idx) => `${e.slNo || idx + 1}. ${e.name}`).join('\n'));
+                              setBulkExperimentsText(updated.map((e, idx) => `${e.slNo || idx + 1}. ${e.name}${e.hours ? ` (${e.hours} hrs)` : ''}`).join('\n'));
                             }}
                             className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 hover:border-sky-500 bg-white hover:bg-sky-50/50 text-slate-600 hover:text-sky-700 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
                           >

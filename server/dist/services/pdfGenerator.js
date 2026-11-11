@@ -265,19 +265,28 @@ export function buildCourseInnerHtml(course, options) {
     };
     // 4b. Laboratory Experiments formatting
     const experimentsList = course.experiments || [];
+    const hasExpHours = isTcp || experimentsList.some((e) => e.hours !== undefined && e.hours !== null);
+    const totalExpHours = experimentsList.reduce((sum, e) => sum + (Number(e.hours) || 0), 0);
     const experimentsRowsHtml = experimentsList.length > 0
         ? experimentsList.map((exp, idx) => `
       <tr>
         <td class="center">${exp.slNo || idx + 1}</td>
         <td class="left">${exp.name || ''}</td>
+        ${hasExpHours ? `<td class="center font-medium">${exp.hours !== undefined && exp.hours !== null ? exp.hours : '-'}</td>` : ''}
         <td class="center">${getExperimentLevelNumber(exp)}</td>
         <td class="center">${getExperimentObjectives(exp)}</td>
         <td class="center font-bold">${Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || '')}</td>
       </tr>
-    `).join('')
+    `).join('') + (hasExpHours && totalExpHours > 0 ? `
+      <tr style="background-color: #F2F2F2; font-weight: bold;">
+        <td colspan="2" class="center font-bold">Total Practical Hours</td>
+        <td class="center font-bold">${totalExpHours}</td>
+        <td colspan="3" class="center"></td>
+      </tr>
+    ` : '')
         : `
       <tr>
-        <td colspan="5" class="center" style="font-style: italic; color: #64748b; padding: 10px;">No laboratory experiments entered yet</td>
+        <td colspan="${hasExpHours ? 6 : 5}" class="center" style="font-style: italic; color: #64748b; padding: 10px;">No laboratory experiments entered yet</td>
       </tr>
     `;
     // 5. Learning Resources
@@ -538,11 +547,12 @@ export function buildCourseInnerHtml(course, options) {
   <table>
     <thead>
       <tr>
-        <th style="width: 8%; text-align: center;">Sl. No.</th>
-        <th style="width: 50%; text-align: left;">Name of the Experiment</th>
-        <th style="width: 14%; text-align: center;">Level of Experiment</th>
-        <th style="width: 14%; text-align: center;">Objective(s)</th>
-        <th style="width: 14%; text-align: center;">COs Addressed</th>
+        <th style="width: ${hasExpHours ? '7%' : '8%'}; text-align: center;">Sl. No.</th>
+        <th style="width: ${hasExpHours ? '47%' : '50%'}; text-align: left;">Name of the Experiment</th>
+        ${hasExpHours ? '<th style="width: 8%; text-align: center;">Hours</th>' : ''}
+        <th style="width: ${hasExpHours ? '12%' : '14%'}; text-align: center;">Level of Experiment</th>
+        <th style="width: ${hasExpHours ? '13%' : '14%'}; text-align: center;">Objective(s)</th>
+        <th style="width: ${hasExpHours ? '13%' : '14%'}; text-align: center;">COs Addressed</th>
       </tr>
     </thead>
     <tbody>
@@ -575,7 +585,7 @@ export function buildCourseInnerHtml(course, options) {
   <div style="font-size: 10pt; font-weight: bold; text-decoration: underline; margin-bottom: 6px;">Practical:</div>
   <div class="line-space-sm"></div>
   <div class="section-p">
-    ${experimentsList.map(e => `${e.slNo || ''}. ${e.name || ''}`).join('; ')}
+    ${experimentsList.map(e => `${e.slNo || ''}. ${e.name || ''}${e.hours ? ` (${e.hours} Hours)` : ''}`).join('; ')}
   </div>
   <div class="line-space"></div>
   ` : ''}
@@ -647,11 +657,12 @@ export function buildCourseInnerHtml(course, options) {
   <table>
     <thead>
       <tr>
-        <th style="width: 8%; text-align: center;">Sl. No.</th>
-        <th style="width: 50%; text-align: left;">Name of the Experiment</th>
-        <th style="width: 14%; text-align: center;">Level of Experiment</th>
-        <th style="width: 14%; text-align: center;">Objective(s)</th>
-        <th style="width: 14%; text-align: center;">COs Addressed</th>
+        <th style="width: 7%; text-align: center;">Sl. No.</th>
+        <th style="width: 47%; text-align: left;">Name of the Experiment</th>
+        <th style="width: 8%; text-align: center;">Hours</th>
+        <th style="width: 12%; text-align: center;">Level of Experiment</th>
+        <th style="width: 13%; text-align: center;">Objective(s)</th>
+        <th style="width: 13%; text-align: center;">COs Addressed</th>
       </tr>
     </thead>
     <tbody>

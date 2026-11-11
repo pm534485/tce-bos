@@ -563,13 +563,16 @@ export function buildCourseDocxElements(course, options) {
         children.push(createLineSpace());
         children.push(createShadedBanner('List of Experiments with CO Mapping'));
         children.push(createLineSpace());
+        const practicalHasHours = experimentsList.some((e) => e.hours !== undefined && e.hours !== null);
+        const practicalTotalExpHours = experimentsList.reduce((sum, e) => sum + (Number(e.hours) || 0), 0);
         const expHeaderRow = new TableRow({
             children: [
-                createCell('Sl. No.', { bold: true, widthPercent: 8, align: AlignmentType.CENTER }),
-                createCell('Name of the Experiment', { bold: true, widthPercent: 50 }),
-                createCell('Level of Experiment', { bold: true, widthPercent: 14, align: AlignmentType.CENTER }),
-                createCell('Objective(s)', { bold: true, widthPercent: 14, align: AlignmentType.CENTER }),
-                createCell('COs Addressed', { bold: true, widthPercent: 14, align: AlignmentType.CENTER }),
+                createCell('Sl. No.', { bold: true, widthPercent: practicalHasHours ? 7 : 8, align: AlignmentType.CENTER }),
+                createCell('Name of the Experiment', { bold: true, widthPercent: practicalHasHours ? 47 : 50 }),
+                ...(practicalHasHours ? [createCell('Hours', { bold: true, widthPercent: 8, align: AlignmentType.CENTER })] : []),
+                createCell('Level of Experiment', { bold: true, widthPercent: practicalHasHours ? 12 : 14, align: AlignmentType.CENTER }),
+                createCell('Objective(s)', { bold: true, widthPercent: practicalHasHours ? 13 : 14, align: AlignmentType.CENTER }),
+                createCell('COs Addressed', { bold: true, widthPercent: practicalHasHours ? 13 : 14, align: AlignmentType.CENTER }),
             ],
         });
         const expRows = [expHeaderRow];
@@ -588,16 +591,29 @@ export function buildCourseDocxElements(course, options) {
             const lvlRaw = String(exp.level || 1);
             const lvlMatch = lvlRaw.match(/\d+/);
             const lvlText = lvlMatch ? lvlMatch[0] : '1';
+            const hrsText = exp.hours !== undefined && exp.hours !== null ? String(exp.hours) : '-';
             expRows.push(new TableRow({
                 children: [
-                    createCell(String(exp.slNo || idx + 1), { widthPercent: 8, align: AlignmentType.CENTER }),
-                    createCell(exp.name || '', { widthPercent: 50 }),
-                    createCell(lvlText, { widthPercent: 14, align: AlignmentType.CENTER }),
-                    createCell(objText, { widthPercent: 14, align: AlignmentType.CENTER }),
-                    createCell(Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || ''), { bold: true, widthPercent: 14, align: AlignmentType.CENTER }),
+                    createCell(String(exp.slNo || idx + 1), { widthPercent: practicalHasHours ? 7 : 8, align: AlignmentType.CENTER }),
+                    createCell(exp.name || '', { widthPercent: practicalHasHours ? 47 : 50 }),
+                    ...(practicalHasHours ? [createCell(hrsText, { widthPercent: 8, align: AlignmentType.CENTER })] : []),
+                    createCell(lvlText, { widthPercent: practicalHasHours ? 12 : 14, align: AlignmentType.CENTER }),
+                    createCell(objText, { widthPercent: practicalHasHours ? 13 : 14, align: AlignmentType.CENTER }),
+                    createCell(Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || ''), { bold: true, widthPercent: practicalHasHours ? 13 : 14, align: AlignmentType.CENTER }),
                 ],
             }));
         });
+        if (practicalHasHours && practicalTotalExpHours > 0) {
+            expRows.push(new TableRow({
+                children: [
+                    createCell('Total Practical Hours', { bold: true, widthPercent: 54, colSpan: 2, align: AlignmentType.CENTER }),
+                    createCell(String(practicalTotalExpHours), { bold: true, widthPercent: 8, align: AlignmentType.CENTER }),
+                    createCell('', { widthPercent: 12, align: AlignmentType.CENTER }),
+                    createCell('', { widthPercent: 13, align: AlignmentType.CENTER }),
+                    createCell('', { widthPercent: 13, align: AlignmentType.CENTER }),
+                ],
+            }));
+        }
         children.push(new Table({
             width: { size: 100, type: WidthType.PERCENTAGE },
             rows: expRows,
@@ -680,7 +696,7 @@ export function buildCourseDocxElements(course, options) {
                     spacing: { before: 30, after: 30 },
                     alignment: AlignmentType.JUSTIFIED,
                     children: [
-                        createText(`${idx + 1}.  ${exp.name || ''}`),
+                        createText(`${idx + 1}.  ${exp.name || ''}${exp.hours ? ` (${exp.hours} Hours)` : ''}`),
                     ],
                 }));
             });
@@ -811,27 +827,44 @@ export function buildCourseDocxElements(course, options) {
             children.push(createLineSpace());
             const expHeaderRow = new TableRow({
                 children: [
-                    createCell('Sl. No.', { bold: true, widthPercent: 8, align: AlignmentType.CENTER }),
-                    createCell('Name of the Experiment', { bold: true, widthPercent: 50 }),
-                    createCell('Level of Experiment', { bold: true, widthPercent: 14, align: AlignmentType.CENTER }),
-                    createCell('Objective(s)', { bold: true, widthPercent: 14, align: AlignmentType.CENTER }),
-                    createCell('COs Addressed', { bold: true, widthPercent: 14, align: AlignmentType.CENTER }),
+                    createCell('Sl. No.', { bold: true, widthPercent: 7, align: AlignmentType.CENTER }),
+                    createCell('Name of the Experiment', { bold: true, widthPercent: 47 }),
+                    createCell('Hours', { bold: true, widthPercent: 8, align: AlignmentType.CENTER }),
+                    createCell('Level of Experiment', { bold: true, widthPercent: 12, align: AlignmentType.CENTER }),
+                    createCell('Objective(s)', { bold: true, widthPercent: 13, align: AlignmentType.CENTER }),
+                    createCell('COs Addressed', { bold: true, widthPercent: 13, align: AlignmentType.CENTER }),
                 ],
             });
             const expRows = [expHeaderRow];
+            let totalTcpExpHours = 0;
             experimentsList.forEach((exp, idx) => {
+                if (exp.hours)
+                    totalTcpExpHours += Number(exp.hours) || 0;
                 const objText = (exp.objectiveNos && exp.objectiveNos.length > 0) ? exp.objectiveNos.join(', ') : '1, 3';
                 const lvlText = String(exp.level || 1).replace(/^Level\s*/i, '');
+                const hrsText = exp.hours !== undefined && exp.hours !== null ? String(exp.hours) : '-';
                 expRows.push(new TableRow({
                     children: [
-                        createCell(String(exp.slNo || idx + 1), { widthPercent: 8, align: AlignmentType.CENTER }),
-                        createCell(exp.name || '', { widthPercent: 50 }),
-                        createCell(lvlText, { widthPercent: 14, align: AlignmentType.CENTER }),
-                        createCell(objText, { widthPercent: 14, align: AlignmentType.CENTER }),
-                        createCell(Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || ''), { bold: true, widthPercent: 14, align: AlignmentType.CENTER }),
+                        createCell(String(exp.slNo || idx + 1), { widthPercent: 7, align: AlignmentType.CENTER }),
+                        createCell(exp.name || '', { widthPercent: 47 }),
+                        createCell(hrsText, { widthPercent: 8, align: AlignmentType.CENTER }),
+                        createCell(lvlText, { widthPercent: 12, align: AlignmentType.CENTER }),
+                        createCell(objText, { widthPercent: 13, align: AlignmentType.CENTER }),
+                        createCell(Array.isArray(exp.coNos) ? exp.coNos.join(', ') : (exp.coNos || ''), { bold: true, widthPercent: 13, align: AlignmentType.CENTER }),
                     ],
                 }));
             });
+            if (totalTcpExpHours > 0) {
+                expRows.push(new TableRow({
+                    children: [
+                        createCell('Total Practical Hours', { bold: true, widthPercent: 54, colSpan: 2, align: AlignmentType.CENTER }),
+                        createCell(String(totalTcpExpHours), { bold: true, widthPercent: 8, align: AlignmentType.CENTER }),
+                        createCell('', { widthPercent: 12, align: AlignmentType.CENTER }),
+                        createCell('', { widthPercent: 13, align: AlignmentType.CENTER }),
+                        createCell('', { widthPercent: 13, align: AlignmentType.CENTER }),
+                    ],
+                }));
+            }
             children.push(new Table({
                 width: { size: 100, type: WidthType.PERCENTAGE },
                 rows: expRows,

@@ -70,6 +70,7 @@ const SdgActivitySchema = new Schema({
 const LabExperimentSchema = new Schema({
   slNo: { type: Number, required: false },
   name: { type: String, required: false },
+  hours: { type: Number, required: false },
   level: { type: Number, enum: [1, 2, 3], required: false },
   objectiveNos: [{ type: Number }],
   coNos: [{ type: String }],
