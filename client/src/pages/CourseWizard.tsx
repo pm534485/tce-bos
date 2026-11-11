@@ -1458,7 +1458,7 @@ export const CourseWizard: React.FC = () => {
     ],
     status: 'DRAFT',
     createdBy: user?.email || '',
-    department: user?.department || '',
+    department: '',
     comments: [],
   });
 
@@ -1520,6 +1520,12 @@ export const CourseWizard: React.FC = () => {
               }
               return item;
             });
+          }
+          if (fetched && fetched.programmeCode) {
+            const expectedDept = getDepartmentForProgramme(fetched.programmeCode);
+            if (expectedDept && fetched.department === 'Computer Applications' && expectedDept !== 'Computer Applications') {
+              fetched.department = expectedDept;
+            }
           }
           setCourse(fetched);
           setLastSaved(new Date());
@@ -1598,7 +1604,7 @@ export const CourseWizard: React.FC = () => {
   const handleDepartmentChange = (dept: string) => {
     const progs = getProgrammesForDepartment(dept);
     const isCurrentValid = progs.some(p => p.code === course.programmeCode);
-    const nextProg = isCurrentValid ? course.programmeCode : (progs[0]?.code || '');
+    const nextProg = isCurrentValid ? course.programmeCode : '';
     setCourse(prev => {
       const updated = {
         ...prev,
@@ -1614,7 +1620,7 @@ export const CourseWizard: React.FC = () => {
       });
       return updated;
     });
-    touchField('programmeCode');
+    touchField('department');
   };
 
   // Active Table 3 Category matching course.categoryLetter or course.categoryAbbr
@@ -4537,9 +4543,9 @@ export const CourseWizard: React.FC = () => {
 
                     {/* Syllabus Modules & Lecture Schedule (Theory and TCP courses only; Practical courses only have experiments) */}
                     {(course.courseType === 'THEORY' || course.courseType === 'TCP') && (
-                      <div className="space-y-4">
+                      <div className="space-y-2.5">
                         {(course.modules || []).map((mod, idx) => (
-                          <div key={idx} className="p-4 border border-slate-200 rounded-xl bg-slate-50/50 space-y-3">
+                          <div key={idx} className="p-3 border border-slate-200 rounded-xl bg-slate-50/50 space-y-2">
                             <div className="flex items-center justify-between">
                               <span className="font-bold text-sm text-slate-800">
                                 Module {mod.moduleNo || idx + 1}

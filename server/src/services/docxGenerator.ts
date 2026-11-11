@@ -699,13 +699,14 @@ export function buildCourseDocxElements(
       modulesList.forEach(mod => {
         children.push(new Paragraph({
           alignment: AlignmentType.JUSTIFIED,
+          spacing: { before: 20, after: 40 },
           children: [
             createText(`${mod.mainTopic}: `, { bold: true }),
             createText(Array.isArray(mod.subtopics) ? mod.subtopics.join(' – ') : ''),
           ],
         }));
-        children.push(createLineSpace());
       });
+      children.push(createLineSpace());
     }
 
     if (isTcp && experimentsList.length > 0) {

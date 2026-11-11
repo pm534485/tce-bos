@@ -217,10 +217,9 @@ export function buildCourseInnerHtml(
   // 4. Syllabus Modules formatting
   const modules = course.modules || [];
   const modulesHtml = modules.map(mod => `
-    <div class="syllabus-topic">
+    <div class="syllabus-topic" style="margin-bottom: 4px; line-height: 1.35; text-align: justify;">
       <strong>${mod.mainTopic}:</strong> ${Array.isArray(mod.subtopics) ? mod.subtopics.join(' – ') : ''}
     </div>
-    <div class="line-space"></div>
   `).join('');
 
   // Helper for experiment objectives (e.g. 1, 3)

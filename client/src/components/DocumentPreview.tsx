@@ -877,9 +877,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
             <div className="h-2" />
 
             {(course.modules && course.modules.length > 0) && (
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {course.modules.map((mod, idx) => (
-                  <div key={idx} className="text-xs leading-relaxed text-justify">
+                  <div key={idx} className="text-xs leading-snug text-justify">
                     <span className="font-bold text-black">{mod.mainTopic}: </span>
                     <span className="text-black">{Array.isArray(mod.subtopics) ? mod.subtopics.join(' – ') : ''}</span>
                   </div>

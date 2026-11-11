@@ -436,8 +436,8 @@ router.post('/google', async (req, res): Promise<void> => {
           .replace(/[._]/g, ' ')
           .replace(/\b\w/g, (char: string) => char.toUpperCase());
 
-      // Auto-assign department based on subdomains or defaults
-      let department = 'Computer Applications';
+      // Auto-assign department based on subdomains if detectable, otherwise leave empty for user to select
+      let department = '';
       if (normalizedEmail.includes('.ee') || normalizedEmail.includes('eee')) {
         department = 'Electrical and Electronics Engineering';
       } else if (normalizedEmail.includes('.ec') || normalizedEmail.includes('ece')) {
@@ -450,6 +450,8 @@ router.post('/google', async (req, res): Promise<void> => {
         department = 'Mechanical Engineering';
       } else if (normalizedEmail.includes('.ce') || normalizedEmail.includes('civil')) {
         department = 'Civil Engineering';
+      } else if (normalizedEmail.includes('.ca') || normalizedEmail.includes('mca')) {
+        department = 'Computer Applications';
       }
 
       const isCoord = PREDEFINED_COORDINATORS.find(c => c.email.toLowerCase() === normalizedEmail);
