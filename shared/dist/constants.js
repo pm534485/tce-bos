@@ -147,12 +147,12 @@ export const CATEGORY_OPTIONS = [
     { abbr: 'AC', name: 'Audit Courses', fullName: 'AC � Audit Courses' },
 ];
 export const TPS_VERBS = {
-    1: ['Define', 'Identify', 'List', 'Name', 'Recall', 'Recognize', 'Record', 'Relate', 'Repeat', 'Underline'],
-    2: ['Explain', 'Describe', 'Interpret', 'Classify'],
-    3: ['Solve', 'Compute', 'Demonstrate', 'Use', 'Apply', 'Operate', 'Measure', 'Execute'],
-    4: ['Compare', 'Differentiate', 'Examine', 'Break down', 'Analyse', 'Analyze'],
-    5: ['Assess', 'Conclude', 'Critique', 'Decide', 'Evaluate', 'Justify', 'Prioritise', 'Prioritize', 'Recommend', 'Validate', 'Verify'],
-    6: ['Construct', 'Design', 'Develop', 'Formulate', 'Invent', 'Create', 'Plan', 'Produce'],
+    1: ['Define', 'Identify', 'List', 'Name', 'Recall', 'Recognize', 'Record', 'Relate', 'Repeat', 'Underline', 'State'],
+    2: ['Explain', 'Describe', 'Interpret', 'Classify', 'Discuss', 'Illustrate', 'Infer', 'Paraphrase', 'Summarize', 'Compare'],
+    3: ['Solve', 'Compute', 'Demonstrate', 'Use', 'Apply', 'Operate', 'Measure', 'Execute', 'Implement', 'Perform', 'Conduct', 'Determine', 'Simulate', 'Calculate', 'Experiment', 'Test', 'Build'],
+    4: ['Compare', 'Differentiate', 'Examine', 'Break down', 'Analyse', 'Analyze', 'Distinguish', 'Investigate', 'Categorize', 'Deconstruct'],
+    5: ['Assess', 'Conclude', 'Critique', 'Decide', 'Evaluate', 'Justify', 'Prioritise', 'Prioritize', 'Recommend', 'Validate', 'Verify', 'Appraise', 'Judge'],
+    6: ['Construct', 'Design', 'Develop', 'Formulate', 'Invent', 'Create', 'Plan', 'Produce', 'Synthesize', 'Compose'],
 };
 export const LAB_OBJECTIVES = [
     { no: 1, name: 'Instrumentation', description: 'Select, calibrate, and operate instruments and sensors for engineering measurement.', domain: 'Cognitive' },
