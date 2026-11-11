@@ -1755,7 +1755,7 @@ export const CourseWizard: React.FC = () => {
         (course.experiments || []).every(exp => (exp.name || '').trim().length > 0) &&
         !validationReport.errors.some(e => e.field.startsWith('experiments'))
       : (course.modules || []).length > 0 &&
-        (course.modules || []).every(m => (m.mainTopic || '').trim().length > 0 && (m.subtopics || []).length > 0) &&
+        (course.modules || []).every(m => (m.mainTopic || '').trim().length > 0 && ((m.subtopics || []).length > 0 || (course.lectureScheduleItems || []).some(it => it.moduleNo.startsWith(`${m.moduleNo}.`)))) &&
         !validationReport.errors.some(e => e.field.startsWith('modules') || e.field.startsWith('lectureScheduleItems'))
   );
 
@@ -1823,6 +1823,20 @@ export const CourseWizard: React.FC = () => {
           if (expErrs.length > 0) return `${expErrs[0].message} (${expErrs[0].fixHint || 'Map all COs to continue'})`;
           return 'Complete laboratory experiments to continue';
         }
+
+        const mods = course.modules || [];
+        if (mods.length === 0) {
+          return 'Add at least one Syllabus Module (Module Title & Topics) in the section above the Lecture Schedule to continue';
+        }
+        const emptyTopicMod = mods.find(m => !(m.mainTopic || '').trim());
+        if (emptyTopicMod) {
+          return `Module ${emptyTopicMod.moduleNo || 1}: Title is missing - scroll up and enter a title to continue`;
+        }
+        const emptySubtopicsMod = mods.find(m => !(m.subtopics || []).some(s => s.trim()));
+        if (emptySubtopicsMod) {
+          return `Module ${emptySubtopicsMod.moduleNo || 1}: Topics are missing - scroll up and enter topics to continue`;
+        }
+
         const scheduleErrors = validationReport.errors.filter(e => e.field.startsWith('lectureScheduleItems'));
         if (scheduleErrors.length > 0) {
           const rowErrs = scheduleErrors.filter(e => e.id?.includes('B9_SCHEDULE_ROW_PERIODS'));
@@ -1831,6 +1845,16 @@ export const CourseWizard: React.FC = () => {
           }
           return `${scheduleErrors[0].message}`;
         }
+
+        if (course.courseType === 'TCP') {
+          const exps = course.experiments || [];
+          if (exps.length === 0) return 'Add at least one laboratory experiment below to continue';
+          const emptyExp = exps.find(e => !(e.name || '').trim());
+          if (emptyExp) return `Experiment ${emptyExp.slNo || 1} title is missing - enter a title to continue`;
+          const expErrs = validationReport.errors.filter(e => e.field.startsWith('experiments'));
+          if (expErrs.length > 0) return `${expErrs[0].message}`;
+        }
+
         return 'Complete all syllabus modules & topics to continue';
       }
       case 'resources': {
@@ -2399,7 +2423,7 @@ export const CourseWizard: React.FC = () => {
   // Derive current step id so rendering is index-independent
   const activeStepId = steps[currentStep]?.id ?? '';
 
-  // Auto-populate lecture schedule items if empty but modules exist when opening syllabus step
+  // Auto-populate lecture schedule items if empty but modules exist, or derive modules if schedule exists
   useEffect(() => {
     if (activeStepId === 'syllabus' && (course.courseType === 'THEORY' || course.courseType === 'TCP')) {
       if (course.modules && course.modules.length > 0 && (!course.lectureScheduleItems || course.lectureScheduleItems.length === 0)) {
@@ -2407,9 +2431,35 @@ export const CourseWizard: React.FC = () => {
         if (synced.length > 0) {
           updateField('lectureScheduleItems', synced);
         }
+      } else if ((!course.modules || course.modules.length === 0) && course.lectureScheduleItems && course.lectureScheduleItems.length > 0) {
+        // Auto-generate modules from schedule items if user entered topics in the schedule table first
+        const moduleMap: Record<number, { mainTopic: string; subtopics: string[] }> = {};
+        course.lectureScheduleItems.forEach(item => {
+          const parts = (item.moduleNo || '1').split('.');
+          const mNum = parseInt(parts[0], 10) || 1;
+          if (!moduleMap[mNum]) {
+            const headerRow = course.lectureScheduleItems?.find(h => h.moduleNo === String(mNum));
+            moduleMap[mNum] = { mainTopic: headerRow?.topic || `Module ${mNum}`, subtopics: [] };
+          }
+          const cleanTopic = item.topic.replace(/^[^:]+:\s*/, '').trim();
+          if (cleanTopic && parts.length > 1 && !moduleMap[mNum].subtopics.includes(cleanTopic)) {
+            moduleMap[mNum].subtopics.push(cleanTopic);
+          }
+        });
+        const derived: SyllabusModule[] = Object.keys(moduleMap)
+          .map(Number)
+          .sort((a, b) => a - b)
+          .map(mNum => ({
+            moduleNo: mNum,
+            mainTopic: moduleMap[mNum].mainTopic || `Module ${mNum}`,
+            subtopics: moduleMap[mNum].subtopics.length > 0 ? moduleMap[mNum].subtopics : [moduleMap[mNum].mainTopic || `Module ${mNum}`],
+          }));
+        if (derived.length > 0) {
+          updateField('modules', derived);
+        }
       }
     }
-  }, [activeStepId, course.modules]);
+  }, [activeStepId, course.modules, course.lectureScheduleItems]);
 
   // Inline highlighted error component directly below the field
   const InlineFieldError: React.FC<{ field: string; fixHint?: boolean }> = ({ field, fixHint = true }) => {
