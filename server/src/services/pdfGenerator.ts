@@ -399,10 +399,10 @@ export function buildCourseInnerHtml(
   <!-- Header Table -->
   <table>
     <tr>
-      <td rowspan="2" class="center font-bold" style="width: ${isTcp ? '16%' : '18%'}; font-size: 10.5pt;">${course.courseCode}</td>
-      <td rowspan="2" class="center font-bold" style="width: ${isTcp ? '38%' : '44%'}; font-size: 10.5pt;">
+      <td rowspan="2" class="center font-bold" style="width: ${isTcp ? '16%' : '18%'}; font-size: 11pt;">${course.courseCode}</td>
+      <td rowspan="2" class="center font-bold" style="width: ${isTcp ? '38%' : '44%'}; font-size: 11pt;">
         <div style="text-transform: uppercase;">${titleCaps}</div>
-        ${subtitleFormatted ? `<div style="font-weight: normal; font-size: 8.5pt; text-transform: none; margin-top: 3px;">${subtitleFormatted}</div>` : ''}
+        ${subtitleFormatted ? `<div style="font-weight: normal; font-size: 9pt; text-transform: none; margin-top: 3px;">${subtitleFormatted}</div>` : ''}
       </td>
       <td class="center" style="width: ${isTcp ? '12%' : '14%'};">Category</td>
       <td class="center" style="width: ${isTcp ? '5%' : '6%'};">L</td>
@@ -480,9 +480,9 @@ export function buildCourseInnerHtml(
         <th class="center" style="width: 28%;">Model Test CO-wise</th>
       </tr>
       <tr>
-        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
-        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
-        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 11pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 11pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 11pt;">% of Marks</th>
       </tr>
     </thead>
     <tbody>
@@ -513,11 +513,11 @@ export function buildCourseInnerHtml(
         <th class="center" style="width: 18%;">Assignment-2</th>
       </tr>
       <tr>
-        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
-        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
-        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
-        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
-        <th class="center" style="font-weight: bold; font-size: 8.5pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 11pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 11pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 11pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 11pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 11pt;">% of Marks</th>
       </tr>
     </thead>
     <tbody>
@@ -578,7 +578,7 @@ export function buildCourseInnerHtml(
   ${modulesHtml}
 
   ${isTcp && experimentsList.length > 0 ? `
-  <div style="font-size: 10pt; font-weight: bold; text-decoration: underline; margin-bottom: 6px;">Practical:</div>
+  <div style="font-size: 11pt; font-weight: bold; text-decoration: underline; margin-bottom: 6px;">Practical:</div>
   <div class="line-space-sm"></div>
   <div class="section-p">
     ${experimentsList.map(e => `${e.slNo || ''}. ${e.name || ''}${e.hours ? ` (${e.hours} Hours)` : ''}`).join('; ')}
@@ -692,7 +692,7 @@ const COMMON_PDF_STYLES = `
   }
   body {
     font-family: Arial, Helvetica, sans-serif;
-    font-size: 10pt;
+    font-size: 11pt;
     line-height: 1.3;
     color: #000;
     margin: 0;
@@ -707,14 +707,14 @@ const COMMON_PDF_STYLES = `
     clear: both;
   }
   .plain-heading {
-    font-size: 10pt;
+    font-size: 11pt;
     font-weight: bold;
     color: #000;
     margin-top: 4px;
     margin-bottom: 2px;
   }
   .section-p {
-    font-size: 10pt;
+    font-size: 11pt;
     line-height: 1.3;
     text-align: justify;
     margin: 0;
@@ -724,7 +724,7 @@ const COMMON_PDF_STYLES = `
     background-color: #D9D9D9;
     color: #000;
     font-weight: bold;
-    font-size: 10pt;
+    font-size: 11pt;
     padding: 2.5px 5px;
     margin: 0;
     width: 100%;
@@ -735,7 +735,7 @@ const COMMON_PDF_STYLES = `
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 9pt;
+    font-size: 11pt;
     margin: 0;
   }
   thead {
@@ -748,6 +748,7 @@ const COMMON_PDF_STYLES = `
     vertical-align: middle;
     color: #000;
     line-height: 1.2;
+    font-size: 11pt;
   }
   th {
     font-weight: bold;
@@ -762,7 +763,7 @@ const COMMON_PDF_STYLES = `
     font-weight: bold;
   }
   .syllabus-topic {
-    font-size: 9.5pt;
+    font-size: 11pt;
     line-height: 1.3;
     text-align: justify;
     margin: 0;
@@ -771,7 +772,7 @@ const COMMON_PDF_STYLES = `
     margin: 0;
     padding-left: 18px;
     list-style-type: disc;
-    font-size: 9.5pt;
+    font-size: 11pt;
     line-height: 1.3;
   }
   .bullet-list li {
@@ -921,7 +922,7 @@ export function generateMergedCoursesHtml(
   }
   body {
     font-family: Arial, Helvetica, sans-serif;
-    font-size: 10pt;
+    font-size: 11pt;
     line-height: 1.35;
     color: #000000;
     margin: 0;

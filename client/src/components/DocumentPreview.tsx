@@ -169,7 +169,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
   }
   body {
     font-family: Arial, Helvetica, sans-serif;
-    font-size: 10pt;
+    font-size: 11pt;
     line-height: 1.3;
     color: #000000;
     margin: 0;
@@ -251,7 +251,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
     background-color: #D9D9D9 !important;
     color: #000000 !important;
     font-weight: bold !important;
-    font-size: 10pt !important;
+    font-size: 11pt !important;
     padding: 2.5px 5px !important;
     margin: 0 0 4px 0 !important;
     width: 100% !important;
@@ -262,7 +262,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
   table:not(.print-page-wrapper) {
     width: 100%;
     border-collapse: collapse;
-    font-size: 9pt;
+    font-size: 11pt !important;
     margin: 0;
   }
   table:not(.print-page-wrapper) thead {
@@ -278,10 +278,16 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
     vertical-align: middle;
     color: #000000;
     line-height: 1.2;
+    font-size: 11pt !important;
   }
   table:not(.print-page-wrapper) th {
     font-weight: bold;
     background-color: transparent;
+    font-size: 11pt !important;
+  }
+  p, li, .section-p, .syllabus-topic {
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 11pt !important;
   }
   .text-center { text-align: center; }
   .text-left { text-align: left; }
@@ -622,9 +628,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
       )}
 
       {/* CONTINUOUS DOCUMENT CONTAINER (Continuous layout matching reference PDF without artificial page gaps) */}
-      <div className="document-sheet bg-white p-10 sm:p-14 rounded-xl shadow-lg border border-slate-300 text-slate-900 select-text font-sans text-[10pt] leading-[1.35] w-full max-w-5xl space-y-3.5">
+      <div className="document-sheet bg-white p-10 sm:p-14 rounded-xl shadow-lg border border-slate-300 text-slate-900 select-text font-['Arial',sans-serif] text-[11pt] leading-[1.35] w-full max-w-5xl space-y-3.5">
         {/* Running Top Right Header */}
-        <div className="print-doc-header text-right text-xs font-normal text-slate-800 mb-3">
+        <div className="print-doc-header text-right text-[11pt] font-normal text-slate-800 mb-3">
           {headerText}
         </div>
 

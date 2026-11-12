@@ -12,7 +12,7 @@ function createText(text, options = {}) {
     return new TextRun({
         text: text || '',
         font: options.font || 'Arial',
-        size: options.size !== undefined ? options.size : 20, // 20 half-pts = 10 pt
+        size: options.size !== undefined ? options.size : 22, // 22 half-pts = 11 pt
         bold: !!options.bold,
         italics: !!options.italics,
     });
@@ -20,14 +20,14 @@ function createText(text, options = {}) {
 function createPlainHeading(text) {
     return new Paragraph({
         spacing: { before: 0, after: 60 },
-        children: [createText(text, { bold: true, size: 21 })],
+        children: [createText(text, { bold: true, size: 22 })],
     });
 }
 function createShadedBanner(text, options = {}) {
     const p = new Paragraph({
         pageBreakBefore: options.pageBreakBefore,
         spacing: { before: 20, after: 20 },
-        children: [createText(text, { bold: true, size: 20 })],
+        children: [createText(text, { bold: true, size: 22 })],
     });
     return new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
@@ -60,7 +60,7 @@ function createCell(textOrRuns, options = {}) {
     const children = typeof textOrRuns === 'string'
         ? (textOrRuns ? textOrRuns.split('\n').map(line => new Paragraph({
             alignment: options.align || AlignmentType.LEFT,
-            children: [createText(line, { bold: options.bold, size: options.size || 19 })],
+            children: [createText(line, { bold: options.bold, size: options.size || 22 })],
         })) : [new Paragraph({ children: [] })])
         : [new Paragraph({
                 alignment: options.align || AlignmentType.LEFT,
@@ -89,7 +89,7 @@ export function buildCourseDocxElements(course, options) {
         children: [
             new Paragraph({
                 alignment: AlignmentType.RIGHT,
-                children: [createText(headerText, { size: 19 })],
+                children: [createText(headerText, { size: 22 })],
             }),
         ],
     });
@@ -126,7 +126,7 @@ export function buildCourseDocxElements(course, options) {
                 widthPercent: isTcp ? 16 : 18,
                 verticalMerge: VerticalMergeType.RESTART,
                 align: AlignmentType.CENTER,
-                size: 21,
+                size: 22,
             }),
             subtitleFormatted
                 ? new TableCell({
@@ -136,12 +136,12 @@ export function buildCourseDocxElements(course, options) {
                     children: [
                         new Paragraph({
                             alignment: AlignmentType.CENTER,
-                            children: [createText(titleText, { bold: true, size: 21 })],
+                            children: [createText(titleText, { bold: true, size: 22 })],
                         }),
                         new Paragraph({
                             alignment: AlignmentType.CENTER,
                             spacing: { before: 40 },
-                            children: [createText(subtitleFormatted, { bold: false, size: 17 })],
+                            children: [createText(subtitleFormatted, { bold: false, size: 18 })],
                         }),
                     ],
                 })
@@ -150,7 +150,7 @@ export function buildCourseDocxElements(course, options) {
                     widthPercent: isTcp ? 38 : 44,
                     verticalMerge: VerticalMergeType.RESTART,
                     align: AlignmentType.CENTER,
-                    size: 21,
+                    size: 22,
                 }),
             createCell('Category', { widthPercent: isTcp ? 12 : 14, align: AlignmentType.CENTER }),
             createCell('L', { widthPercent: isTcp ? 5 : 6, align: AlignmentType.CENTER }),
@@ -299,9 +299,9 @@ export function buildCourseDocxElements(course, options) {
         const assessHeader3 = new TableRow({
             children: [
                 createCell('', { widthPercent: 16, verticalMerge: VerticalMergeType.CONTINUE }),
-                createCell('% of Marks', { bold: true, widthPercent: 28, align: AlignmentType.CENTER, size: 17 }),
-                createCell('% of Marks', { bold: true, widthPercent: 28, align: AlignmentType.CENTER, size: 17 }),
-                createCell('% of Marks', { bold: true, widthPercent: 28, align: AlignmentType.CENTER, size: 17 }),
+                createCell('% of Marks', { bold: true, widthPercent: 28, align: AlignmentType.CENTER, size: 22 }),
+                createCell('% of Marks', { bold: true, widthPercent: 28, align: AlignmentType.CENTER, size: 22 }),
+                createCell('% of Marks', { bold: true, widthPercent: 28, align: AlignmentType.CENTER, size: 22 }),
             ],
         });
         let totLabCa = 0;
@@ -359,11 +359,11 @@ export function buildCourseDocxElements(course, options) {
         const assessHeader2 = new TableRow({
             children: [
                 createCell('', { widthPercent: 10, verticalMerge: VerticalMergeType.CONTINUE }),
-                createCell('% of Marks', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, size: 17 }),
-                createCell('% of Marks', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, size: 17 }),
-                createCell('% of Marks', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, size: 17 }),
-                createCell('% of Marks', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, size: 17 }),
-                createCell('% of Marks', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, size: 17 }),
+                createCell('% of Marks', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, size: 22 }),
+                createCell('% of Marks', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, size: 22 }),
+                createCell('% of Marks', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, size: 22 }),
+                createCell('% of Marks', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, size: 22 }),
+                createCell('% of Marks', { bold: true, widthPercent: 18, align: AlignmentType.CENTER, size: 22 }),
             ],
         });
         let totCol1 = 0;
@@ -631,7 +631,7 @@ export function buildCourseDocxElements(course, options) {
                     runs.push(new TextRun({
                         text: d.email,
                         font: 'Arial',
-                        size: 20,
+                        size: 22,
                         color: '0000FF',
                         underline: {
                             type: UnderlineType.SINGLE,
@@ -651,7 +651,7 @@ export function buildCourseDocxElements(course, options) {
                     new TextRun({
                         text: 'faculty@tce.edu',
                         font: 'Arial',
-                        size: 20,
+                        size: 22,
                         color: '0000FF',
                         underline: {
                             type: UnderlineType.SINGLE,
@@ -687,7 +687,7 @@ export function buildCourseDocxElements(course, options) {
                         bold: true,
                         underline: { type: UnderlineType.SINGLE },
                         font: 'Arial',
-                        size: 20,
+                        size: 22,
                     }),
                 ],
             }));
@@ -884,7 +884,7 @@ export function buildCourseDocxElements(course, options) {
                     runs.push(new TextRun({
                         text: d.email,
                         font: 'Arial',
-                        size: 20,
+                        size: 22,
                         color: '0000FF',
                         underline: {
                             type: UnderlineType.SINGLE,
@@ -904,7 +904,7 @@ export function buildCourseDocxElements(course, options) {
                     new TextRun({
                         text: 'faculty@tce.edu',
                         font: 'Arial',
-                        size: 20,
+                        size: 22,
                         color: '0000FF',
                         underline: {
                             type: UnderlineType.SINGLE,
@@ -924,7 +924,7 @@ export async function generateDocxDocument(course, options) {
                 document: {
                     run: {
                         font: 'Arial',
-                        size: 20,
+                        size: 22,
                         color: '000000',
                     },
                 },
@@ -980,7 +980,7 @@ export async function generateMergedCoursesDocx(courses, metadata) {
                 document: {
                     run: {
                         font: 'Arial',
-                        size: 20,
+                        size: 22,
                         color: '000000',
                     },
                 },
@@ -1002,7 +1002,7 @@ export async function generateProgrammeBundleDocx(bundleData) {
         children: [
             new Paragraph({
                 alignment: AlignmentType.RIGHT,
-                children: [createText(headerText, { size: 19 })],
+                children: [createText(headerText, { size: 22 })],
             }),
         ],
     });
@@ -1078,7 +1078,7 @@ export async function generateProgrammeBundleDocx(bundleData) {
                                 children: [
                                     new Paragraph({
                                         alignment: AlignmentType.CENTER,
-                                        children: [createText(titleText, { bold: true, size: 21 })],
+                                        children: [createText(titleText, { bold: true, size: 22 })],
                                     }),
                                     new Paragraph({
                                         alignment: AlignmentType.CENTER,
