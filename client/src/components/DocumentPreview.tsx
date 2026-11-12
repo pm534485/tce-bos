@@ -39,16 +39,21 @@ export function getDegreeProgramHeader(course: Course): string {
     'PB': 'M.E. (Construction Engg)',
     'PC': 'M.E. (Communication Systems)',
     'PD': 'M.E. (CSE)',
-    'EL': 'B.E. (ECE - VLSI)',
-    'EV': 'B.E. (ECE - VLSI)',
+    'EL': 'B.Tech. Electronics Engineering (VLSI Design and Technology)',
+    'EV': 'B.Tech. Electronics Engineering (VLSI Design and Technology)',
     'FT': 'B.Tech. (Fashion Technology)',
     'ER': 'B.E. (Electrical and Computer Engg)',
   };
 
-  const degree = progMap[progCode] || (progCode ? `B.E. (${progCode})` : 'B.E. (ECE)');
   const regYear = course.regulationYear || 2026;
   const nextYearShort = String(Number(regYear) + 1).slice(2);
   const acadYear = `${regYear}-${nextYearShort}`;
+
+  if (progCode === 'EL' || progCode === 'EV') {
+    return `B.Tech. Electronics Engineering (VLSI Design and Technology) Program ${acadYear}`;
+  }
+
+  const degree = progMap[progCode] || (progCode ? `B.E. (${progCode})` : 'B.E. (ECE)');
 
   return `${degree} Degree Program ${acadYear}`;
 }

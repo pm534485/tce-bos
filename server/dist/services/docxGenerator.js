@@ -993,7 +993,11 @@ export async function generateMergedCoursesDocx(courses, metadata) {
 // Programme Compilation Bundle Generator
 export async function generateProgrammeBundleDocx(bundleData) {
     const { programmeCode, programmeName, regulationYear, annexureNo, courses } = bundleData;
-    const headerText = `${programmeCode} Degree Program ${regulationYear}-${(regulationYear + 1).toString().slice(-2)}`;
+    const pCode = (programmeCode || '').toUpperCase();
+    const acadYear = `${regulationYear}-${(regulationYear + 1).toString().slice(-2)}`;
+    const headerText = (pCode === 'EL' || pCode === 'EV')
+        ? `B.Tech. Electronics Engineering (VLSI Design and Technology) Program ${acadYear}`
+        : `${programmeCode} Degree Program ${acadYear}`;
     const header = new Header({
         children: [
             new Paragraph({

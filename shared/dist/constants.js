@@ -13,7 +13,7 @@ export const PROGRAMME_CODES = [
     { code: 'ER', name: 'Electrical and Computer Engineering', department: 'Electrical and Electronics Engineering' },
     // Electronics and Communication Engineering
     { code: 'EC', name: 'Electronics and Communication Engineering', department: 'Electronics and Communication Engineering' },
-    { code: 'EL', name: 'Electronics Engineering (VLSI Design)', department: 'Electronics and Communication Engineering' },
+    { code: 'EL', name: 'Electronics Engineering (VLSI Design and Technology)', department: 'Electronics and Communication Engineering' },
     { code: 'PC', name: 'Communication Systems', department: 'Electronics and Communication Engineering' },
     // Computer Science and Engineering
     { code: 'CS', name: 'Computer Science and Engineering', department: 'Computer Science and Engineering' },
