@@ -68,6 +68,28 @@ export const DEPARTMENT_OPTIONS = [
 
 export type DepartmentName = typeof DEPARTMENT_OPTIONS[number];
 
+export const SALUTATION_OPTIONS = ['Dr.', 'Mr.', 'Ms.', 'Mrs.', 'Er.', 'Prof.'] as const;
+export type Salutation = typeof SALUTATION_OPTIONS[number];
+
+export function formatDesignerName(designer: { salutation?: string; name?: string }): string {
+  const salutation = (designer?.salutation || '').trim();
+  const rawName = (designer?.name || '').trim();
+  if (!rawName) return '';
+  if (!salutation) return rawName;
+
+  const salutationEscaped = salutation.replace('.', '\\.');
+  if (new RegExp(`^${salutationEscaped}\\s*`, 'i').test(rawName)) {
+    return rawName;
+  }
+
+  const prefixRegex = /^(Dr\.|Mr\.|Ms\.|Mrs\.|Er\.|Prof\.)\s*/i;
+  if (prefixRegex.test(rawName)) {
+    return rawName.replace(prefixRegex, `${salutation} `);
+  }
+
+  return `${salutation} ${rawName}`;
+}
+
 export function getProgrammesForDepartment(dept?: string): ProgrammeCode[] {
   if (!dept) return PROGRAMME_CODES;
   const map: Record<string, string[]> = {

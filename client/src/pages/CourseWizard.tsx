@@ -39,6 +39,8 @@ import {
   SCHWAB_HERRON_LEVELS,
   LAB_ASSESSMENT_SPLITS,
   getExpectedHoursCriteria,
+  SALUTATION_OPTIONS,
+  formatDesignerName,
 } from '@syllabusforge/shared';
 import { LiveCompliancePanel } from '../components/LiveCompliancePanel';
 import { DocumentPreview } from '../components/DocumentPreview';
@@ -1450,7 +1452,8 @@ export const CourseWizard: React.FC = () => {
     coursePlan: [],
     designers: [
       {
-        name: user?.name || '',
+        salutation: user?.name?.match(/^(Dr\.|Mr\.|Ms\.|Mrs\.|Er\.|Prof\.)/i)?.[1] || '',
+        name: user?.name ? user.name.replace(/^(Dr\.|Mr\.|Ms\.|Mrs\.|Er\.|Prof\.)\s*/i, '') : '',
         designation: user?.designation || '',
         department: user?.department || '',
         email: user?.email || '',
@@ -6121,74 +6124,120 @@ export const CourseWizard: React.FC = () => {
                               </button>
                             )}
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
-                            <input
-                              type="text"
-                              value={des.name}
-                              onChange={e => {
-                                const updated = [...(course.designers || [])];
-                                updated[idx] = { ...updated[idx], name: e.target.value };
-                                updateField('designers', updated);
-                              }}
-                              placeholder="Faculty Name"
-                              className="p-2 border border-slate-300 rounded text-xs font-semibold"
-                            />
-                            <select
-                              value={
-                                ['Assistant Professor', 'Associate Professor', 'Professor'].find(
-                                  opt => opt.toLowerCase() === (des.designation || '').trim().toLowerCase()
-                                ) || des.designation || ''
-                              }
-                              onChange={e => {
-                                const updated = [...(course.designers || [])];
-                                updated[idx] = { ...updated[idx], designation: e.target.value };
-                                updateField('designers', updated);
-                              }}
-                              className={`p-2 border border-slate-300 rounded text-xs bg-white ${
-                                !des.designation ? 'text-slate-400' : 'text-slate-800'
-                              }`}
-                            >
-                              <option value="" disabled>
-                                Select Designation
-                              </option>
-                              {des.designation &&
-                                !['Assistant Professor', 'Associate Professor', 'Professor'].some(
-                                  opt => opt.toLowerCase() === (des.designation || '').trim().toLowerCase()
-                                ) && (
-                                  <option value={des.designation}>{des.designation}</option>
-                                )}
-                              <option value="Assistant Professor" className="text-slate-800">
-                                Assistant Professor
-                              </option>
-                              <option value="Associate Professor" className="text-slate-800">
-                                Associate Professor
-                              </option>
-                              <option value="Professor" className="text-slate-800">
-                                Professor
-                              </option>
-                            </select>
-                            <input
-                              type="text"
-                              value={des.department}
-                              onChange={e => {
-                                const updated = [...(course.designers || [])];
-                                updated[idx] = { ...updated[idx], department: e.target.value };
-                                updateField('designers', updated);
-                              }}
-                              placeholder="Department"
-                              className="p-2 border border-slate-300 rounded text-xs"
-                            />
-                            <input
-                              type="email"
-                              value={des.email}
-                              onChange={e => {
-                                const updated = [...(course.designers || [])];
-                                updated[idx] = { ...updated[idx], email: e.target.value };
-                                updateField('designers', updated);
-                              }}
-                              placeholder="Email ID"
-                              className="p-2 border border-slate-300 rounded text-xs font-mono text-[#0000FF] underline font-medium"
-                            />
+                          <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
+                            {/* Salutation & Faculty Name */}
+                            <div className="flex space-x-1.5 md:col-span-4">
+                              <select
+                                value={
+                                  des.salutation !== undefined && des.salutation !== ''
+                                    ? des.salutation
+                                    : (des.name?.match(/^(Dr\.|Mr\.|Ms\.|Mrs\.|Er\.|Prof\.)/i)?.[1] || '')
+                                }
+                                onChange={e => {
+                                  const newSal = e.target.value;
+                                  const updated = [...(course.designers || [])];
+                                  const currentRawName = des.name || '';
+                                  const cleanName = currentRawName.replace(/^(Dr\.|Mr\.|Ms\.|Mrs\.|Er\.|Prof\.)\s*/i, '').trim();
+                                  updated[idx] = {
+                                    ...updated[idx],
+                                    salutation: newSal,
+                                    name: cleanName || currentRawName,
+                                  };
+                                  updateField('designers', updated);
+                                }}
+                                className="p-2 border border-slate-300 rounded text-xs bg-white text-slate-800 font-semibold w-24 shrink-0 cursor-pointer"
+                                title="Salutation"
+                              >
+                                <option value="">Salutation</option>
+                                <option value="Dr.">Dr.</option>
+                                <option value="Mr.">Mr.</option>
+                                <option value="Ms.">Ms.</option>
+                                <option value="Mrs.">Mrs.</option>
+                                <option value="Er.">Er.</option>
+                                <option value="Prof.">Prof.</option>
+                              </select>
+                              <input
+                                type="text"
+                                value={(() => {
+                                  const currentSal = des.salutation !== undefined && des.salutation !== ''
+                                    ? des.salutation
+                                    : (des.name?.match(/^(Dr\.|Mr\.|Ms\.|Mrs\.|Er\.|Prof\.)/i)?.[1] || '');
+                                  if (currentSal) {
+                                    return (des.name || '').replace(new RegExp(`^${currentSal.replace('.', '\\.')}\\s*`, 'i'), '');
+                                  }
+                                  return des.name || '';
+                                })()}
+                                onChange={e => {
+                                  const updated = [...(course.designers || [])];
+                                  updated[idx] = { ...updated[idx], name: e.target.value };
+                                  updateField('designers', updated);
+                                }}
+                                placeholder="Faculty Name"
+                                className="p-2 border border-slate-300 rounded text-xs font-semibold flex-1 min-w-0"
+                              />
+                            </div>
+                            <div className="md:col-span-3">
+                              <select
+                                value={
+                                  ['Assistant Professor', 'Associate Professor', 'Professor'].find(
+                                    opt => opt.toLowerCase() === (des.designation || '').trim().toLowerCase()
+                                  ) || des.designation || ''
+                                }
+                                onChange={e => {
+                                  const updated = [...(course.designers || [])];
+                                  updated[idx] = { ...updated[idx], designation: e.target.value };
+                                  updateField('designers', updated);
+                                }}
+                                className={`w-full p-2 border border-slate-300 rounded text-xs bg-white ${
+                                  !des.designation ? 'text-slate-400' : 'text-slate-800'
+                                }`}
+                              >
+                                <option value="" disabled>
+                                  Select Designation
+                                </option>
+                                {des.designation &&
+                                  !['Assistant Professor', 'Associate Professor', 'Professor'].some(
+                                    opt => opt.toLowerCase() === (des.designation || '').trim().toLowerCase()
+                                  ) && (
+                                    <option value={des.designation}>{des.designation}</option>
+                                  )}
+                                <option value="Assistant Professor" className="text-slate-800">
+                                  Assistant Professor
+                                </option>
+                                <option value="Associate Professor" className="text-slate-800">
+                                  Associate Professor
+                                </option>
+                                <option value="Professor" className="text-slate-800">
+                                  Professor
+                                </option>
+                              </select>
+                            </div>
+                            <div className="md:col-span-2">
+                              <input
+                                type="text"
+                                value={des.department}
+                                onChange={e => {
+                                  const updated = [...(course.designers || [])];
+                                  updated[idx] = { ...updated[idx], department: e.target.value };
+                                  updateField('designers', updated);
+                                }}
+                                placeholder="Department"
+                                className="w-full p-2 border border-slate-300 rounded text-xs"
+                              />
+                            </div>
+                            <div className="md:col-span-3">
+                              <input
+                                type="email"
+                                value={des.email}
+                                onChange={e => {
+                                  const updated = [...(course.designers || [])];
+                                  updated[idx] = { ...updated[idx], email: e.target.value };
+                                  updateField('designers', updated);
+                                }}
+                                placeholder="Email ID"
+                                className="w-full p-2 border border-slate-300 rounded text-xs font-mono text-[#0000FF] underline font-medium"
+                              />
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -6196,6 +6245,7 @@ export const CourseWizard: React.FC = () => {
                       <button
                         onClick={() => {
                           const newDes: CourseDesigner = {
+                            salutation: '',
                             name: '',
                             designation: '',
                             department: course.department || '',

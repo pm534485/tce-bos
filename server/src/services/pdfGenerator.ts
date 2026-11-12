@@ -1,4 +1,4 @@
-import { Course, getDisplayTeType } from '@syllabusforge/shared';
+import { Course, getDisplayTeType, formatDesignerName } from '@syllabusforge/shared';
 import { ConfigSettingsModel } from '../models/MasterData.js';
 
 export function getDegreeProgramHeader(course: Course): string {
@@ -382,7 +382,8 @@ export function buildCourseInnerHtml(
   const designers = course.designers || [];
   const designersHtml = designers.length > 0
     ? designers.map(d => {
-        const parts = [d.name, d.designation, d.department].filter(Boolean).join(', ');
+        const fullName = formatDesignerName(d);
+        const parts = [fullName, d.designation, d.department].filter(Boolean).join(', ');
         return `${parts}${d.email ? (parts ? ', ' : '') + `<a href="mailto:${d.email}" style="color: #0000FF; text-decoration: underline;">${d.email}</a>` : ''}`;
       }).join('<br>')
     : 'Faculty Member, <a href="mailto:faculty@tce.edu" style="color: #0000FF; text-decoration: underline;">faculty@tce.edu</a>';

@@ -150,6 +150,7 @@ export interface LabCoursePlanItem {
 }
 
 export interface CourseDesigner {
+  salutation?: string;
   name: string;
   designation: string;
   department: string;

@@ -57,6 +57,24 @@ export const DEPARTMENT_OPTIONS = [
     'Physics',
     'First Year / Interdisciplinary',
 ];
+export const SALUTATION_OPTIONS = ['Dr.', 'Mr.', 'Ms.', 'Mrs.', 'Er.', 'Prof.'];
+export function formatDesignerName(designer) {
+    const salutation = (designer?.salutation || '').trim();
+    const rawName = (designer?.name || '').trim();
+    if (!rawName)
+        return '';
+    if (!salutation)
+        return rawName;
+    const salutationEscaped = salutation.replace('.', '\\.');
+    if (new RegExp(`^${salutationEscaped}\\s*`, 'i').test(rawName)) {
+        return rawName;
+    }
+    const prefixRegex = /^(Dr\.|Mr\.|Ms\.|Mrs\.|Er\.|Prof\.)\s*/i;
+    if (prefixRegex.test(rawName)) {
+        return rawName.replace(prefixRegex, `${salutation} `);
+    }
+    return `${salutation} ${rawName}`;
+}
 export function getProgrammesForDepartment(dept) {
     if (!dept)
         return PROGRAMME_CODES;

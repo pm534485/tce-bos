@@ -15,7 +15,7 @@ import {
   VerticalMergeType,
   UnderlineType,
 } from 'docx';
-import { Course, getDisplayTeType } from '@syllabusforge/shared';
+import { Course, getDisplayTeType, formatDesignerName } from '@syllabusforge/shared';
 import { getDegreeProgramHeader } from './pdfGenerator.js';
 
 // Table cell borders helper: clean single solid borders
@@ -656,7 +656,7 @@ export function buildCourseDocxElements(
     const designers = course.designers || [];
     if (designers.length > 0) {
       designers.forEach(d => {
-        const parts = [d.name, d.designation, d.department].filter(Boolean).join(', ');
+        const parts = [formatDesignerName(d), d.designation, d.department].filter(Boolean).join(', ');
         const runs = [createText(`${parts}${d.email ? (parts ? ', ' : '') : ''}`)];
         if (d.email) {
           runs.push(new TextRun({
@@ -931,7 +931,7 @@ export function buildCourseDocxElements(
     const designers = course.designers || [];
     if (designers.length > 0) {
       designers.forEach(d => {
-        const parts = [d.name, d.designation, d.department].filter(Boolean).join(', ');
+        const parts = [formatDesignerName(d), d.designation, d.department].filter(Boolean).join(', ');
         const runs = [createText(`${parts}${d.email ? (parts ? ', ' : '') : ''}`)];
         if (d.email) {
           runs.push(new TextRun({

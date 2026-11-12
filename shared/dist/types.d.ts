@@ -129,6 +129,7 @@ export interface LabCoursePlanItem {
     postMarks: number;
 }
 export interface CourseDesigner {
+    salutation?: string;
     name: string;
     designation: string;
     department: string;

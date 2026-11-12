@@ -1,4 +1,4 @@
-import { getDisplayTeType } from '@syllabusforge/shared';
+import { getDisplayTeType, formatDesignerName } from '@syllabusforge/shared';
 export function getDegreeProgramHeader(course) {
     let progCode = (course.programmeCode || '').toUpperCase();
     if (!progCode && course.courseCode && course.courseCode.length >= 4) {
@@ -392,7 +392,8 @@ export function buildCourseInnerHtml(course, options) {
     const designers = course.designers || [];
     const designersHtml = designers.length > 0
         ? designers.map(d => {
-            const parts = [d.name, d.designation, d.department].filter(Boolean).join(', ');
+            const fullName = formatDesignerName(d);
+            const parts = [fullName, d.designation, d.department].filter(Boolean).join(', ');
             return `${parts}${d.email ? (parts ? ', ' : '') + `<a href="mailto:${d.email}" style="color: #0000FF; text-decoration: underline;">${d.email}</a>` : ''}`;
         }).join('<br>')
         : 'Faculty Member, <a href="mailto:faculty@tce.edu" style="color: #0000FF; text-decoration: underline;">faculty@tce.edu</a>';

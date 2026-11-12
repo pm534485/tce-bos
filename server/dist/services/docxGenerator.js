@@ -1,5 +1,5 @@
 import { Document, Paragraph, Table, TableRow, TableCell, TextRun, AlignmentType, WidthType, BorderStyle, Footer, Header, Packer, VerticalMergeType, UnderlineType, } from 'docx';
-import { getDisplayTeType } from '@syllabusforge/shared';
+import { getDisplayTeType, formatDesignerName } from '@syllabusforge/shared';
 import { getDegreeProgramHeader } from './pdfGenerator.js';
 // Table cell borders helper: clean single solid borders
 const cellBorders = {
@@ -625,7 +625,7 @@ export function buildCourseDocxElements(course, options) {
         const designers = course.designers || [];
         if (designers.length > 0) {
             designers.forEach(d => {
-                const parts = [d.name, d.designation, d.department].filter(Boolean).join(', ');
+                const parts = [formatDesignerName(d), d.designation, d.department].filter(Boolean).join(', ');
                 const runs = [createText(`${parts}${d.email ? (parts ? ', ' : '') : ''}`)];
                 if (d.email) {
                     runs.push(new TextRun({
@@ -878,7 +878,7 @@ export function buildCourseDocxElements(course, options) {
         const designers = course.designers || [];
         if (designers.length > 0) {
             designers.forEach(d => {
-                const parts = [d.name, d.designation, d.department].filter(Boolean).join(', ');
+                const parts = [formatDesignerName(d), d.designation, d.department].filter(Boolean).join(', ');
                 const runs = [createText(`${parts}${d.email ? (parts ? ', ' : '') : ''}`)];
                 if (d.email) {
                     runs.push(new TextRun({

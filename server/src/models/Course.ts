@@ -89,6 +89,7 @@ const LabCoursePlanItemSchema = new Schema({
 }, { _id: false });
 
 const CourseDesignerSchema = new Schema({
+  salutation: { type: String, required: false, default: '' },
   name: { type: String, required: false },
   designation: { type: String, required: false },
   department: { type: String, required: false },
