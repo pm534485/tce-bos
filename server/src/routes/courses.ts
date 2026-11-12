@@ -233,18 +233,33 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response): Promise<
     });
 
     if (existing) {
-      if (existing.status === 'FINALIZED') {
+      const isOwner =
+        existing.createdBy &&
+        req.user?.email &&
+        existing.createdBy.trim().toLowerCase() === req.user.email.trim().toLowerCase();
+
+      // If existing course is SUBMITTED, APPROVED, or FINALIZED, it CANNOT be overwritten!
+      if (existing.status !== 'DRAFT') {
         res.status(400).json({
-          error: `Course ${courseData.courseCode} v${courseData.version} is finalized. Please clone as a new revision.`,
+          error: `Course ${courseData.courseCode} v${courseData.version} is already ${existing.status} ("${existing.courseName || 'Existing syllabus'}"). It cannot be overwritten. Please choose a different unique course letter.`,
         });
         return;
       }
 
-      // Update existing course document so saving a draft updates smoothly
+      // If existing draft belongs to a different faculty member, NEVER overwrite someone else's work!
+      if (!isOwner && req.user?.role !== 'ADMIN') {
+        res.status(400).json({
+          error: `Course code ${courseData.courseCode} is already reserved by another faculty member (${existing.createdBy}). Please choose a different unique course letter.`,
+        });
+        return;
+      }
+
+      // Only if it's the author's own DRAFT, update it smoothly
       const updated = await Course.findByIdAndUpdate(
         existing._id,
         {
           ...courseData,
+          status: 'DRAFT',
           department: courseData.department || existing.department || req.user?.department || 'General',
           updatedAt: new Date(),
         },
@@ -298,6 +313,23 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response): Promis
         uniqueLetter: updateData.uniqueLetter || existing.uniqueLetter,
         version: updateData.version !== undefined ? updateData.version : existing.version,
       });
+    }
+
+    // Check if updated course code would collide with another existing course
+    if (updateData.courseCode && updateData.courseCode !== existing.courseCode) {
+      const duplicate = await Course.findOne({
+        _id: { $ne: existing._id },
+        regulationCode: updateData.regulationCode || existing.regulationCode,
+        programmeCode: updateData.programmeCode || existing.programmeCode,
+        courseCode: updateData.courseCode,
+        version: updateData.version !== undefined ? updateData.version : existing.version,
+      });
+      if (duplicate) {
+        res.status(400).json({
+          error: `Cannot change course code to ${updateData.courseCode}: this code is already in use by "${duplicate.courseName || 'another course'}" (${duplicate.status}). Please choose a different unique course letter.`,
+        });
+        return;
+      }
     }
 
     // Prevent direct status escalation via normal PUT
