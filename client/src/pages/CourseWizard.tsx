@@ -1387,6 +1387,9 @@ export const CourseWizard: React.FC = () => {
   // Guidelines doc viewer modal state (null = closed, string = docx public path to view)
   const [guidelinesDocOpen, setGuidelinesDocOpen] = useState<boolean>(false);
 
+  // Manual custom salutation entry tracking per designer index
+  const [customSalutationIndices, setCustomSalutationIndices] = useState<Record<number, boolean>>({});
+
   // Handler: user chose "New Course" → version = 0, locked
   const handleIntentNew = () => {
     setCourseIntent('new');
@@ -6127,35 +6130,74 @@ export const CourseWizard: React.FC = () => {
                           <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
                             {/* Salutation & Faculty Name */}
                             <div className="flex space-x-1.5 md:col-span-4">
-                              <select
-                                value={
-                                  des.salutation !== undefined && des.salutation !== ''
-                                    ? des.salutation
-                                    : (des.name?.match(/^(Dr\.|Mr\.|Ms\.|Mrs\.|Er\.|Prof\.)/i)?.[1] || '')
-                                }
-                                onChange={e => {
-                                  const newSal = e.target.value;
-                                  const updated = [...(course.designers || [])];
-                                  const currentRawName = des.name || '';
-                                  const cleanName = currentRawName.replace(/^(Dr\.|Mr\.|Ms\.|Mrs\.|Er\.|Prof\.)\s*/i, '').trim();
-                                  updated[idx] = {
-                                    ...updated[idx],
-                                    salutation: newSal,
-                                    name: cleanName || currentRawName,
-                                  };
-                                  updateField('designers', updated);
-                                }}
-                                className="p-2 border border-slate-300 rounded text-xs bg-white text-slate-800 font-semibold w-24 shrink-0 cursor-pointer"
-                                title="Salutation"
-                              >
-                                <option value="">Salutation</option>
-                                <option value="Dr.">Dr.</option>
-                                <option value="Mr.">Mr.</option>
-                                <option value="Ms.">Ms.</option>
-                                <option value="Mrs.">Mrs.</option>
-                                <option value="Er.">Er.</option>
-                                <option value="Prof.">Prof.</option>
-                              </select>
+                              {customSalutationIndices[idx] || (des.salutation && !['Dr.', 'Mr.', 'Ms.', 'Mrs.', 'Er.', 'Prof.', ''].includes(des.salutation)) ? (
+                                <div className="flex items-center space-x-1 w-28 shrink-0">
+                                  <input
+                                    type="text"
+                                    value={des.salutation || ''}
+                                    onChange={e => {
+                                      const updated = [...(course.designers || [])];
+                                      updated[idx] = { ...updated[idx], salutation: e.target.value };
+                                      updateField('designers', updated);
+                                    }}
+                                    placeholder="Title/Prefix"
+                                    className="p-2 border border-indigo-400 rounded text-xs bg-indigo-50/40 text-slate-900 font-semibold w-full focus:ring-1 focus:ring-indigo-500"
+                                    title="Manual Salutation (e.g. Er., Dr., Shri, Prof., Capt.)"
+                                    autoFocus
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setCustomSalutationIndices(prev => ({ ...prev, [idx]: false }));
+                                      const updated = [...(course.designers || [])];
+                                      updated[idx] = { ...updated[idx], salutation: '' };
+                                      updateField('designers', updated);
+                                    }}
+                                    title="Switch back to dropdown list"
+                                    className="p-1 text-slate-400 hover:text-rose-600 text-xs font-bold"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ) : (
+                                <select
+                                  value={
+                                    ['Dr.', 'Mr.', 'Ms.', 'Mrs.', 'Er.', 'Prof.'].includes(des.salutation || '')
+                                      ? (des.salutation || '')
+                                      : (des.name?.match(/^(Dr\.|Mr\.|Ms\.|Mrs\.|Er\.|Prof\.)/i)?.[1] || '')
+                                  }
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    if (val === '__MANUAL__') {
+                                      setCustomSalutationIndices(prev => ({ ...prev, [idx]: true }));
+                                      const updated = [...(course.designers || [])];
+                                      updated[idx] = { ...updated[idx], salutation: '' };
+                                      updateField('designers', updated);
+                                      return;
+                                    }
+                                    const updated = [...(course.designers || [])];
+                                    const currentRawName = des.name || '';
+                                    const cleanName = currentRawName.replace(/^(Dr\.|Mr\.|Ms\.|Mrs\.|Er\.|Prof\.)\s*/i, '').trim();
+                                    updated[idx] = {
+                                      ...updated[idx],
+                                      salutation: val,
+                                      name: cleanName || currentRawName,
+                                    };
+                                    updateField('designers', updated);
+                                  }}
+                                  className="p-2 border border-slate-300 rounded text-xs bg-white text-slate-800 font-semibold w-28 shrink-0 cursor-pointer"
+                                  title="Select or enter manual salutation"
+                                >
+                                  <option value="">Salutation</option>
+                                  <option value="Dr.">Dr.</option>
+                                  <option value="Mr.">Mr.</option>
+                                  <option value="Ms.">Ms.</option>
+                                  <option value="Mrs.">Mrs.</option>
+                                  <option value="Er.">Er.</option>
+                                  <option value="Prof.">Prof.</option>
+                                  <option value="__MANUAL__">✏️ Other (Manual)...</option>
+                                </select>
+                              )}
                               <input
                                 type="text"
                                 value={(() => {

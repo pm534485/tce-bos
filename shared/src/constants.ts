@@ -77,7 +77,7 @@ export function formatDesignerName(designer: { salutation?: string; name?: strin
   if (!rawName) return '';
   if (!salutation) return rawName;
 
-  const salutationEscaped = salutation.replace('.', '\\.');
+  const salutationEscaped = salutation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   if (new RegExp(`^${salutationEscaped}\\s*`, 'i').test(rawName)) {
     return rawName;
   }
