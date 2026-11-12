@@ -753,7 +753,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
                   </th>
                 </tr>
                 <tr>
-                  <th className="border border-black p-1.5 text-center font-bold w-[28%]">OCR/Continuous Assessment</th>
+                  <th className="border border-black p-1.5 text-center font-bold w-[28%]">Practical CA (OCR)</th>
                   <th className="border border-black p-1.5 text-center font-bold w-[28%]">Model Test CO-wise</th>
                 </tr>
                 <tr>
@@ -791,7 +791,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
                   <th rowSpan={2} className="border border-black p-1.5 text-center align-middle w-[10%]">CO</th>
                   <th className="border border-black p-1.5 text-center w-[18%]">{isTcp ? 'Theory CAT1' : 'CAT1'}</th>
                   <th className="border border-black p-1.5 text-center w-[18%]">{isTcp ? 'Theory CAT2' : 'Assignment 1'}</th>
-                  <th className="border border-black p-1.5 text-center w-[18%]">{isTcp ? 'Practical CA' : 'CAT2'}</th>
+                  <th className="border border-black p-1.5 text-center w-[18%]">{isTcp ? 'Practical CA (OCR)' : 'CAT2'}</th>
                   <th className="border border-black p-1.5 text-center w-[18%]">{isTcp ? 'Model Test' : 'Assignment 2'}</th>
                   <th className="border border-black p-1.5 text-center w-[18%]">Terminal Exam</th>
                 </tr>

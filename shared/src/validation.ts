@@ -980,7 +980,7 @@ export function validateAssessmentPattern(
     const columns: Array<{ name: keyof typeof colTotals; label: string }> = [
       { name: 'theoryCat1', label: 'Theory CAT 1' },
       { name: 'theoryCat2', label: 'Theory CAT 2' },
-      { name: 'practicalCa', label: 'Practical CA' },
+      { name: 'practicalCa', label: 'Practical CA (OCR)' },
       { name: 'practicalModel', label: 'Model Test CO-wise' },
       { name: 'tcpTerminal', label: 'Terminal Exam' },
     ];
@@ -1022,7 +1022,7 @@ export function validateAssessmentPattern(
     });
 
     const columns: Array<{ name: keyof typeof colTotals; label: string }> = [
-      { name: 'practicalCa', label: 'OCR/Continuous Assessment' },
+      { name: 'practicalCa', label: 'Practical CA (OCR)' },
       { name: 'practicalModel', label: 'Model Test CO-wise' },
       { name: 'terminalExam', label: 'Terminal Exam (Practical)' },
     ];
@@ -1043,7 +1043,7 @@ export function validateAssessmentPattern(
     // Domain weightage validation for Practical Course assessment components:
     // 60% Cognitive, 20% Affective, 20% Psychomotor
     const compWeights: Array<{ col: keyof typeof colTotals; label: string }> = [
-      { col: 'practicalCa', label: 'OCR/Continuous Assessment' },
+      { col: 'practicalCa', label: 'Practical CA (OCR)' },
       { col: 'practicalModel', label: 'Model Test CO-wise' },
       { col: 'terminalExam', label: 'Terminal Exam (Practical)' },
     ];

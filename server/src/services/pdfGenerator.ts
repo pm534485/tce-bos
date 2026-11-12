@@ -477,7 +477,7 @@ export function buildCourseInnerHtml(
         <th rowspan="2" class="center" style="width: 28%;">Terminal Exam<br />${terminalExamBracket}</th>
       </tr>
       <tr>
-        <th class="center" style="width: 28%;">OCR/Continuous Assessment</th>
+        <th class="center" style="width: 28%;">Practical CA (OCR)</th>
         <th class="center" style="width: 28%;">Model Test CO-wise</th>
       </tr>
       <tr>
@@ -493,6 +493,39 @@ export function buildCourseInnerHtml(
         <td class="center font-bold">${totalPracticalCa || 100}%</td>
         <td class="center font-bold">${totalPracticalModel || 100}%</td>
         <td class="center font-bold">${totalPracticalTerm || 100}%</td>
+      </tr>
+    </tbody>
+  </table>
+  ` : isTcp ? `
+  <div class="gray-banner">Assessment Pattern</div>
+  <div class="line-space-sm"></div>
+  <table>
+    <thead>
+      <tr>
+        <th rowspan="2" class="center" style="width: 10%;">CO</th>
+        <th class="center" style="width: 18%;">Theory CAT1</th>
+        <th class="center" style="width: 18%;">Theory CAT2</th>
+        <th class="center" style="width: 18%;">Practical CA (OCR)</th>
+        <th class="center" style="width: 18%;">Model Test</th>
+        <th class="center" style="width: 18%;">Terminal Exam</th>
+      </tr>
+      <tr>
+        <th class="center" style="font-weight: bold; font-size: 11pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 11pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 11pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 11pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 11pt;">% of Marks</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${assessmentRowsHtml}
+      <tr>
+        <td class="center font-bold">Total</td>
+        <td class="center font-bold">${totalCol1 || 100}%</td>
+        <td class="center font-bold">${totalCol2 || 100}%</td>
+        <td class="center font-bold">${totalCol3 || 100}%</td>
+        <td class="center font-bold">${totalCol4 || 100}%</td>
+        <td class="center font-bold">${totalCol5 || 100}%</td>
       </tr>
     </tbody>
   </table>

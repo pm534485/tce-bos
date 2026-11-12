@@ -849,7 +849,7 @@ export function validateAssessmentPattern(courseType, cos, matrix, tolerance = 3
         const columns = [
             { name: 'theoryCat1', label: 'Theory CAT 1' },
             { name: 'theoryCat2', label: 'Theory CAT 2' },
-            { name: 'practicalCa', label: 'Practical CA' },
+            { name: 'practicalCa', label: 'Practical CA (OCR)' },
             { name: 'practicalModel', label: 'Model Test CO-wise' },
             { name: 'tcpTerminal', label: 'Terminal Exam' },
         ];
@@ -884,7 +884,7 @@ export function validateAssessmentPattern(courseType, cos, matrix, tolerance = 3
             coAppearance[row.coNo] = (coAppearance[row.coNo] || 0) + c3 + c4 + c5;
         });
         const columns = [
-            { name: 'practicalCa', label: 'OCR/Continuous Assessment' },
+            { name: 'practicalCa', label: 'Practical CA (OCR)' },
             { name: 'practicalModel', label: 'Model Test CO-wise' },
             { name: 'terminalExam', label: 'Terminal Exam (Practical)' },
         ];
@@ -903,7 +903,7 @@ export function validateAssessmentPattern(courseType, cos, matrix, tolerance = 3
         // Domain weightage validation for Practical Course assessment components:
         // 60% Cognitive, 20% Affective, 20% Psychomotor
         const compWeights = [
-            { col: 'practicalCa', label: 'OCR/Continuous Assessment' },
+            { col: 'practicalCa', label: 'Practical CA (OCR)' },
             { col: 'practicalModel', label: 'Model Test CO-wise' },
             { col: 'terminalExam', label: 'Terminal Exam (Practical)' },
         ];

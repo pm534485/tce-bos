@@ -4135,7 +4135,7 @@ export const CourseWizard: React.FC = () => {
                                     </tr>
                                     <tr>
                                       <th className="border border-black p-2 text-center font-bold text-black w-[28%]">
-                                        OCR/Continuous Assessment
+                                        Practical CA (OCR)
                                       </th>
                                       <th className="border border-black p-2 text-center font-bold text-black w-[28%]">
                                         Model Test CO-wise
@@ -4323,7 +4323,7 @@ export const CourseWizard: React.FC = () => {
                                 const psyCos = cos.filter(c => getDomainForCourseOutcome(c) === 'Psychomotor');
 
                                 const components: Array<{ col: 'practicalCa' | 'practicalModel' | 'terminalExam'; label: string }> = [
-                                  { col: 'practicalCa', label: 'OCR/Continuous Assessment' },
+                                  { col: 'practicalCa', label: 'Practical CA (OCR)' },
                                   { col: 'practicalModel', label: 'Model Test CO-wise' },
                                   { col: 'terminalExam', label: 'Terminal Exam (Practical)' },
                                 ];
@@ -4441,7 +4441,7 @@ export const CourseWizard: React.FC = () => {
                               <th className="p-2.5 border-b">CO</th>
                               <th className="p-2.5 border-b text-center">Theory CAT1 (%)</th>
                               <th className="p-2.5 border-b text-center">Theory CAT2 (%)</th>
-                              <th className="p-2.5 border-b text-center">Practical CA (%)</th>
+                              <th className="p-2.5 border-b text-center">Practical CA (OCR) (%)</th>
                               <th className="p-2.5 border-b text-center">Model Test (%)</th>
                               <th className="p-2.5 border-b text-center">Terminal (%)</th>
                             </tr>

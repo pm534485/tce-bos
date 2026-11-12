@@ -354,7 +354,7 @@ export function buildCourseDocxElements(
     const assessHeader2 = new TableRow({
       children: [
         createCell('', { widthPercent: 16, verticalMerge: VerticalMergeType.CONTINUE }),
-        createCell('OCR/Continuous Assessment', { bold: true, widthPercent: 28, align: AlignmentType.CENTER }),
+        createCell('Practical CA (OCR)', { bold: true, widthPercent: 28, align: AlignmentType.CENTER }),
         createCell('Model Test CO-wise', { bold: true, widthPercent: 28, align: AlignmentType.CENTER }),
         createCell('', { widthPercent: 28, verticalMerge: VerticalMergeType.CONTINUE }),
       ],
@@ -418,7 +418,7 @@ export function buildCourseDocxElements(
         createCell('CO', { bold: true, widthPercent: 10, align: AlignmentType.CENTER, verticalMerge: VerticalMergeType.RESTART }),
         createCell(isTcp ? 'Theory CAT1' : 'CAT1', { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
         createCell(isTcp ? 'Theory CAT2' : 'Assignment 1', { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
-        createCell(isTcp ? 'Practical CA' : 'CAT2', { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
+        createCell(isTcp ? 'Practical CA (OCR)' : 'CAT2', { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
         createCell(isTcp ? 'Model Test' : 'Assignment 2', { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
         createCell('Terminal Exam', { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
       ],
