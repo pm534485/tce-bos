@@ -176,6 +176,27 @@ router.post('/export', async (req, res) => {
         res.status(500).json({ error: `Export failed: ${err.message}` });
     }
 });
+// GET /api/courses/existing-codes - Lightweight list of all registered course codes across all programmes
+router.get('/existing-codes', authenticate, async (req, res) => {
+    try {
+        const list = await Course.find({}, {
+            _id: 1,
+            courseCode: 1,
+            courseName: 1,
+            programmeCode: 1,
+            regulationCode: 1,
+            categoryLetter: 1,
+            uniqueLetter: 1,
+            version: 1,
+            status: 1,
+            createdBy: 1,
+        }).lean();
+        res.json(list);
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 // GET /api/courses/:id
 router.get('/:id', authenticate, async (req, res) => {
     try {
@@ -286,18 +307,19 @@ router.put('/:id', authenticate, async (req, res) => {
                 version: updateData.version !== undefined ? updateData.version : existing.version,
             });
         }
-        // Check if updated course code would collide with another existing course
-        if (updateData.courseCode && updateData.courseCode !== existing.courseCode) {
+        // Check if course code collides with another existing course
+        const targetCode = updateData.courseCode || existing.courseCode;
+        if (targetCode) {
             const duplicate = await Course.findOne({
                 _id: { $ne: existing._id },
                 regulationCode: updateData.regulationCode || existing.regulationCode,
                 programmeCode: updateData.programmeCode || existing.programmeCode,
-                courseCode: updateData.courseCode,
+                courseCode: targetCode,
                 version: updateData.version !== undefined ? updateData.version : existing.version,
             });
             if (duplicate) {
                 res.status(400).json({
-                    error: `Cannot change course code to ${updateData.courseCode}: this code is already in use by "${duplicate.courseName || 'another course'}" (${duplicate.status}). Please choose a different unique course letter.`,
+                    error: `Course code ${targetCode} is already in use by "${duplicate.courseName || 'another course'}" (${duplicate.status}). Please choose a different unique course letter.`,
                 });
                 return;
             }

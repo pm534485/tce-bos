@@ -1544,6 +1544,15 @@ export const CourseWizard: React.FC = () => {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [existingCodes, setExistingCodes] = useState<string[]>([]);
+  const [allExistingCourses, setAllExistingCourses] = useState<{
+    _id: string;
+    courseCode: string;
+    courseName: string;
+    programmeCode: string;
+    status: string;
+    createdBy: string;
+  }[]>([]);
+  const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null);
 
   // Close sidebar on Escape
   useEffect(() => {
@@ -1695,12 +1704,12 @@ export const CourseWizard: React.FC = () => {
         setLoadError(null);
       }
       try {
-        const [allCourses, regRes] = await Promise.all([
-          api.getCourses({ scope: 'all' }),
+        const [existingCodeList, regRes] = await Promise.all([
+          api.getExistingCodes().catch(() => []),
           api.getActiveRegulation().catch(() => ({ regulationYear: 2026, regulationCode: '26' }))
         ]);
-        const codes = allCourses.map(c => c.courseCode);
-        setExistingCodes(codes);
+        setAllExistingCourses(existingCodeList as any);
+        setExistingCodes(existingCodeList.map(c => c.courseCode));
 
         if (regRes && regRes.regulationCode) {
           setAdminRegulation({ year: regRes.regulationYear, code: regRes.regulationCode });
@@ -1819,6 +1828,16 @@ export const CourseWizard: React.FC = () => {
   // Always show reg code + hyphens for unfilled parts (never collapse to single dash)
   const displaySubjectCode = `${regPart}${progPart}${catPart}${uniquePart}${verPart}`;
 
+  // Live course code conflict check against all registered courses in the college
+  const duplicateCourse = useMemo(() => {
+    const currentCode = (course.courseCode || displaySubjectCode || '').trim().toUpperCase();
+    if (!currentCode || currentCode.includes('—')) return null;
+    return allExistingCourses.find(c =>
+      c.courseCode?.trim().toUpperCase() === currentCode &&
+      String(c._id) !== String(course._id)
+    );
+  }, [course.courseCode, displaySubjectCode, course._id, allExistingCourses]);
+
   // Filter designated programme codes based on the chosen department
   const availableProgrammeCodes = useMemo(() => {
     const currentDept = course.department || getDepartmentForProgramme(course.programmeCode);
@@ -1914,6 +1933,7 @@ export const CourseWizard: React.FC = () => {
 
   // Step 0 validation: Next button enabled ONLY when all details in the first page are entered and valid
   const isStep0Complete = Boolean(
+    !duplicateCourse &&
     (course.regulationCode || adminRegulation.code) &&
     (course.regulationYear || adminRegulation.year) &&
     course.programmeCode &&
@@ -2147,6 +2167,11 @@ export const CourseWizard: React.FC = () => {
   useEffect(() => {
     if (!isAutoSaveEnabled) return;
 
+    if (duplicateCourse) {
+      setSaveErrorMessage(`Course code ${course.courseCode || displaySubjectCode} is already registered to "${duplicateCourse.courseName}". Please choose a different sequence letter.`);
+      return;
+    }
+
     // Cache local draft copy in localStorage
     try {
       const localKey = course._id ? `draft_course_${course._id}` : `draft_new_${course.courseType}`;
@@ -2163,8 +2188,10 @@ export const CourseWizard: React.FC = () => {
           const updated = await api.updateCourse(course._id, course);
           setLastSaved(new Date());
           setIsSaving(false);
-        } catch (e) {
+          setSaveErrorMessage(null);
+        } catch (e: any) {
           setIsSaving(false);
+          setSaveErrorMessage(e?.message || 'Autosave failed');
         }
       } else if ((isStep0Complete || canAutoCreateDraft) && course.courseName?.trim()) {
         if (isCreatingDraftRef.current) return;
@@ -2176,10 +2203,12 @@ export const CourseWizard: React.FC = () => {
           setLastSaved(new Date());
           setIsSaving(false);
           isCreatingDraftRef.current = false;
+          setSaveErrorMessage(null);
           navigate(`/courses/${saved._id}`, { replace: true });
-        } catch (e) {
+        } catch (e: any) {
           setIsSaving(false);
           isCreatingDraftRef.current = false;
+          setSaveErrorMessage(e?.message || 'Autosave failed');
         }
       }
     }, 2500);
@@ -2187,10 +2216,14 @@ export const CourseWizard: React.FC = () => {
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
-  }, [course, isAutoSaveEnabled, isStep0Complete, canAutoCreateDraft]);
+  }, [course, isAutoSaveEnabled, isStep0Complete, canAutoCreateDraft, duplicateCourse]);
 
   // Handle Initial Draft Creation
   const handleSaveDraft = async (): Promise<Course | null> => {
+    if (duplicateCourse) {
+      alert(`Cannot save: Course code ${course.courseCode || displaySubjectCode} is already used by "${duplicateCourse.courseName || 'Existing Course'}" (${duplicateCourse.status}). Please choose a different sequence letter.`);
+      return null;
+    }
     try {
       setIsSaving(true);
       let savedCourse: Course;
@@ -2202,8 +2235,10 @@ export const CourseWizard: React.FC = () => {
       }
       setCourse(savedCourse);
       setLastSaved(new Date());
+      setSaveErrorMessage(null);
       return savedCourse;
     } catch (err: any) {
+      setSaveErrorMessage(err.message);
       alert(`Save error: ${err.message}`);
       return null;
     } finally {
@@ -2954,6 +2989,18 @@ export const CourseWizard: React.FC = () => {
         </div>
       )}
 
+      {saveErrorMessage && (
+        <div className="bg-rose-50 border-b border-rose-300 px-6 py-2.5 text-xs text-rose-900 flex items-center justify-between animate-in fade-in duration-150">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+            <span className="font-semibold">{saveErrorMessage}</span>
+          </div>
+          <button onClick={() => setSaveErrorMessage(null)} className="text-xs font-bold text-rose-700 hover:text-rose-900 cursor-pointer">
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Main Workspace - Full width to fit all screen sizes without side margins */}
       <div className="w-full px-3 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex flex-col">
         {activeTab === 'preview' ? (
@@ -3216,9 +3263,9 @@ export const CourseWizard: React.FC = () => {
                               value={activeTable3Category?.name || ''}
                               onChange={e => updateField('categoryTable3', e.target.value)}
                               className="w-full text-center font-bold text-xs text-emerald-950 bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0 truncate"
-                              title="Course Category (Table 3)"
+                              title="Select Category"
                             >
-                              <option value="" disabled>Select Course Category (Table 3)</option>
+                              <option value="" disabled>Select Category</option>
                               {COURSE_CATEGORIES_TABLE_3.map(cat => (
                                 <option key={cat.name} value={cat.name}>
                                   {cat.name} ({cat.codes.join(', ')})
@@ -3257,12 +3304,18 @@ export const CourseWizard: React.FC = () => {
                         </div>
 
                         {/* 6. U: Unique Letter Sequence — Amber / Orange Theme */}
-                        <div className="p-2 bg-amber-50/60 rounded-xl border-2 border-amber-300 hover:border-amber-500 transition-all flex flex-col justify-between min-w-[76px] h-[74px] shadow-2xs">
+                        <div className={`p-2 rounded-xl border-2 transition-all flex flex-col justify-between min-w-[76px] h-[74px] shadow-2xs ${
+                          duplicateCourse
+                            ? 'bg-rose-50 border-rose-500 ring-2 ring-rose-300'
+                            : 'bg-amber-50/60 border-amber-300 hover:border-amber-500'
+                        }`}>
                           <div className="w-full flex-1 flex items-center justify-center">
                             <select
                               value={course.uniqueLetter || ''}
                               onChange={e => updateField('uniqueLetter', e.target.value.toUpperCase())}
-                              className="w-full text-center font-black text-lg text-amber-950 bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0"
+                              className={`w-full text-center font-black text-lg bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0 ${
+                                duplicateCourse ? 'text-rose-950 font-black' : 'text-amber-950'
+                              }`}
                               title="Sequence"
                             >
                               <option value="" disabled>Seq</option>
@@ -3273,7 +3326,9 @@ export const CourseWizard: React.FC = () => {
                               ))}
                             </select>
                           </div>
-                          <span className="text-[10px] text-amber-800 font-bold block tracking-wide">Sequence</span>
+                          <span className={`text-[10px] font-bold block tracking-wide ${
+                            duplicateCourse ? 'text-rose-800' : 'text-amber-800'
+                          }`}>Sequence</span>
                         </div>
 
                         {/* 7. V: Version — Slate Theme */}
@@ -3287,6 +3342,26 @@ export const CourseWizard: React.FC = () => {
                         </div>
                       </div>
 
+                      {duplicateCourse && (
+                        <div className="mt-3 p-3.5 bg-rose-50 border-2 border-rose-400 rounded-xl text-xs text-rose-950 flex items-start space-x-3 shadow-sm animate-in fade-in duration-150">
+                          <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+                          <div className="space-y-1">
+                            <div className="font-extrabold text-rose-900 text-sm flex items-center gap-2">
+                              <span>Course Code {displaySubjectCode} is already in use!</span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-200 text-rose-900 border border-rose-300">
+                                {duplicateCourse.status}
+                              </span>
+                            </div>
+                            <p className="text-slate-800 leading-snug">
+                              This code is already assigned to <strong>"{duplicateCourse.courseName || 'Existing Course'}"</strong> in {duplicateCourse.programmeCode} by <em>{duplicateCourse.createdBy}</em>.
+                            </p>
+                            <p className="text-rose-700 font-bold pt-0.5">
+                              ⚠️ This course code cannot be reused. Please select a different <strong>Sequence Letter</strong> (in the highlighted box above) to make your course code unique.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Bright Sequence Guidance Banner */}
                       <div className="mt-3 p-3 bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-xl flex items-center space-x-2.5 text-xs text-amber-950 font-bold shadow-xs">
                         <span className="text-base flex-shrink-0">📌</span>
@@ -3296,7 +3371,7 @@ export const CourseWizard: React.FC = () => {
                         </div>
                       </div>
 
-                      {(hasFieldError('uniqueLetter') || hasFieldError('courseCode')) && (
+                      {(hasFieldError('uniqueLetter') || hasFieldError('courseCode')) && !duplicateCourse && (
                         <div className="mt-2 text-xs text-red-600 font-semibold flex items-center space-x-1">
                           <AlertCircle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
                           <span>Code configuration error</span>

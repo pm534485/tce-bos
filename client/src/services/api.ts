@@ -73,6 +73,17 @@ export const api = {
   getUsers: () => request<User[]>('/auth/users'),
 
   // Courses
+  getExistingCodes: () =>
+    request<{
+      _id: string;
+      courseCode: string;
+      courseName: string;
+      programmeCode: string;
+      regulationCode: string;
+      version: number;
+      status: string;
+      createdBy: string;
+    }[]>('/courses/existing-codes'),
   getCourses: (params?: Record<string, string | number>) => {
     const query = params ? '?' + new URLSearchParams(params as any).toString() : '';
     return request<Course[]>(`/courses${query}`);
