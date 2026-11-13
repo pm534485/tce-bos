@@ -32,6 +32,14 @@ export interface BackupMetadata {
   totalSizeBytes?: number;
 }
 
+export function getLocalDateString(): string {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function getBackupBaseDir(): string {
   // Support running from repo root or server package directory
   const cwd = process.cwd();
@@ -100,7 +108,7 @@ export async function createDailyBackup(customDate?: string): Promise<{
   fullBackupJson: string;
 }> {
   const baseDir = getBackupBaseDir();
-  const dateStr = customDate || new Date().toISOString().split('T')[0];
+  const dateStr = customDate || getLocalDateString();
   const targetFolder = path.join(baseDir, dateStr);
 
   if (!fs.existsSync(targetFolder)) {

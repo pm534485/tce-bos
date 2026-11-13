@@ -2,12 +2,12 @@ import { Router } from 'express';
 import path from 'path';
 import fs from 'fs';
 import { authenticate, requireRole } from '../middleware/auth.js';
-import { createDailyBackup, fetchFullDataset, listExistingBackups, getBackupBaseDir, } from '../services/backupService.js';
+import { createDailyBackup, fetchFullDataset, listExistingBackups, getBackupBaseDir, getLocalDateString, } from '../services/backupService.js';
 const router = Router();
 // GET /api/backup/download - Direct one-click download of the latest full JSON backup
 router.get('/download', authenticate, async (req, res) => {
     try {
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = getLocalDateString();
         const data = await fetchFullDataset();
         const payload = {
             _backupMetadata: {

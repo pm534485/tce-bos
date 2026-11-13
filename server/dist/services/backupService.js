@@ -4,6 +4,13 @@ import { Course } from '../models/Course.js';
 import { Programme } from '../models/Programme.js';
 import { User } from '../models/User.js';
 import { ProgrammeCodeModel, CategoryCodeModel, TpsVerbModel, LabObjectiveModel, GeneralCoPoolModel, PerformanceIndicatorModel, SdgListModel, DomainToSdgMapModel, TcpWeightageTableModel, ConfigSettingsModel, } from '../models/MasterData.js';
+export function getLocalDateString() {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
 export function getBackupBaseDir() {
     // Support running from repo root or server package directory
     const cwd = process.cwd();
@@ -50,7 +57,7 @@ export async function fetchFullDataset() {
 }
 export async function createDailyBackup(customDate) {
     const baseDir = getBackupBaseDir();
-    const dateStr = customDate || new Date().toISOString().split('T')[0];
+    const dateStr = customDate || getLocalDateString();
     const targetFolder = path.join(baseDir, dateStr);
     if (!fs.existsSync(targetFolder)) {
         fs.mkdirSync(targetFolder, { recursive: true });

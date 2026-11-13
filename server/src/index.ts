@@ -8,7 +8,7 @@ import masterRoutes from './routes/master.js';
 import courseRoutes from './routes/courses.js';
 import programmeRoutes from './routes/programmes.js';
 import backupRoutes from './routes/backup.js';
-import { createDailyBackup, getBackupBaseDir } from './services/backupService.js';
+import { createDailyBackup, getBackupBaseDir, getLocalDateString } from './services/backupService.js';
 
 dotenv.config();
 
@@ -173,7 +173,7 @@ async function startServer() {
 
     // Auto-check daily backup on server start
     try {
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = getLocalDateString();
       const todayFolder = path.join(getBackupBaseDir(), todayStr);
       if (!fs.existsSync(todayFolder)) {
         console.log(`[BACKUP] Initializing automatic daily backup for ${todayStr}...`);
@@ -186,7 +186,7 @@ async function startServer() {
 
       // Schedule recurring backup check every 6 hours
       setInterval(() => {
-        const checkDate = new Date().toISOString().split('T')[0];
+        const checkDate = getLocalDateString();
         const checkFolder = path.join(getBackupBaseDir(), checkDate);
         if (!fs.existsSync(checkFolder)) {
           createDailyBackup(checkDate)
