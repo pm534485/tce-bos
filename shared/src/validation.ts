@@ -1417,6 +1417,26 @@ export function validateLearningResources(
       });
     }
 
+    if (!book.edition || !book.edition.trim()) {
+      results.push({
+        id: `B10_EDITION_MISSING_${book.label}`,
+        field: `${book.section}.${book.idx}.edition`,
+        severity: 'error',
+        message: `${book.label}: Edition is required.`,
+        fixHint: 'Enter publication edition (e.g. 1st, 2nd, 10th).',
+      });
+    }
+
+    if (!book.publisher || !book.publisher.trim()) {
+      results.push({
+        id: `B10_PUBLISHER_MISSING_${book.label}`,
+        field: `${book.section}.${book.idx}.publisher`,
+        severity: 'error',
+        message: `${book.label}: Publisher is required.`,
+        fixHint: 'Enter publisher name (e.g. Pearson, Wiley, McGraw Hill).',
+      });
+    }
+
     if (!book.year) {
       results.push({
         id: `B10_YEAR_MISSING_${book.label}`,

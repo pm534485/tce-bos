@@ -595,16 +595,16 @@ describe('B9: Lecture Schedule Validation', () => {
 
 describe('B10: Learning Resources Validation', () => {
   const validBooks: LearningResource[] = [
-    { type: 'TEXT', authors: 'Mark Allen Weiss', title: 'Data Structures and Algorithm Analysis in C++', publisher: 'Pearson', year: 2022 },
+    { type: 'TEXT', authors: 'Mark Allen Weiss', title: 'Data Structures and Algorithm Analysis in C++', edition: '4th', publisher: 'Pearson', year: 2022 },
   ];
 
   const validRefs: LearningResource[] = [
-    { type: 'REFERENCE', authors: 'Thomas H. Cormen', title: 'Introduction to Algorithms', publisher: 'MIT Press', year: 2022 },
-    { type: 'REFERENCE', authors: 'Robert Sedgewick', title: 'Algorithms', publisher: 'Addison-Wesley', year: 2021 },
-    { type: 'REFERENCE', authors: 'Michael T. Goodrich', title: 'Data Structures and Algorithms in Java', publisher: 'Wiley', year: 2023 },
+    { type: 'REFERENCE', authors: 'Thomas H. Cormen', title: 'Introduction to Algorithms', edition: '4th', publisher: 'MIT Press', year: 2022 },
+    { type: 'REFERENCE', authors: 'Robert Sedgewick', title: 'Algorithms', edition: '4th', publisher: 'Addison-Wesley', year: 2021 },
+    { type: 'REFERENCE', authors: 'Michael T. Goodrich', title: 'Data Structures and Algorithms in Java', edition: '6th', publisher: 'Wiley', year: 2023 },
   ];
 
-  it('should accept 1-2 text books and 3-6 reference books with publication years', () => {
+  it('should accept 1-2 text books and 3-6 reference books with publication years, edition, and publisher', () => {
     const res = validateLearningResources(validBooks, validRefs, 2026);
     expect(res.filter(r => r.severity === 'error')).toHaveLength(0);
   });
@@ -615,14 +615,26 @@ describe('B10: Learning Resources Validation', () => {
     expect(res.some(e => e.id.includes('B10_YEAR_MISSING'))).toBe(true);
   });
 
+  it('should reject missing edition', () => {
+    const missingEdition: LearningResource[] = [{ ...validBooks[0], edition: '' }];
+    const res = validateLearningResources(missingEdition, validRefs, 2026);
+    expect(res.some(e => e.id.includes('B10_EDITION_MISSING'))).toBe(true);
+  });
+
+  it('should reject missing publisher', () => {
+    const missingPublisher: LearningResource[] = [{ ...validBooks[0], publisher: '' }];
+    const res = validateLearningResources(missingPublisher, validRefs, 2026);
+    expect(res.some(e => e.id.includes('B10_PUBLISHER_MISSING'))).toBe(true);
+  });
+
   it('should enforce 5-year recency rule for advanced/elective courses', () => {
     const oldBooks: LearningResource[] = [
-      { type: 'TEXT', authors: 'Old Author', title: 'Classic Algorithms', publisher: 'Old Press', year: 2010 },
+      { type: 'TEXT', authors: 'Old Author', title: 'Classic Algorithms', edition: '1st', publisher: 'Old Press', year: 2010 },
     ];
     const oldRefs: LearningResource[] = [
-      { type: 'REFERENCE', authors: 'Ref 1', title: 'Ref Title 1', year: 2012 },
-      { type: 'REFERENCE', authors: 'Ref 2', title: 'Ref Title 2', year: 2014 },
-      { type: 'REFERENCE', authors: 'Ref 3', title: 'Ref Title 3', year: 2015 },
+      { type: 'REFERENCE', authors: 'Ref 1', title: 'Ref Title 1', edition: '1st', publisher: 'Press 1', year: 2012 },
+      { type: 'REFERENCE', authors: 'Ref 2', title: 'Ref Title 2', edition: '1st', publisher: 'Press 2', year: 2014 },
+      { type: 'REFERENCE', authors: 'Ref 3', title: 'Ref Title 3', edition: '1st', publisher: 'Press 3', year: 2015 },
     ];
     const res = validateLearningResources(oldBooks, oldRefs, 2026, true);
     expect(res.some(e => e.id.includes('B10_RECENCY_ADVANCED'))).toBe(true);
@@ -710,12 +722,12 @@ describe('B13: 17-Point Theory Compliance Checklist Auto-Evaluation', () => {
         { moduleNo: 4, mainTopic: 'Hashing and Advanced Sets', subtopics: ['Open hashing', 'Disjoint sets'], periods: 12, coMapping: ['CO5', 'CO6'] },
       ],
       textBooks: [
-        { type: 'TEXT', authors: 'Mark Allen Weiss', title: 'Data Structures and Algorithm Analysis in C++', publisher: 'Pearson', year: 2022 },
+        { type: 'TEXT', authors: 'Mark Allen Weiss', title: 'Data Structures and Algorithm Analysis in C++', edition: '4th', publisher: 'Pearson', year: 2022 },
       ],
       referenceBooks: [
-        { type: 'REFERENCE', authors: 'Thomas H. Cormen', title: 'Introduction to Algorithms', publisher: 'MIT Press', year: 2022 },
-        { type: 'REFERENCE', authors: 'Robert Sedgewick', title: 'Algorithms', publisher: 'Addison-Wesley', year: 2021 },
-        { type: 'REFERENCE', authors: 'Michael T. Goodrich', title: 'Data Structures in Java', publisher: 'Wiley', year: 2023 },
+        { type: 'REFERENCE', authors: 'Thomas H. Cormen', title: 'Introduction to Algorithms', edition: '4th', publisher: 'MIT Press', year: 2022 },
+        { type: 'REFERENCE', authors: 'Robert Sedgewick', title: 'Algorithms', edition: '4th', publisher: 'Addison-Wesley', year: 2021 },
+        { type: 'REFERENCE', authors: 'Michael T. Goodrich', title: 'Data Structures in Java', edition: '6th', publisher: 'Wiley', year: 2023 },
       ],
       webResources: [],
       sdgActivities: [

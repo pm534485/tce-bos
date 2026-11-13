@@ -2063,15 +2063,15 @@ export const CourseWizard: React.FC = () => {
     course.courseType === 'PRACTICAL'
       ? (course.referenceBooks || []).length >= 1 &&
         (course.referenceBooks || []).length <= 6 &&
-        (course.referenceBooks || []).every(rb => (rb.title || '').trim().length > 0 && (rb.authors || '').trim().length > 0 && Boolean(rb.year)) &&
-        ((course.textBooks || []).length === 0 || ((course.textBooks || []).length <= 2 && (course.textBooks || []).every(tb => (tb.title || '').trim().length > 0 && (tb.authors || '').trim().length > 0 && Boolean(tb.year)))) &&
+        (course.referenceBooks || []).every(rb => (rb.title || '').trim().length > 0 && (rb.authors || '').trim().length > 0 && (rb.edition || '').trim().length > 0 && (rb.publisher || '').trim().length > 0 && Boolean(rb.year)) &&
+        ((course.textBooks || []).length === 0 || ((course.textBooks || []).length <= 2 && (course.textBooks || []).every(tb => (tb.title || '').trim().length > 0 && (tb.authors || '').trim().length > 0 && (tb.edition || '').trim().length > 0 && (tb.publisher || '').trim().length > 0 && Boolean(tb.year)))) &&
         !validationReport.errors.some(e => e.field.startsWith('textBooks') || e.field.startsWith('referenceBooks'))
       : (course.textBooks || []).length >= 1 &&
         (course.textBooks || []).length <= 2 &&
-        (course.textBooks || []).every(tb => (tb.title || '').trim().length > 0 && (tb.authors || '').trim().length > 0 && Boolean(tb.year)) &&
+        (course.textBooks || []).every(tb => (tb.title || '').trim().length > 0 && (tb.authors || '').trim().length > 0 && (tb.edition || '').trim().length > 0 && (tb.publisher || '').trim().length > 0 && Boolean(tb.year)) &&
         (course.referenceBooks || []).length >= 3 &&
         (course.referenceBooks || []).length <= 6 &&
-        (course.referenceBooks || []).every(rb => (rb.title || '').trim().length > 0 && (rb.authors || '').trim().length > 0 && Boolean(rb.year)) &&
+        (course.referenceBooks || []).every(rb => (rb.title || '').trim().length > 0 && (rb.authors || '').trim().length > 0 && (rb.edition || '').trim().length > 0 && (rb.publisher || '').trim().length > 0 && Boolean(rb.year)) &&
         !validationReport.errors.some(e => e.field.startsWith('textBooks') || e.field.startsWith('referenceBooks'))
   );
 
@@ -6190,8 +6190,8 @@ export const CourseWizard: React.FC = () => {
                       <h2 className="text-xl font-bold text-slate-900">6. Learning Resources</h2>
                       <p className="text-sm text-slate-500 mt-1">
                         {course.courseType === 'PRACTICAL'
-                          ? 'Must specify at least 1 and up to 6 Reference Books or Laboratory Manuals with publication year. Text Books are optional for laboratory courses.'
-                          : 'Must specify 1 to 2 Text Books and 3 to 6 Reference Books with mandatory publication year.'}
+                          ? 'Must specify at least 1 and up to 6 Reference Books or Laboratory Manuals with mandatory edition, publisher, and publication year. Text Books are optional for laboratory courses.'
+                          : 'Must specify 1 to 2 Text Books and 3 to 6 Reference Books with mandatory edition, publisher, and publication year.'}
                       </p>
                     </div>
 
@@ -6261,8 +6261,8 @@ export const CourseWizard: React.FC = () => {
                               />
                             </div>
                             <div className="md:col-span-1">
-                              <label className="block text-[11px] font-medium text-slate-500 mb-1">
-                                Edition
+                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                                Edition <span className="text-rose-500">*</span>
                               </label>
                               <input
                                 type="text"
@@ -6273,12 +6273,14 @@ export const CourseWizard: React.FC = () => {
                                   updateField('textBooks', updated);
                                 }}
                                 placeholder="10th"
-                                className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white text-center"
+                                className={`w-full p-2 border rounded-lg text-xs bg-white text-center ${
+                                  !b.edition?.trim() ? 'border-amber-300 focus:border-sky-500' : 'border-slate-300'
+                                }`}
                               />
                             </div>
                             <div className="md:col-span-2">
-                              <label className="block text-[11px] font-medium text-slate-500 mb-1">
-                                Publisher
+                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                                Publisher <span className="text-rose-500">*</span>
                               </label>
                               <input
                                 type="text"
@@ -6289,7 +6291,9 @@ export const CourseWizard: React.FC = () => {
                                   updateField('textBooks', updated);
                                 }}
                                 placeholder="Wiley"
-                                className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white"
+                                className={`w-full p-2 border rounded-lg text-xs bg-white ${
+                                  !b.publisher?.trim() ? 'border-amber-300 focus:border-sky-500' : 'border-slate-300'
+                                }`}
                               />
                             </div>
                             <div className="md:col-span-2">
@@ -6403,8 +6407,8 @@ export const CourseWizard: React.FC = () => {
                               />
                             </div>
                             <div className="md:col-span-1">
-                              <label className="block text-[11px] font-medium text-slate-500 mb-1">
-                                Edition
+                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                                Edition <span className="text-rose-500">*</span>
                               </label>
                               <input
                                 type="text"
@@ -6415,12 +6419,14 @@ export const CourseWizard: React.FC = () => {
                                   updateField('referenceBooks', updated);
                                 }}
                                 placeholder="9th"
-                                className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white text-center"
+                                className={`w-full p-2 border rounded-lg text-xs bg-white text-center ${
+                                  !b.edition?.trim() ? 'border-amber-300 focus:border-sky-500' : 'border-slate-300'
+                                }`}
                               />
                             </div>
                             <div className="md:col-span-2">
-                              <label className="block text-[11px] font-medium text-slate-500 mb-1">
-                                Publisher
+                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                                Publisher <span className="text-rose-500">*</span>
                               </label>
                               <input
                                 type="text"
@@ -6431,7 +6437,9 @@ export const CourseWizard: React.FC = () => {
                                   updateField('referenceBooks', updated);
                                 }}
                                 placeholder="Pearson"
-                                className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white"
+                                className={`w-full p-2 border rounded-lg text-xs bg-white ${
+                                  !b.publisher?.trim() ? 'border-amber-300 focus:border-sky-500' : 'border-slate-300'
+                                }`}
                               />
                             </div>
                             <div className="md:col-span-2">
