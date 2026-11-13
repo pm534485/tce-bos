@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
-import { Course, CourseType } from '@syllabusforge/shared';
+import { Course, CourseType, getDepartmentForProgramme } from '@syllabusforge/shared';
 import {
   FileText,
   Clock,
@@ -69,11 +69,41 @@ export const Dashboard: React.FC = () => {
     setLoading(false);
   }
 
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
+  const canDeleteCourse = (c: Course) => {
+    if (!c || !user) return false;
+    if (user.role === 'ADMIN') return true;
+
+    const userDept = (user.department || '').trim().toLowerCase();
+    const courseDept = (c.department || getDepartmentForProgramme(c.programmeCode) || '').trim().toLowerCase();
+    const progAccess = (user.programmeAccess || []).map(p => p.toUpperCase());
+    const isDeptMatch = (userDept && courseDept && userDept === courseDept) ||
+      (c.programmeCode && progAccess.includes(c.programmeCode.toUpperCase()));
+
+    if ((user.role === 'BOS_COORDINATOR' || user.role === 'HOD') && isDeptMatch) {
+      return c.status === 'SUBMITTED' || c.status === 'RETURNED' || c.status === 'DRAFT';
+    }
+
+    if (c.status === 'DRAFT') {
+      const userEmail = (user.email || '').trim().toLowerCase();
+      const isAuthor = (c.createdBy?.toLowerCase() === userEmail) ||
+        (Array.isArray(c.designers) && c.designers.some(d => d.email?.toLowerCase() === userEmail));
+      return isAuthor;
+    }
+
+    return false;
+  };
+
+  const handleDelete = async (c: Course, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm('Are you sure you want to delete this syllabus draft?')) return;
+    if (!c._id) return;
+    const isSubmitted = c.status === 'SUBMITTED';
+    const courseLabel = c.courseCode ? `${c.courseCode} (${c.courseName})` : c.courseName;
+    const prompt = isSubmitted
+      ? `Are you sure you want to permanently delete the submitted syllabus document for "${courseLabel}"?\n\nThis action cannot be undone.`
+      : `Are you sure you want to delete this syllabus draft?`;
+    if (!window.confirm(prompt)) return;
     try {
-      await api.deleteCourse(id);
+      await api.deleteCourse(c._id);
       loadCourses();
     } catch (err: any) {
       alert(`Delete error: ${err.message}`);
@@ -358,10 +388,10 @@ export const Dashboard: React.FC = () => {
                         <Copy className="w-3.5 h-3.5" />
                       </button>
                     )}
-                    {c.status === 'DRAFT' && (
+                    {canDeleteCourse(c) && (
                       <button
-                        onClick={e => handleDelete(c._id!, e)}
-                        title="Delete draft"
+                        onClick={e => handleDelete(c, e)}
+                        title={c.status === 'SUBMITTED' ? "Delete submitted syllabus" : "Delete draft"}
                         className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

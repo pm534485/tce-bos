@@ -20,6 +20,7 @@ import {
   Building2,
   ChevronDown,
   X,
+  Trash2,
 } from 'lucide-react';
 
 export const ReviewWorkspace: React.FC = () => {
@@ -217,6 +218,28 @@ export const ReviewWorkspace: React.FC = () => {
       alert(`Syllabus ${action === 'APPROVE' ? 'approved' : 'returned'} successfully.`);
     } catch (err: any) {
       alert(`Review action failed: ${err.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteCourse = async () => {
+    if (!selectedCourse?._id) return;
+    const courseCode = selectedCourse.courseCode || 'Untitled';
+    const courseName = selectedCourse.courseName || '';
+    const confirmMsg = `Are you sure you want to permanently delete this submitted syllabus document?\n\nCourse: ${courseCode} - ${courseName}\n\nThis action cannot be undone.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      setIsSubmitting(true);
+      await api.deleteCourse(selectedCourse._id);
+      const deletedId = selectedCourse._id;
+      setSelectedCourse(null);
+      setSelectedForMerge(prev => prev.filter(id => id !== deletedId));
+      loadReviewQueue();
+      alert('The submitted syllabus document has been permanently deleted.');
+    } catch (err: any) {
+      alert(`Delete failed: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -670,21 +693,33 @@ export const ReviewWorkspace: React.FC = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                   <button
-                    onClick={() => handleReviewAction('RETURN')}
+                    onClick={handleDeleteCourse}
                     disabled={isSubmitting}
-                    className="px-4 py-2 rounded-xl border border-rose-300 bg-red-50 hover:bg-rose-100 text-rose-700 font-bold text-xs shadow-xs transition-all active:scale-95 cursor-pointer"
+                    title="Permanently delete this submitted syllabus document"
+                    className="px-3.5 py-2 rounded-xl border border-rose-300 bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 font-semibold text-xs shadow-xs transition-all active:scale-95 cursor-pointer flex items-center space-x-1.5"
                   >
-                    Return for Changes
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete Syllabus</span>
                   </button>
-                  <button
-                    onClick={() => handleReviewAction('APPROVE')}
-                    disabled={isSubmitting}
-                    className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all active:scale-95 cursor-pointer"
-                  >
-                    Approve Syllabus
-                  </button>
+
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => handleReviewAction('RETURN')}
+                      disabled={isSubmitting}
+                      className="px-4 py-2 rounded-xl border border-rose-300 bg-red-50 hover:bg-rose-100 text-rose-700 font-bold text-xs shadow-xs transition-all active:scale-95 cursor-pointer"
+                    >
+                      Return for Changes
+                    </button>
+                    <button
+                      onClick={() => handleReviewAction('APPROVE')}
+                      disabled={isSubmitting}
+                      className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all active:scale-95 cursor-pointer"
+                    >
+                      Approve Syllabus
+                    </button>
+                  </div>
                 </div>
               </div>
 

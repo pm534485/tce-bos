@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { Course } from '../models/Course.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
-import { validateCourse, computeCredits, computeCourseCode } from '@syllabusforge/shared';
+import { validateCourse, computeCredits, computeCourseCode, getDepartmentForProgramme } from '@syllabusforge/shared';
 import { generateDocxDocument, generateMergedCoursesDocx } from '../services/docxGenerator.js';
 import { generatePdfDocument, generateMergedCoursesPdf } from '../services/pdfGenerator.js';
 const router = Router();
@@ -343,12 +343,37 @@ router.delete('/:id', authenticate, async (req, res) => {
             res.status(404).json({ error: 'Course not found.' });
             return;
         }
-        if (course.status !== 'DRAFT' && req.user?.role !== 'ADMIN') {
-            res.status(400).json({ error: 'Only drafts can be deleted.' });
+        const userRole = req.user?.role;
+        const userEmail = (req.user?.email || '').trim().toLowerCase();
+        const userDept = (req.user?.department || '').trim().toLowerCase();
+        const courseDept = (course.department || getDepartmentForProgramme(course.programmeCode) || '').trim().toLowerCase();
+        const progAccess = (req.user?.programmeAccess || []).map((p) => p.toUpperCase());
+        const isDeptMatch = (userDept && courseDept && userDept === courseDept) ||
+            (course.programmeCode && progAccess.includes(course.programmeCode.toUpperCase()));
+        const isDeptCoordOrHod = (userRole === 'BOS_COORDINATOR' || userRole === 'HOD') && isDeptMatch;
+        const isAdmin = userRole === 'ADMIN';
+        // Check if requester is designer/author
+        const isAuthor = course.createdBy?.toLowerCase() === userEmail ||
+            (Array.isArray(course.designers) && course.designers.some((d) => d.email?.toLowerCase() === userEmail));
+        // Admin can delete any course in any status
+        if (isAdmin) {
+            await Course.findByIdAndDelete(req.params.id);
+            res.json({ message: 'Course deleted successfully.' });
             return;
         }
-        await Course.findByIdAndDelete(req.params.id);
-        res.json({ message: 'Course deleted successfully.' });
+        // BOS Coordinator (or HoD) of that department can delete submitted, returned, or draft courses in their department
+        if (isDeptCoordOrHod && (course.status === 'SUBMITTED' || course.status === 'RETURNED' || course.status === 'DRAFT')) {
+            await Course.findByIdAndDelete(req.params.id);
+            res.json({ message: 'Course deleted successfully by department coordinator.' });
+            return;
+        }
+        // Faculty author can only delete their own DRAFT courses
+        if (course.status === 'DRAFT' && isAuthor) {
+            await Course.findByIdAndDelete(req.params.id);
+            res.json({ message: 'Course deleted successfully.' });
+            return;
+        }
+        res.status(403).json({ error: 'You do not have permission to delete this course.' });
     }
     catch (err) {
         res.status(500).json({ error: err.message });
