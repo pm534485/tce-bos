@@ -19,7 +19,7 @@ import {
   suggestCoWeightages,
 } from './validation.js';
 import { Course, CourseOutcome, SyllabusModule, LearningResource, SdgActivity } from './types.js';
-import { getDisplayTeType, PERFORMANCE_INDICATORS } from './constants.js';
+import { getDisplayTeType, PERFORMANCE_INDICATORS, isPgProgramme, isPgCourse } from './constants.js';
 import { getDepartmentPerformanceIndicators } from './departmentPerformanceIndicators.js';
 
 describe('B1: Course Name Validation', () => {
@@ -796,6 +796,49 @@ describe('B13: 17-Point Theory Compliance Checklist Auto-Evaluation', () => {
 
       const elPis = getDepartmentPerformanceIndicators('Electronics Engineering (VLSI)', 'EL', PERFORMANCE_INDICATORS);
       expect(elPis).toBe(PERFORMANCE_INDICATORS);
+    });
+
+    it('should identify PG courses and return empty PIs for PG programmes', () => {
+      // PG Programme checks
+      expect(isPgProgramme('PA')).toBe(true); // M.E. Structural
+      expect(isPgProgramme('PB')).toBe(true); // M.E. Construction
+      expect(isPgProgramme('PC')).toBe(true); // M.E. Communication Systems
+      expect(isPgProgramme('PD')).toBe(true); // M.E. CSE
+      expect(isPgProgramme('CA')).toBe(true); // MCA
+
+      // UG Programme checks
+      expect(isPgProgramme('CE')).toBe(false);
+      expect(isPgProgramme('CS')).toBe(false);
+      expect(isPgProgramme('EE')).toBe(false);
+      expect(isPgProgramme('EC')).toBe(false);
+      expect(isPgProgramme('ME')).toBe(false);
+      expect(isPgProgramme('MT')).toBe(false);
+      expect(isPgProgramme('IT')).toBe(false);
+
+      // Course-level checks
+      expect(isPgCourse({ programmeCode: 'PA' })).toBe(true);
+      expect(isPgCourse({ courseCode: '26PACD0' })).toBe(true);
+      expect(isPgCourse({ courseCode: '26PACE0' })).toBe(true);
+      expect(isPgCourse({ courseCode: '26CECE0' })).toBe(false);
+
+      // PG courses have no PIs
+      const pgPisPA = getDepartmentPerformanceIndicators('Civil Engineering', 'PA');
+      expect(pgPisPA).toEqual([]);
+
+      const pgPisPD = getDepartmentPerformanceIndicators('Computer Science and Engineering', 'PD');
+      expect(pgPisPD).toEqual([]);
+
+      // PG course validation does not warn about missing PIs
+      const pgCosWithoutPi: CourseOutcome[] = [
+        { coNo: 'CO1', statement: 'Analyze structural behaviour of steel members.', tpsLevel: 4, weightage: 18, sdgNo: 'NC', sdgLevel: 0 },
+        { coNo: 'CO2', statement: 'Evaluate dynamic response of multistory buildings.', tpsLevel: 5, weightage: 18, sdgNo: 'NC', sdgLevel: 0 },
+        { coNo: 'CO3', statement: 'Design prestressed concrete bridge girders.', tpsLevel: 6, weightage: 18, sdgNo: 'NC', sdgLevel: 0 },
+        { coNo: 'CO4', statement: 'Apply finite element formulation for plates.', tpsLevel: 3, weightage: 16, sdgNo: 'NC', sdgLevel: 0 },
+        { coNo: 'CO5', statement: 'Model soil-structure interaction effects.', tpsLevel: 3, weightage: 15, sdgNo: 'NC', sdgLevel: 0 },
+        { coNo: 'CO6', statement: 'Explain advanced non-linear material laws.', tpsLevel: 2, weightage: 15, sdgNo: 'NC', sdgLevel: 0 },
+      ];
+      const res = validateCourseOutcomes(pgCosWithoutPi, 'THEORY', false, 3, 'Civil Engineering', 'PA');
+      expect(res.some(e => e.id.includes('PI'))).toBe(false);
     });
   });
 });

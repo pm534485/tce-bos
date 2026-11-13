@@ -1,4 +1,4 @@
-import { Course, getDisplayTeType, formatDesignerName, LAB_OBJECTIVES_LEGEND_TEXT } from '@syllabusforge/shared';
+import { Course, getDisplayTeType, formatDesignerName, LAB_OBJECTIVES_LEGEND_TEXT, isPgCourse } from '@syllabusforge/shared';
 import { ConfigSettingsModel } from '../models/MasterData.js';
 
 export function getDegreeProgramHeader(course: Course): string {
@@ -92,13 +92,14 @@ export function buildCourseInnerHtml(
   const prereqList = getPrerequisiteList(course.prerequisites);
 
   // 2. Course Outcomes formatting
+  const isPg = isPgCourse(course);
   const coList = course.courseOutcomes || [];
   const coRowsHtml = coList.map(co => `
     <tr>
       <td class="center">${co.coNo}</td>
       <td class="left">${co.statement}</td>
       <td class="center">TPS${co.tpsLevel}</td>
-      <td class="center">${co.pi}</td>
+      ${!isPg ? `<td class="center">${co.pi || ''}</td>` : ''}
       <td class="center">${co.weightage !== undefined ? co.weightage : ''}</td>
       <td class="center">${co.sdgNo && co.sdgNo !== 'NC' ? (String(co.sdgNo).includes(',') ? `SDGs ${co.sdgNo}` : `SDG ${co.sdgNo}`) : 'NC'}</td>
       <td class="center">${co.sdgLevel !== undefined ? co.sdgLevel : ''}</td>
@@ -449,11 +450,11 @@ export function buildCourseInnerHtml(
     <thead>
       <tr>
         <th style="width: 7%; text-align: center;">No.</th>
-        <th style="width: 45%; text-align: left;">Course Outcome</th>
-        <th style="width: 10%; text-align: center;">TPS<br>Level</th>
-        <th style="width: 14%; text-align: center;">Performance<br>Indicator</th>
-        <th style="width: 10%; text-align: center;">CO<br>Weightage</th>
-        <th style="width: 8%; text-align: center;">SDG<br>addressed</th>
+        <th style="width: ${isPg ? '55%' : '45%'}; text-align: left;">Course Outcome</th>
+        <th style="width: ${isPg ? '13%' : '10%'}; text-align: center;">TPS<br>Level</th>
+        ${!isPg ? '<th style="width: 14%; text-align: center;">Performance<br>Indicator</th>' : ''}
+        <th style="width: ${isPg ? '10%' : '10%'}; text-align: center;">CO<br>Weightage</th>
+        <th style="width: ${isPg ? '9%' : '8%'}; text-align: center;">SDG<br>addressed</th>
         <th style="width: 6%; text-align: center;">SDG<br>Level</th>
       </tr>
     </thead>

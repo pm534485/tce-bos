@@ -106,6 +106,41 @@ export function getDepartmentForProgramme(code) {
     const prog = PROGRAMME_CODES.find(p => p.code === code);
     return prog?.department || '';
 }
+/**
+ * Check whether an academic programme is Postgraduate (PG)
+ * - TCE PG Engineering / M.E. programmes start with 'P' (PA, PB, PC, PD, etc.)
+ * - Computer Applications MCA (CA) is a Postgraduate degree
+ */
+export function isPgProgramme(code) {
+    if (!code)
+        return false;
+    const p = code.trim().toUpperCase();
+    return p.startsWith('P') || p === 'CA' || p === 'MCA';
+}
+/**
+ * Check whether a course belongs to a Postgraduate (PG) programme
+ * Uses programmeCode, courseCode (e.g. 26PACD0 -> PA), or degree indicators
+ */
+export function isPgCourse(course) {
+    if (!course)
+        return false;
+    if (course.programmeCode && isPgProgramme(course.programmeCode)) {
+        return true;
+    }
+    if (course.courseCode && course.courseCode.length >= 4) {
+        const pCode = course.courseCode.substring(2, 4).toUpperCase();
+        if (isPgProgramme(pCode)) {
+            return true;
+        }
+    }
+    if (course.degree) {
+        const d = course.degree.toUpperCase();
+        if (d.includes('M.E.') || d.includes('M.TECH') || d.includes('MCA') || d.includes('POSTGRADUATE') || d.includes('PG')) {
+            return true;
+        }
+    }
+    return false;
+}
 export const CATEGORY_CODES = [
     { code: 'C', name: 'Programme Core Courses', defaultAbbr: 'PCC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },
     { code: 'D', name: 'Programme Core Courses', defaultAbbr: 'PCC', allowedTypes: ['THEORY', 'PRACTICAL', 'TCP'] },

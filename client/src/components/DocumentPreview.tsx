@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Course, getDisplayTeType, formatDesignerName, LAB_OBJECTIVES_LEGEND_TEXT } from '@syllabusforge/shared';
+import { Course, getDisplayTeType, formatDesignerName, LAB_OBJECTIVES_LEGEND_TEXT, isPgCourse } from '@syllabusforge/shared';
 import { Download, FileText, Printer, Loader2, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -709,32 +709,41 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
           <p className="text-xs text-black mt-1 mb-1.5">
             On the successful completion of the course, students will be able to
           </p>
-          <table className="w-full border-collapse border border-black mb-0 text-xs">
-            <thead>
-              <tr className="border-b border-black">
-                <th className="border border-black p-1 text-center w-[7%]">No.</th>
-                <th className="border border-black p-1 text-left w-[44%]">Course Outcome</th>
-                <th className="border border-black p-1 text-center w-[11%]">TCE<br />Proficiency Scale</th>
-                <th className="border border-black p-1 text-center w-[14%]">Performance<br />Indicator</th>
-                <th className="border border-black p-1 text-center w-[8%]">CO<br />Weightage</th>
-                <th className="border border-black p-1 text-center w-[10%]">SDG<br />Addressed</th>
-                <th className="border border-black p-1 text-center w-[6%]">SDG<br />Level</th>
-              </tr>
-            </thead>
-            <tbody>
-              {coList.map(co => (
-                <tr key={co.coNo} className="border-b border-black">
-                  <td className="border border-black p-1.5 text-center font-bold">{co.coNo}</td>
-                  <td className="border border-black p-1.5 text-left">{co.statement}</td>
-                  <td className="border border-black p-1 text-center">TPS{co.tpsLevel}</td>
-                  <td className="border border-black p-1.5 text-center">{co.pi}</td>
-                  <td className="border border-black p-1 text-center">{co.weightage !== undefined && co.weightage !== null ? co.weightage : (co.objectiveNo !== undefined ? co.objectiveNo : '')}</td>
-                  <td className="border border-black p-1.5 text-center">{co.sdgNo && co.sdgNo !== 'NC' ? (String(co.sdgNo).includes(',') ? `SDGs ${co.sdgNo}` : `SDG ${co.sdgNo}`) : 'NC'}</td>
-                  <td className="border border-black p-1.5 text-center">{co.sdgLevel !== undefined ? co.sdgLevel : ''}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {(() => {
+            const isPg = isPgCourse(course);
+            return (
+              <table className="w-full border-collapse border border-black mb-0 text-xs">
+                <thead>
+                  <tr className="border-b border-black">
+                    <th className="border border-black p-1 text-center w-[7%]">No.</th>
+                    <th className={`border border-black p-1 text-left ${isPg ? 'w-[55%]' : 'w-[44%]'}`}>Course Outcome</th>
+                    <th className={`border border-black p-1 text-center ${isPg ? 'w-[13%]' : 'w-[11%]'}`}>TCE<br />Proficiency Scale</th>
+                    {!isPg && (
+                      <th className="border border-black p-1 text-center w-[14%]">Performance<br />Indicator</th>
+                    )}
+                    <th className={`border border-black p-1 text-center ${isPg ? 'w-[10%]' : 'w-[8%]'}`}>CO<br />Weightage</th>
+                    <th className={`border border-black p-1 text-center ${isPg ? 'w-[9%]' : 'w-[10%]'}`}>SDG<br />Addressed</th>
+                    <th className="border border-black p-1 text-center w-[6%]">SDG<br />Level</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {coList.map(co => (
+                    <tr key={co.coNo} className="border-b border-black">
+                      <td className="border border-black p-1.5 text-center font-bold">{co.coNo}</td>
+                      <td className="border border-black p-1.5 text-left">{co.statement}</td>
+                      <td className="border border-black p-1 text-center">TPS{co.tpsLevel}</td>
+                      {!isPg && (
+                        <td className="border border-black p-1.5 text-center">{co.pi}</td>
+                      )}
+                      <td className="border border-black p-1 text-center">{co.weightage !== undefined && co.weightage !== null ? co.weightage : (co.objectiveNo !== undefined ? co.objectiveNo : '')}</td>
+                      <td className="border border-black p-1.5 text-center">{co.sdgNo && co.sdgNo !== 'NC' ? (String(co.sdgNo).includes(',') ? `SDGs ${co.sdgNo}` : `SDG ${co.sdgNo}`) : 'NC'}</td>
+                      <td className="border border-black p-1.5 text-center">{co.sdgLevel !== undefined ? co.sdgLevel : ''}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            );
+          })()}
         </div>
 
         {/* Assessment Pattern */}

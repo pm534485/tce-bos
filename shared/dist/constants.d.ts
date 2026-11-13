@@ -14,6 +14,21 @@ export declare function formatDesignerName(designer: {
 }): string;
 export declare function getProgrammesForDepartment(dept?: string): ProgrammeCode[];
 export declare function getDepartmentForProgramme(code?: string): string;
+/**
+ * Check whether an academic programme is Postgraduate (PG)
+ * - TCE PG Engineering / M.E. programmes start with 'P' (PA, PB, PC, PD, etc.)
+ * - Computer Applications MCA (CA) is a Postgraduate degree
+ */
+export declare function isPgProgramme(code?: string): boolean;
+/**
+ * Check whether a course belongs to a Postgraduate (PG) programme
+ * Uses programmeCode, courseCode (e.g. 26PACD0 -> PA), or degree indicators
+ */
+export declare function isPgCourse(course?: {
+    programmeCode?: string;
+    courseCode?: string;
+    degree?: string;
+} | null): boolean;
 export interface CategoryCode {
     code: string;
     name: string;

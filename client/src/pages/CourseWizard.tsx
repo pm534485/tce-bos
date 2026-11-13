@@ -43,6 +43,7 @@ import {
   getExpectedHoursCriteria,
   SALUTATION_OPTIONS,
   formatDesignerName,
+  isPgCourse,
 } from '@syllabusforge/shared';
 import { LiveCompliancePanel } from '../components/LiveCompliancePanel';
 import { DocumentPreview } from '../components/DocumentPreview';
@@ -873,8 +874,9 @@ interface CoMappingPopupProps {
   courseOutcomes: CourseOutcome[];
   selectedCoNos: string[];
   onToggle: (coNo: string) => void;
+  isPg?: boolean;
 }
-const CoMappingPopup: React.FC<CoMappingPopupProps> = ({ expLabel, courseOutcomes, selectedCoNos, onToggle }) => {
+const CoMappingPopup: React.FC<CoMappingPopupProps> = ({ expLabel, courseOutcomes, selectedCoNos, onToggle, isPg }) => {
   const [open, setOpen] = useState(false);
   const getDomainForCo = (co: CourseOutcome) => getDomainForCourseOutcome(co);
 
@@ -956,7 +958,9 @@ const CoMappingPopup: React.FC<CoMappingPopupProps> = ({ expLabel, courseOutcome
                     <th className="px-4 py-3 text-left font-bold text-slate-700 w-16">No.</th>
                     <th className="px-4 py-3 text-left font-bold text-slate-700">Course Outcome</th>
                     <th className="px-4 py-3 text-center font-bold text-slate-700 w-20">TPS Level</th>
-                    <th className="px-4 py-3 text-center font-bold text-slate-700 w-28">Performance Indicator</th>
+                    {!isPg && (
+                      <th className="px-4 py-3 text-center font-bold text-slate-700 w-28">Performance Indicator</th>
+                    )}
                     <th className="px-4 py-3 text-center font-bold text-slate-700 w-24">CO Weightage</th>
                     <th className="px-4 py-3 text-center font-bold text-slate-700 w-24">SDG addressed</th>
                     <th className="px-4 py-3 text-center font-bold text-slate-700 w-20">SDG Level</th>
@@ -981,7 +985,9 @@ const CoMappingPopup: React.FC<CoMappingPopupProps> = ({ expLabel, courseOutcome
                         </td>
                         <td className="px-4 py-3 text-slate-800 leading-snug align-top font-medium">{co.statement}</td>
                         <td className="px-4 py-3 text-center font-bold text-slate-700 align-top">TPS{co.tpsLevel}</td>
-                        <td className="px-4 py-3 text-center text-slate-600 align-top">{co.pi || '—'}</td>
+                        {!isPg && (
+                          <td className="px-4 py-3 text-center text-slate-600 align-top">{co.pi || '—'}</td>
+                        )}
                         <td className="px-4 py-3 text-center text-slate-600 align-top">{(co as any).weightage ? `${(co as any).weightage}%` : '—'}</td>
                         <td className="px-4 py-3 text-center text-slate-600 align-top">{co.sdgNo || 'NC'}</td>
                         <td className="px-4 py-3 text-center text-slate-600 align-top">{co.sdgLevel ?? 0}</td>
@@ -2713,6 +2719,7 @@ export const CourseWizard: React.FC = () => {
 
   // Stepper definition — Learning Resources step is skipped for PRACTICAL courses
   const isPracticalCourse = course.courseType === 'PRACTICAL';
+  const isPg = isPgCourse({ programmeCode: course.programmeCode, courseCode: course.courseCode });
   const steps = [
     { id: 'identity',   title: '1. Course Code & Credits',      desc: 'Code, title, L-T-P & credits' },
     { id: 'preamble',   title: '2. Preamble & Prerequisites',   desc: 'Course context & prior courses' },
@@ -3832,6 +3839,18 @@ export const CourseWizard: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* PG Course Notice */}
+                    {isPg && (
+                      <div className="flex items-center space-x-2 px-3.5 py-2.5 bg-indigo-50/80 border border-indigo-200 rounded-xl text-xs text-indigo-900 font-medium animate-in fade-in">
+                        <span className="font-bold bg-indigo-200 text-indigo-800 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wide">
+                          PG Course
+                        </span>
+                        <span>
+                          Postgraduate course detected (<strong>{course.programmeCode || course.courseCode?.substring(2, 4)}</strong>): Performance Indicators (PIs) are disabled and not required as per NBA PG accreditation norms.
+                        </span>
+                      </div>
+                    )}
+
                     {/* Practical General CO Pool Picker — 3 domain buttons */}
                     {course.courseType === 'PRACTICAL' && (
                       <CoDomainPicker
@@ -4057,28 +4076,45 @@ export const CourseWizard: React.FC = () => {
                               </div>
                             </div>
 
-                            {/* ROW 2: Performance Indicators, CO Weightage, SDG Addressed, SDG Level */}
+                            {/* ROW 2: Performance Indicators (UG only), CO Weightage, SDG Addressed, SDG Level */}
                             <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-1 items-start">
                               {/* Performance Indicators */}
-                              <div className="sm:col-span-4">
-                                <PiCheckboxSelector
-                                  value={co.pi || ''}
-                                  coNo={co.coNo}
-                                  department={course.department}
-                                  programmeCode={course.programmeCode}
-                                  onChange={(newPi, matchedTpsLevel) => {
-                                    const updated = [...(course.courseOutcomes || [])];
-                                    const otherTps2 = (course.courseOutcomes || []).filter((c, i) => i !== idx && c.tpsLevel === 2).length;
-                                    const canApplyMatchedTps = matchedTpsLevel !== 2 || otherTps2 < 2;
-                                    updated[idx] = {
-                                      ...updated[idx],
-                                      pi: newPi,
-                                      ...(matchedTpsLevel && canApplyMatchedTps ? { tpsLevel: matchedTpsLevel } : {}),
-                                    };
-                                    updateField('courseOutcomes', updated);
-                                  }}
-                                />
-                              </div>
+                              {!isPg ? (
+                                <div className="sm:col-span-4">
+                                  <PiCheckboxSelector
+                                    value={co.pi || ''}
+                                    coNo={co.coNo}
+                                    department={course.department}
+                                    programmeCode={course.programmeCode}
+                                    onChange={(newPi, matchedTpsLevel) => {
+                                      const updated = [...(course.courseOutcomes || [])];
+                                      const otherTps2 = (course.courseOutcomes || []).filter((c, i) => i !== idx && c.tpsLevel === 2).length;
+                                      const canApplyMatchedTps = matchedTpsLevel !== 2 || otherTps2 < 2;
+                                      updated[idx] = {
+                                        ...updated[idx],
+                                        pi: newPi,
+                                        ...(matchedTpsLevel && canApplyMatchedTps ? { tpsLevel: matchedTpsLevel } : {}),
+                                      };
+                                      updateField('courseOutcomes', updated);
+                                    }}
+                                  />
+                                </div>
+                              ) : (
+                                <div className="sm:col-span-4">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <label className="text-[11px] font-bold text-slate-500">
+                                      Performance Indicators (PIs)
+                                    </label>
+                                    <span className="text-[10px] text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded font-semibold border border-indigo-200">
+                                      PG Course
+                                    </span>
+                                  </div>
+                                  <div className="w-full min-h-[38px] px-2.5 py-2 border border-slate-200 rounded-lg text-xs bg-slate-100/70 text-slate-500 italic flex items-center justify-between">
+                                    <span>Not applicable for PG courses</span>
+                                    <span className="text-[11px] text-slate-400 font-semibold">—</span>
+                                  </div>
+                                </div>
+                              )}
 
                               {/* CO Weightage (%) */}
                               <div className="sm:col-span-3">
@@ -6092,6 +6128,7 @@ export const CourseWizard: React.FC = () => {
                                     expLabel={`Exp. ${exp.slNo || idx + 1}`}
                                     courseOutcomes={course.courseOutcomes || []}
                                     selectedCoNos={exp.coNos || []}
+                                    isPg={isPg}
                                     onToggle={(coNo) => {
                                       const updated = [...(course.experiments || [])];
                                       const current = updated[idx].coNos || [];

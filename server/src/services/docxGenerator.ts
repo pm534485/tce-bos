@@ -15,7 +15,7 @@ import {
   VerticalMergeType,
   UnderlineType,
 } from 'docx';
-import { Course, getDisplayTeType, formatDesignerName, LAB_OBJECTIVES_LEGEND_TEXT } from '@syllabusforge/shared';
+import { Course, getDisplayTeType, formatDesignerName, LAB_OBJECTIVES_LEGEND_TEXT, isPgCourse } from '@syllabusforge/shared';
 import { getDegreeProgramHeader } from './pdfGenerator.js';
 
 // Table cell borders helper: clean single solid borders
@@ -299,15 +299,16 @@ export function buildCourseDocxElements(
     children: [createText('After the successful completion of the course, students will be able to:')],
   }));
 
+  const isPg = isPgCourse(course);
   const coList = course.courseOutcomes || [];
   const coHeaderRow = new TableRow({
     children: [
       createCell('No.', { bold: true, widthPercent: 7, align: AlignmentType.CENTER }),
-      createCell('Course Outcome', { bold: true, widthPercent: 45 }),
-      createCell('TPS Level', { bold: true, widthPercent: 10, align: AlignmentType.CENTER }),
-      createCell('Performance Indicator', { bold: true, widthPercent: 14, align: AlignmentType.CENTER }),
+      createCell('Course Outcome', { bold: true, widthPercent: isPg ? 55 : 45 }),
+      createCell('TPS Level', { bold: true, widthPercent: isPg ? 13 : 10, align: AlignmentType.CENTER }),
+      ...(!isPg ? [createCell('Performance Indicator', { bold: true, widthPercent: 14, align: AlignmentType.CENTER })] : []),
       createCell('CO Weightage', { bold: true, widthPercent: 10, align: AlignmentType.CENTER }),
-      createCell('SDG addressed', { bold: true, widthPercent: 8, align: AlignmentType.CENTER }),
+      createCell('SDG addressed', { bold: true, widthPercent: isPg ? 9 : 8, align: AlignmentType.CENTER }),
       createCell('SDG Level', { bold: true, widthPercent: 6, align: AlignmentType.CENTER }),
     ],
   });
@@ -317,11 +318,11 @@ export function buildCourseDocxElements(
     coRows.push(new TableRow({
       children: [
         createCell(co.coNo, { widthPercent: 7, align: AlignmentType.CENTER }),
-        createCell(co.statement, { widthPercent: 45 }),
-        createCell(`TPS${co.tpsLevel}`, { widthPercent: 10, align: AlignmentType.CENTER }),
-        createCell(co.pi, { widthPercent: 14, align: AlignmentType.CENTER }),
+        createCell(co.statement, { widthPercent: isPg ? 55 : 45 }),
+        createCell(`TPS${co.tpsLevel}`, { widthPercent: isPg ? 13 : 10, align: AlignmentType.CENTER }),
+        ...(!isPg ? [createCell(co.pi, { widthPercent: 14, align: AlignmentType.CENTER })] : []),
         createCell(co.weightage !== undefined ? String(co.weightage) : '', { widthPercent: 10, align: AlignmentType.CENTER }),
-        createCell(co.sdgNo && co.sdgNo !== 'NC' ? (String(co.sdgNo).includes(',') ? `SDGs ${co.sdgNo}` : `SDG ${co.sdgNo}`) : 'NC', { widthPercent: 8, align: AlignmentType.CENTER }),
+        createCell(co.sdgNo && co.sdgNo !== 'NC' ? (String(co.sdgNo).includes(',') ? `SDGs ${co.sdgNo}` : `SDG ${co.sdgNo}`) : 'NC', { widthPercent: isPg ? 9 : 8, align: AlignmentType.CENTER }),
         createCell(co.sdgLevel !== undefined ? String(co.sdgLevel) : '', { widthPercent: 6, align: AlignmentType.CENTER }),
       ],
     }));

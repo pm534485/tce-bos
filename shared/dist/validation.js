@@ -1,5 +1,5 @@
 // Institutional Validation Engine for SyllabusForge (Regulation 2026)
-import { PROGRAMME_CODES, CATEGORY_CODES, CATEGORY_ABBREVIATIONS, TPS_VERBS, PERFORMANCE_INDICATORS, DEFAULT_CONFIG_SETTINGS, } from './constants.js';
+import { PROGRAMME_CODES, CATEGORY_CODES, CATEGORY_ABBREVIATIONS, TPS_VERBS, PERFORMANCE_INDICATORS, DEFAULT_CONFIG_SETTINGS, isPgCourse, } from './constants.js';
 import { getDepartmentPerformanceIndicators } from './departmentPerformanceIndicators.js';
 // Helper: Word count for string
 export function countWords(text) {
@@ -469,41 +469,44 @@ export function validateCourseOutcomes(cos, courseType, allowTps1 = false, credi
         if (co.tpsLevel >= 3) {
             tpsAtLeast3Count++;
         }
-        // Performance Indicator format & TPS alignment
-        const piValues = (co.pi || '').split(/[,;]+/).map(s => s.trim()).filter(Boolean);
-        if (piValues.length === 0) {
-            results.push({
-                id: `B5_CO_PI_FORMAT_${coId}`,
-                field: `courseOutcomes.${idx}.pi`,
-                severity: 'warning',
-                message: `${coId}: Performance Indicator is recommended.`,
-                fixHint: 'Enter a valid Performance Indicator (e.g. 1.2.1 or multiple values like 1.2.1, 2.1.3).',
-            });
-        }
-        else {
-            const nonStandardPis = piValues.filter(p => !/^[a-zA-Z0-9_.-]+$/.test(p));
-            if (nonStandardPis.length > 0) {
+        // Performance Indicator format & TPS alignment (Applicable to UG courses only; PG courses have no PIs)
+        const isPg = isPgCourse({ programmeCode });
+        if (!isPg) {
+            const piValues = (co.pi || '').split(/[,;]+/).map(s => s.trim()).filter(Boolean);
+            if (piValues.length === 0) {
                 results.push({
                     id: `B5_CO_PI_FORMAT_${coId}`,
                     field: `courseOutcomes.${idx}.pi`,
                     severity: 'warning',
-                    message: `${coId}: Non-standard Performance Indicator format: ${nonStandardPis.join(', ')}.`,
-                    fixHint: 'Standard Performance Indicators follow x.y.z format (e.g. 1.2.1), but custom indicators are accepted.',
+                    message: `${coId}: Performance Indicator is recommended.`,
+                    fixHint: 'Enter a valid Performance Indicator (e.g. 1.2.1 or multiple values like 1.2.1, 2.1.3).',
                 });
             }
-            // Check if any entered PI matches known master list and TPS
-            const deptPis = getDepartmentPerformanceIndicators(department, programmeCode, PERFORMANCE_INDICATORS);
-            const matchedPis = piValues
-                .map(p => deptPis.find(pi => pi.piNumber.toLowerCase() === p.toLowerCase()))
-                .filter(Boolean);
-            if (matchedPis.length > 0 && !matchedPis.some(p => p.tpsLevel === co.tpsLevel)) {
-                results.push({
-                    id: `B5_CO_PI_TPS_MISMATCH_${coId}`,
-                    field: `courseOutcomes.${idx}.tpsLevel`,
-                    severity: 'warning',
-                    message: `${coId}: CO TPS Level (${co.tpsLevel}) differs from standard PI TPS Level (${matchedPis.map(p => p.tpsLevel).join(', ')}).`,
-                    fixHint: `Align TPS level with the Performance Indicator(s) if applicable.`,
-                });
+            else {
+                const nonStandardPis = piValues.filter(p => !/^[a-zA-Z0-9_.-]+$/.test(p));
+                if (nonStandardPis.length > 0) {
+                    results.push({
+                        id: `B5_CO_PI_FORMAT_${coId}`,
+                        field: `courseOutcomes.${idx}.pi`,
+                        severity: 'warning',
+                        message: `${coId}: Non-standard Performance Indicator format: ${nonStandardPis.join(', ')}.`,
+                        fixHint: 'Standard Performance Indicators follow x.y.z format (e.g. 1.2.1), but custom indicators are accepted.',
+                    });
+                }
+                // Check if any entered PI matches known master list and TPS
+                const deptPis = getDepartmentPerformanceIndicators(department, programmeCode, PERFORMANCE_INDICATORS);
+                const matchedPis = piValues
+                    .map(p => deptPis.find(pi => pi.piNumber.toLowerCase() === p.toLowerCase()))
+                    .filter(Boolean);
+                if (matchedPis.length > 0 && !matchedPis.some(p => p.tpsLevel === co.tpsLevel)) {
+                    results.push({
+                        id: `B5_CO_PI_TPS_MISMATCH_${coId}`,
+                        field: `courseOutcomes.${idx}.tpsLevel`,
+                        severity: 'warning',
+                        message: `${coId}: CO TPS Level (${co.tpsLevel}) differs from standard PI TPS Level (${matchedPis.map(p => p.tpsLevel).join(', ')}).`,
+                        fixHint: `Align TPS level with the Performance Indicator(s) if applicable.`,
+                    });
+                }
             }
         }
         // SDG Level consistency: if SDG is "NC" or empty, level must be 0

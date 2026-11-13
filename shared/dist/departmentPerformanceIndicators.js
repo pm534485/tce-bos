@@ -1,3 +1,5 @@
+// Department-specific Performance Indicators (TCE Regulation 2026 / AICTE Examination Reform Policy)
+import { isPgProgramme } from './constants.js';
 // 1. Mechanical Engineering
 export const MECHANICAL_PERFORMANCE_INDICATORS = [
     // PO 1
@@ -647,6 +649,10 @@ export const AMCS_PERFORMANCE_INDICATORS = [
 export function getDepartmentPerformanceIndicators(department, programmeCode, defaultList = []) {
     const deptNorm = (department || '').trim().toLowerCase();
     const progNorm = (programmeCode || '').trim().toUpperCase();
+    // PG programmes do not have Performance Indicators
+    if (isPgProgramme(progNorm)) {
+        return [];
+    }
     // 1. Mechanical
     if (deptNorm.includes('mechanical') ||
         progNorm === 'ME') {
