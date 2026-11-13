@@ -438,38 +438,49 @@ router.post('/google', async (req, res): Promise<void> => {
 
       // Auto-assign department based on subdomains or email handle patterns if detectable, otherwise leave empty
       const handle = normalizedEmail.split('@')[0];
+      const isDeptPattern = (patterns: string[]) =>
+        patterns.some(p =>
+          handle === p ||
+          handle.endsWith(`_${p}`) ||
+          handle.endsWith(`.${p}`) ||
+          handle.endsWith(`-${p}`) ||
+          normalizedEmail.includes(`.${p}@`) ||
+          normalizedEmail.includes(`@${p}.`) ||
+          normalizedEmail.includes(`.${p}.`)
+        );
+
       let department = '';
-      if (handle.endsWith('eee') || handle.endsWith('ee') || normalizedEmail.includes('.ee') || normalizedEmail.includes('eee')) {
+      if (isDeptPattern(['eee', 'ee'])) {
         department = 'Electrical and Electronics Engineering';
-      } else if (handle.endsWith('ece') || handle.endsWith('ec') || normalizedEmail.includes('.ec') || normalizedEmail.includes('ece')) {
+      } else if (isDeptPattern(['ece', 'ec'])) {
         department = 'Electronics and Communication Engineering';
-      } else if (handle.endsWith('cse') || handle.endsWith('cs') || normalizedEmail.includes('.cs') || normalizedEmail.includes('cse')) {
+      } else if (isDeptPattern(['cse', 'cs'])) {
         department = 'Computer Science and Engineering';
-      } else if (handle.endsWith('it') || normalizedEmail.includes('.it')) {
+      } else if (isDeptPattern(['it'])) {
         department = 'Information Technology';
-      } else if (handle.endsWith('mech') || handle.endsWith('me') || normalizedEmail.includes('.me') || normalizedEmail.includes('mech')) {
+      } else if (isDeptPattern(['mech', 'me'])) {
         department = 'Mechanical Engineering';
-      } else if (handle.endsWith('civil') || handle.endsWith('ce') || normalizedEmail.includes('.ce') || normalizedEmail.includes('civil')) {
+      } else if (isDeptPattern(['civil', 'ce'])) {
         department = 'Civil Engineering';
-      } else if (handle.endsWith('mca') || handle.endsWith('ca') || normalizedEmail.includes('.ca') || normalizedEmail.includes('mca')) {
+      } else if (isDeptPattern(['mca', 'ca'])) {
         department = 'Computer Applications';
-      } else if (handle.endsWith('aiml') || normalizedEmail.includes('.aiml')) {
+      } else if (isDeptPattern(['aiml', 'ai'])) {
         department = 'Artificial Intelligence and Machine Learning';
-      } else if (handle.endsWith('csbs') || normalizedEmail.includes('.csbs')) {
+      } else if (isDeptPattern(['csbs'])) {
         department = 'Computer Science and Business Systems';
-      } else if (handle.endsWith('ds') || normalizedEmail.includes('.ds')) {
+      } else if (isDeptPattern(['ds'])) {
         department = 'Data Science';
-      } else if (handle.endsWith('mect') || handle.endsWith('mt') || normalizedEmail.includes('.mect')) {
+      } else if (isDeptPattern(['mect', 'mt'])) {
         department = 'Mechatronics';
-      } else if (handle.endsWith('ft') || normalizedEmail.includes('.ft')) {
+      } else if (isDeptPattern(['ft'])) {
         department = 'Fashion Technology';
-      } else if (handle.endsWith('maths') || handle.endsWith('mat') || normalizedEmail.includes('.maths')) {
+      } else if (isDeptPattern(['maths', 'mat'])) {
         department = 'Mathematics';
-      } else if (handle.endsWith('phy') || handle.endsWith('physics') || normalizedEmail.includes('.physics')) {
+      } else if (isDeptPattern(['phy', 'physics'])) {
         department = 'Physics';
-      } else if (handle.endsWith('chem') || handle.endsWith('chemistry') || normalizedEmail.includes('.chemistry')) {
+      } else if (isDeptPattern(['chem', 'chemistry'])) {
         department = 'Chemistry';
-      } else if (handle.endsWith('eng') || handle.endsWith('english') || normalizedEmail.includes('.english')) {
+      } else if (isDeptPattern(['eng', 'english'])) {
         department = 'English';
       }
 

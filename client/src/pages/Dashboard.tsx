@@ -121,8 +121,19 @@ export const Dashboard: React.FC = () => {
   };
 
   // Filtered courses
+  const isBosCoord = user?.role === 'BOS_COORDINATOR';
+  const coordDept = (user?.department || '').trim().toLowerCase();
+
   const courseList = Array.isArray(courses) ? courses : [];
-  const filteredCourses = courseList.filter(c => {
+  const deptCourseList = isBosCoord && coordDept
+    ? courseList.filter(c => {
+        if (!c) return false;
+        const cDept = (c.department || getDepartmentForProgramme(c.programmeCode) || '').trim().toLowerCase();
+        return cDept === coordDept;
+      })
+    : courseList;
+
+  const filteredCourses = deptCourseList.filter(c => {
     if (!c) return false;
     const matchesSearch =
       (c.courseName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -133,8 +144,8 @@ export const Dashboard: React.FC = () => {
   });
 
   // Summary counts
-  const draftsCount = courseList.filter(c => c && c.status === 'DRAFT').length;
-  const submittedCount = courseList.filter(c => c && c.status === 'SUBMITTED').length;
+  const draftsCount = deptCourseList.filter(c => c && c.status === 'DRAFT').length;
+  const submittedCount = deptCourseList.filter(c => c && c.status === 'SUBMITTED').length;
 
   return (
     <div className="w-full px-4 sm:px-6 lg:px-8 pt-3 pb-8 space-y-4">

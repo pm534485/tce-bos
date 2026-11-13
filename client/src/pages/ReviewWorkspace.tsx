@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Course, DEPARTMENT_OPTIONS } from '@syllabusforge/shared';
+import { Course, DEPARTMENT_OPTIONS, getDepartmentForProgramme } from '@syllabusforge/shared';
 import { DocumentPreview } from '../components/DocumentPreview';
 import {
   CheckSquare,
@@ -135,9 +135,16 @@ export const ReviewWorkspace: React.FC = () => {
     try {
       setLoading(true);
       const data = await api.getCourses({ scope: 'review', department: selectedDept });
-      setCourses(data);
-      if (data.length > 0) {
-        setSelectedCourse(data[0]);
+      const deptFiltered = Array.isArray(data)
+        ? data.filter(c => {
+            if (!c) return false;
+            const cDept = (c.department || getDepartmentForProgramme(c.programmeCode) || '').trim().toLowerCase();
+            return !selectedDept || cDept === selectedDept.trim().toLowerCase();
+          })
+        : [];
+      setCourses(deptFiltered);
+      if (deptFiltered.length > 0) {
+        setSelectedCourse(deptFiltered[0]);
       } else {
         setSelectedCourse(null);
       }
@@ -401,11 +408,6 @@ export const ReviewWorkspace: React.FC = () => {
             <CheckSquare className="w-6 h-6 text-[#C59B27]" />
             <span>{isBosCoord ? 'BOS Coordinator Curriculum Workspace' : 'Department Syllabus Review Workspace'}</span>
           </h1>
-          <p className="text-xs text-slate-600 mt-1 max-w-2xl">
-            {isBosCoord
-              ? `Review faculty submitted course syllabi for ${selectedDept}. Select documents in your desired sequence with the checkboxes to merge and download compiled bundles in Word (.docx) or PDF (.pdf).`
-              : `Examine submitted curriculum documents under Regulation ${activeReg.regulationYear}, anchor revision notes by section, and issue approvals.`}
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

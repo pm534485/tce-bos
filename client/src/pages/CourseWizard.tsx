@@ -1805,7 +1805,7 @@ export const CourseWizard: React.FC = () => {
           }
           if (fetched && fetched.programmeCode) {
             const expectedDept = getDepartmentForProgramme(fetched.programmeCode);
-            if (expectedDept && fetched.department === 'Computer Applications' && expectedDept !== 'Computer Applications') {
+            if (expectedDept && fetched.department !== expectedDept) {
               fetched.department = expectedDept;
             }
           }
@@ -1896,7 +1896,7 @@ export const CourseWizard: React.FC = () => {
   const handleDepartmentChange = (dept: string) => {
     const progs = getProgrammesForDepartment(dept);
     const isCurrentValid = progs.some(p => p.code === course.programmeCode);
-    const nextProg = isCurrentValid ? course.programmeCode : '';
+    const nextProg = isCurrentValid ? course.programmeCode : (progs.length === 1 ? progs[0].code : '');
     setCourse(prev => {
       const updated = {
         ...prev,
@@ -1913,6 +1913,7 @@ export const CourseWizard: React.FC = () => {
       return updated;
     });
     touchField('department');
+    if (nextProg) touchField('programmeCode');
   };
 
   // Active Table 3 Category matching course.categoryLetter or course.categoryAbbr
@@ -3285,7 +3286,27 @@ export const CourseWizard: React.FC = () => {
                           <div className="w-full flex-1 flex items-center justify-center">
                             <select
                               value={course.programmeCode || ''}
-                              onChange={e => updateField('programmeCode', e.target.value)}
+                              onChange={e => {
+                                const prog = e.target.value;
+                                const matchedDept = getDepartmentForProgramme(prog);
+                                setCourse(prev => {
+                                  const updated = {
+                                    ...prev,
+                                    programmeCode: prog,
+                                    department: matchedDept || prev.department || '',
+                                  };
+                                  updated.courseCode = computeCourseCode({
+                                    regulationCode: updated.regulationCode,
+                                    programmeCode: updated.programmeCode,
+                                    categoryLetter: updated.categoryLetter,
+                                    uniqueLetter: updated.uniqueLetter,
+                                    version: updated.version,
+                                  });
+                                  return updated;
+                                });
+                                touchField('programmeCode');
+                                if (matchedDept) touchField('department');
+                              }}
                               disabled={!(course.department || course.programmeCode)}
                               className="w-full text-center font-bold text-xs text-indigo-950 bg-transparent border-0 focus:ring-0 rounded cursor-pointer p-0 disabled:cursor-not-allowed"
                               title="Programme"

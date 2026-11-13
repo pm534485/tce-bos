@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { Course } from '../models/Course.js';
 import { authenticate, AuthRequest, requireRole } from '../middleware/auth.js';
-import { validateCourse, computeCredits, computeCourseCode, getDepartmentForProgramme } from '@syllabusforge/shared';
+import { validateCourse, computeCredits, computeCourseCode, getDepartmentForProgramme, getProgrammesForDepartment } from '@syllabusforge/shared';
 import { generateDocxDocument, generateMergedCoursesDocx } from '../services/docxGenerator.js';
 import { generatePdfDocument, generateMergedCoursesPdf } from '../services/pdfGenerator.js';
 
@@ -28,19 +28,16 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response): Promise<v
       // No user restriction
     } else if (scope === 'review' && (req.user?.role === 'HOD' || req.user?.role === 'ADMIN' || req.user?.role === 'BOS_COORDINATOR')) {
       // HoD/Admin/BOS Coordinator institutional review queue:
-      // Allow filtering by selected department (e.g. when coordinator or admin switches department view)
+      // Filter strictly by the selected department queue from page 1 of course design
       const targetDept = req.query.department ? String(req.query.department).trim() : (req.user.role === 'ADMIN' ? '' : req.user.department);
-      const conditions: any[] = [];
       if (targetDept) {
-        conditions.push({ department: targetDept });
-      } else if (req.user.department && req.user.role !== 'ADMIN') {
-        conditions.push({ department: req.user.department });
-      }
-      if (req.user.programmeAccess && req.user.programmeAccess.length > 0 && req.user.role !== 'ADMIN') {
-        conditions.push({ programmeCode: { $in: req.user.programmeAccess } });
-      }
-      if (conditions.length > 0) {
-        andConditions.push({ $or: conditions });
+        const deptProgs = getProgrammesForDepartment(targetDept).map(p => p.code);
+        andConditions.push({
+          $or: [
+            { department: { $regex: `^${escapeRegex(targetDept)}$`, $options: 'i' } },
+            ...(deptProgs.length > 0 ? [{ programmeCode: { $in: deptProgs } }] : []),
+          ],
+        });
       }
     } else if (req.user?.role === 'ADMIN') {
       // Admin dashboard: By default, institutional admin can view all courses across departments.
@@ -59,8 +56,9 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response): Promise<v
           andConditions.push({ $or: userConditions });
         }
       }
-    } else if (req.user?.role === 'HOD' || req.user?.role === 'BOS_COORDINATOR') {
-      // HoD dashboard: view own authored courses as well as courses in their department
+    } else if (req.user?.role === 'BOS_COORDINATOR' || req.user?.role === 'HOD') {
+      // BOS Coordinator & HoD Dashboard:
+      // If scope === 'mine', view their own personally authored courses
       if (scope === 'mine') {
         const userConditions: any[] = [];
         if (userEmail) {
@@ -75,27 +73,21 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response): Promise<v
           andConditions.push({ $or: userConditions });
         }
       } else {
-        const hodConditions: any[] = [];
-        if (userEmail) {
-          const escapedEmail = escapeRegex(userEmail);
-          hodConditions.push({ createdBy: { $regex: `^${escapedEmail}$`, $options: 'i' } });
-          hodConditions.push({ 'designers.email': { $regex: `^${escapedEmail}$`, $options: 'i' } });
-        }
-        if (userId) {
-          hodConditions.push({ createdBy: userId });
-        }
-        if (req.user.department) {
-          hodConditions.push({ department: req.user.department });
-        }
-        if (req.user.programmeAccess && req.user.programmeAccess.length > 0) {
-          hodConditions.push({ programmeCode: { $in: req.user.programmeAccess } });
-        }
-        if (hodConditions.length > 0) {
-          andConditions.push({ $or: hodConditions });
+        // By default on Dashboard: Show ONLY courses belonging to that coordinator's department!
+        // Decided strictly by the department chosen on page 1 of course design (or its programme), NEVER by mail ID.
+        const targetDept = (req.query.department ? String(req.query.department).trim() : req.user.department) || '';
+        if (targetDept) {
+          const deptProgs = getProgrammesForDepartment(targetDept).map(p => p.code);
+          andConditions.push({
+            $or: [
+              { department: { $regex: `^${escapeRegex(targetDept)}$`, $options: 'i' } },
+              ...(deptProgs.length > 0 ? [{ programmeCode: { $in: deptProgs } }] : []),
+            ],
+          });
         }
       }
     } else {
-      // By default: ONLY documents saved or submitted by the logged-in user are shown
+      // Regular Faculty: view courses created or designed by them
       const userConditions: any[] = [];
       if (userEmail) {
         const escapedEmail = escapeRegex(userEmail);
@@ -243,7 +235,15 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response): Promise<
     });
 
     courseData.createdBy = req.user?.email || courseData.createdBy || 'unknown';
-    courseData.department = courseData.department || req.user?.department || 'General';
+    // Resolve course department strictly from course design page 1 selection, NEVER from user's email profile:
+    const progDept = getDepartmentForProgramme(courseData.programmeCode);
+    if (progDept) {
+      courseData.department = progDept;
+    } else if (courseData.department && courseData.department.trim()) {
+      courseData.department = courseData.department.trim();
+    } else {
+      courseData.department = 'General';
+    }
     courseData.status = 'DRAFT';
 
     // Check if course with this compound key already exists
@@ -282,7 +282,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response): Promise<
         {
           ...courseData,
           status: 'DRAFT',
-          department: courseData.department || existing.department || req.user?.department || 'General',
+          department: courseData.department || progDept || existing.department || 'General',
           updatedAt: new Date(),
         },
         { new: true, runValidators: true }
@@ -335,6 +335,16 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response): Promis
         uniqueLetter: updateData.uniqueLetter || existing.uniqueLetter,
         version: updateData.version !== undefined ? updateData.version : existing.version,
       });
+    }
+
+    // Ensure department is kept consistent with page 1 course design (programme or explicit department)
+    if (updateData.programmeCode || updateData.department) {
+      const progDept = getDepartmentForProgramme(updateData.programmeCode || existing.programmeCode);
+      if (progDept) {
+        updateData.department = progDept;
+      } else if (updateData.department && updateData.department.trim()) {
+        updateData.department = updateData.department.trim();
+      }
     }
 
     // Check if course code collides with another existing course
