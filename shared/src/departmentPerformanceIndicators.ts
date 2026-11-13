@@ -727,3 +727,4 @@ export function getDepartmentPerformanceIndicators(
   // Fallback to default institutional list
   return defaultList;
 }
+

@@ -1638,6 +1638,28 @@ export const CourseWizard: React.FC = () => {
   // Manual custom salutation entry tracking per designer index
   const [customSalutationIndices, setCustomSalutationIndices] = useState<Record<number, boolean>>({});
 
+  // Reorder course designers (e.g. moving logged-in faculty to 2nd or 3rd position)
+  const moveDesigner = (fromIdx: number, toIdx: number) => {
+    const list = [...(course.designers || [])];
+    if (fromIdx < 0 || fromIdx >= list.length || toIdx < 0 || toIdx >= list.length || fromIdx === toIdx) return;
+    const item = list.splice(fromIdx, 1)[0];
+    list.splice(toIdx, 0, item);
+
+    // Keep custom salutation tracker aligned with the moved items
+    setCustomSalutationIndices(prev => {
+      const next: Record<number, boolean> = {};
+      const flags = (course.designers || []).map((_, i) => Boolean(prev[i]));
+      const movedFlag = flags.splice(fromIdx, 1)[0];
+      flags.splice(toIdx, 0, movedFlag);
+      flags.forEach((f, i) => {
+        if (f) next[i] = true;
+      });
+      return next;
+    });
+
+    updateField('designers', list);
+  };
+
   // Handler: user chose "New Course" → version = 0, locked
   const handleIntentNew = () => {
     setCourseIntent('new');
@@ -6529,30 +6551,95 @@ export const CourseWizard: React.FC = () => {
                 {/* Step 7: Course Designers */}
                 {activeStepId === 'designers' && (
                   <div className="space-y-6">
-                    <div>
-                      <h2 className="text-xl font-bold text-slate-900">7. Course Designers</h2>
-                      <p className="text-sm text-slate-500 mt-1">
-                        List course designers with institutional emails.
-                      </p>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div>
+                        <h2 className="text-xl font-bold text-slate-900">
+                          {isPracticalCourse ? '6. Course Designers' : '7. Course Designers'}
+                        </h2>
+                        <p className="text-sm text-slate-500 mt-1">
+                          List course designers with institutional emails. Use <strong>Move Up</strong> / <strong>Move Down</strong> to adjust the sequence (e.g. to position a senior professor or co-designer first).
+                        </p>
+                      </div>
+                      {(course.designers || []).length > 1 && (
+                        <span className="text-xs text-sky-800 bg-sky-50 px-2.5 py-1 rounded-lg border border-sky-200 font-medium self-start sm:self-auto flex items-center space-x-1">
+                          <span>💡 Faculty 1 is the Primary Designer in documents</span>
+                        </span>
+                      )}
                     </div>
 
                     <div className="space-y-3">
                       <span className="font-bold text-xs text-slate-800 block">Course Designers:</span>
                       {(course.designers || []).map((des, idx) => (
-                        <div key={idx} className="p-3 border border-slate-200 rounded-xl bg-slate-50/50 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-xs text-slate-700">Faculty {idx + 1}</span>
-                            {(course.designers || []).length > 1 && (
+                        <div key={idx} className="p-3 border border-slate-200 rounded-xl bg-slate-50/50 space-y-2.5 transition-all hover:border-slate-300">
+                          <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200/70">
+                            <div className="flex items-center space-x-2">
+                              <span className="w-5 h-5 rounded-full bg-sky-600 text-white flex items-center justify-center text-[11px] font-bold shadow-2xs">
+                                {idx + 1}
+                              </span>
+                              <span className="font-bold text-xs text-slate-800">Faculty {idx + 1}</span>
+                              {idx === 0 ? (
+                                <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold px-2 py-0.5 rounded-full">
+                                  Primary Designer
+                                </span>
+                              ) : (
+                                <span className="text-[10px] bg-slate-100 text-slate-600 font-medium px-2 py-0.5 rounded-full">
+                                  Co-Designer
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center space-x-1.5">
+                              {/* Move Up */}
                               <button
-                                onClick={() => {
-                                  const updated = (course.designers || []).filter((_, i) => i !== idx);
-                                  updateField('designers', updated);
-                                }}
-                                className="p-1 text-slate-400 hover:text-rose-600"
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={() => moveDesigner(idx, idx - 1)}
+                                title={idx === 0 ? 'Already in the first position' : `Move up to Faculty ${idx}`}
+                                className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-all ${
+                                  idx === 0
+                                    ? 'text-slate-300 border border-slate-100 bg-slate-50/40 cursor-not-allowed'
+                                    : 'text-slate-700 bg-white hover:bg-sky-50 hover:text-sky-700 border border-slate-300 hover:border-sky-300 shadow-2xs cursor-pointer'
+                                }`}
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <ChevronUp className="w-3.5 h-3.5" />
+                                <span className="text-[11px]">Move Up</span>
                               </button>
-                            )}
+
+                              {/* Move Down */}
+                              <button
+                                type="button"
+                                disabled={idx === (course.designers || []).length - 1}
+                                onClick={() => moveDesigner(idx, idx + 1)}
+                                title={
+                                  idx === (course.designers || []).length - 1
+                                    ? 'Already in the last position'
+                                    : `Move down to Faculty ${idx + 2}`
+                                }
+                                className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-all ${
+                                  idx === (course.designers || []).length - 1
+                                    ? 'text-slate-300 border border-slate-100 bg-slate-50/40 cursor-not-allowed'
+                                    : 'text-slate-700 bg-white hover:bg-sky-50 hover:text-sky-700 border border-slate-300 hover:border-sky-300 shadow-2xs cursor-pointer'
+                                }`}
+                              >
+                                <ChevronDown className="w-3.5 h-3.5" />
+                                <span className="text-[11px]">Move Down</span>
+                              </button>
+
+                              {/* Delete button */}
+                              {(course.designers || []).length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = (course.designers || []).filter((_, i) => i !== idx);
+                                    updateField('designers', updated);
+                                  }}
+                                  title="Remove designer"
+                                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-200 cursor-pointer ml-1"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
                             {/* Salutation & Faculty Name */}
@@ -6711,21 +6798,51 @@ export const CourseWizard: React.FC = () => {
                         </div>
                       ))}
 
-                      <button
-                        onClick={() => {
-                          const newDes: CourseDesigner = {
-                            salutation: '',
-                            name: '',
-                            designation: '',
-                            department: course.department || '',
-                            email: '',
-                          };
-                          updateField('designers', [...(course.designers || []), newDes]);
-                        }}
-                        className="w-full py-2 rounded-xl border border-dashed border-slate-300 text-slate-600 hover:text-sky-700 text-xs font-semibold"
-                      >
-                        + Add Additional Designer
-                      </button>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newDes: CourseDesigner = {
+                              salutation: '',
+                              name: '',
+                              designation: '',
+                              department: course.department || '',
+                              email: '',
+                            };
+                            // Shift custom salutation map indices
+                            setCustomSalutationIndices(prev => {
+                              const next: Record<number, boolean> = {};
+                              Object.keys(prev).forEach(k => {
+                                next[Number(k) + 1] = prev[Number(k)];
+                              });
+                              return next;
+                            });
+                            updateField('designers', [newDes, ...(course.designers || [])]);
+                          }}
+                          className="w-full py-2.5 px-3 rounded-xl border border-dashed border-sky-300 bg-sky-50/50 hover:bg-sky-100 text-sky-800 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
+                        >
+                          <Plus className="w-3.5 h-3.5 text-sky-600" />
+                          <span>+ Add Designer as First (Primary)</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newDes: CourseDesigner = {
+                              salutation: '',
+                              name: '',
+                              designation: '',
+                              department: course.department || '',
+                              email: '',
+                            };
+                            updateField('designers', [...(course.designers || []), newDes]);
+                          }}
+                          className="w-full py-2.5 px-3 rounded-xl border border-dashed border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 text-slate-700 hover:text-sky-700 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
+                        >
+                          <Plus className="w-3.5 h-3.5 text-slate-500" />
+                          <span>+ Add Additional Designer (At End)</span>
+                        </button>
+                      </div>
                       <InlineFieldError field="designers" />
                       {!hasFieldError('designers') && (course.designers || []).length > 0 && (
                         <InlineFieldSuccess message="Course designers verified with institutional emails" />
