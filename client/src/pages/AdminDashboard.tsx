@@ -12,10 +12,14 @@ import {
   RefreshCw,
   Layers,
   Sparkles,
+  Database,
+  HardDrive,
+  Calendar,
+  Loader2,
 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'bundler' | 'readiness' | 'master' | 'settings' | 'users'>('readiness');
+  const [activeTab, setActiveTab] = useState<'bundler' | 'readiness' | 'master' | 'settings' | 'users' | 'backups'>('readiness');
 
   // Programme state
   const [programmes, setProgrammes] = useState<any[]>([]);
@@ -46,10 +50,64 @@ export const AdminDashboard: React.FC = () => {
   const [savingReg, setSavingReg] = useState<boolean>(false);
   const [regSuccess, setRegSuccess] = useState<string | null>(null);
 
+  // Backups state
+  const [backupsList, setBackupsList] = useState<any[]>([]);
+  const [loadingBackups, setLoadingBackups] = useState<boolean>(false);
+  const [isDownloadingBackup, setIsDownloadingBackup] = useState<boolean>(false);
+  const [isTriggeringBackup, setIsTriggeringBackup] = useState<boolean>(false);
+  const [backupSuccessMessage, setBackupSuccessMessage] = useState<string | null>(null);
+
   useEffect(() => {
     loadProgrammes();
     loadRegulation();
+    loadBackups();
   }, []);
+
+  const handleDownloadBackup = async (dateStr?: string) => {
+    setIsDownloadingBackup(true);
+    try {
+      const blob = await api.downloadBackupJson(dateStr);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const today = dateStr || new Date().toISOString().split('T')[0];
+      a.download = `tce_bos_backup_${today}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err: any) {
+      alert(err.message || 'Failed to download JSON backup');
+    } finally {
+      setIsDownloadingBackup(false);
+    }
+  };
+
+  const handleTriggerBackup = async () => {
+    setIsTriggeringBackup(true);
+    setBackupSuccessMessage(null);
+    try {
+      const res = await api.triggerBackup();
+      setBackupSuccessMessage(`Daily backup saved successfully in: ${res.folder}`);
+      await loadBackups();
+    } catch (err: any) {
+      alert(err.message || 'Failed to create backup');
+    } finally {
+      setIsTriggeringBackup(false);
+    }
+  };
+
+  const loadBackups = async () => {
+    setLoadingBackups(true);
+    try {
+      const res = await api.listBackups();
+      setBackupsList(res.backups || []);
+    } catch (err) {
+      console.warn('Failed to load backups list', err);
+    } finally {
+      setLoadingBackups(false);
+    }
+  };
 
   async function loadRegulation() {
     try {
@@ -174,21 +232,36 @@ export const AdminDashboard: React.FC = () => {
   return (
     <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-black text-[#7B1113] tracking-tight flex items-center space-x-2 font-tce">
-          <ShieldCheck className="w-6 h-6 text-[#C59B27]" />
-          <span>Academic Council (ACM) & System Administration</span>
-        </h1>
-        <p className="text-xs text-slate-500 mt-1">
-          Perform institutional readiness audits for Thiagarajar College of Engineering, compile multi-semester curriculum bundles, and configure master data collections.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-[#7B1113] tracking-tight flex items-center space-x-2 font-tce">
+            <ShieldCheck className="w-6 h-6 text-[#C59B27]" />
+            <span>Academic Council (ACM) & System Administration</span>
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Perform institutional readiness audits for Thiagarajar College of Engineering, compile multi-semester curriculum bundles, and configure master data collections.
+          </p>
+        </div>
+        <button
+          onClick={() => handleDownloadBackup()}
+          disabled={isDownloadingBackup}
+          className="px-4 py-2.5 bg-[#7B1113] hover:bg-[#600e0f] text-white rounded-xl text-xs font-bold flex items-center space-x-2 shadow-sm transition-all flex-shrink-0 cursor-pointer disabled:opacity-50"
+          title="Download latest full database backup in JSON format for your professor or offline safety"
+        >
+          {isDownloadingBackup ? (
+            <Loader2 className="w-4 h-4 animate-spin text-[#E2BF53]" />
+          ) : (
+            <Download className="w-4 h-4 text-[#E2BF53]" />
+          )}
+          <span>Download JSON Backup</span>
+        </button>
       </div>
 
       {/* Admin Tabs */}
-      <div className="flex space-x-1 bg-white border border-slate-200 border-t-4 border-t-[#7B1113] p-1.5 rounded-2xl shadow-xs text-xs font-semibold text-slate-600">
+      <div className="flex space-x-1 bg-white border border-slate-200 border-t-4 border-t-[#7B1113] p-1.5 rounded-2xl shadow-xs text-xs font-semibold text-slate-600 overflow-x-auto">
         <button
           onClick={() => setActiveTab('readiness')}
-          className={`px-4 py-2 rounded-xl flex items-center space-x-2 transition-all ${
+          className={`px-4 py-2 rounded-xl flex items-center space-x-2 transition-all whitespace-nowrap ${
             activeTab === 'readiness' ? 'bg-[#7B1113] text-white shadow-sm font-bold' : 'hover:bg-slate-100 hover:text-slate-900'
           }`}
         >
@@ -197,7 +270,7 @@ export const AdminDashboard: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('bundler')}
-          className={`px-4 py-2 rounded-xl flex items-center space-x-2 transition-all ${
+          className={`px-4 py-2 rounded-xl flex items-center space-x-2 transition-all whitespace-nowrap ${
             activeTab === 'bundler' ? 'bg-[#7B1113] text-white shadow-sm font-bold' : 'hover:bg-slate-100 hover:text-slate-900'
           }`}
         >
@@ -206,7 +279,7 @@ export const AdminDashboard: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('master')}
-          className={`px-4 py-2 rounded-xl flex items-center space-x-2 transition-all ${
+          className={`px-4 py-2 rounded-xl flex items-center space-x-2 transition-all whitespace-nowrap ${
             activeTab === 'master' ? 'bg-[#7B1113] text-white shadow-sm font-bold' : 'hover:bg-slate-100 hover:text-slate-900'
           }`}
         >
@@ -215,7 +288,7 @@ export const AdminDashboard: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('users')}
-          className={`px-4 py-2 rounded-xl flex items-center space-x-2 transition-all ${
+          className={`px-4 py-2 rounded-xl flex items-center space-x-2 transition-all whitespace-nowrap ${
             activeTab === 'users' ? 'bg-[#7B1113] text-white shadow-sm font-bold' : 'hover:bg-slate-100 hover:text-slate-900'
           }`}
         >
@@ -224,12 +297,24 @@ export const AdminDashboard: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('settings')}
-          className={`px-4 py-2 rounded-xl flex items-center space-x-2 transition-all ${
+          className={`px-4 py-2 rounded-xl flex items-center space-x-2 transition-all whitespace-nowrap ${
             activeTab === 'settings' ? 'bg-[#7B1113] text-white shadow-sm font-bold' : 'hover:bg-slate-100 hover:text-slate-900'
           }`}
         >
           <Sparkles className="w-4 h-4 text-[#E2BF53]" />
           <span>Regulation Settings</span>
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab('backups');
+            loadBackups();
+          }}
+          className={`px-4 py-2 rounded-xl flex items-center space-x-2 transition-all whitespace-nowrap ${
+            activeTab === 'backups' ? 'bg-[#7B1113] text-white shadow-sm font-bold' : 'hover:bg-slate-100 hover:text-slate-900'
+          }`}
+        >
+          <Database className="w-4 h-4 text-[#E2BF53]" />
+          <span>Daily Backups (JSON)</span>
         </button>
       </div>
 
@@ -645,6 +730,158 @@ export const AdminDashboard: React.FC = () => {
               )}
             </button>
           </form>
+        </div>
+      )}
+
+      {/* TAB 6: Daily Backups (JSON) */}
+      {activeTab === 'backups' && (
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900 flex items-center space-x-2">
+                <Database className="w-5 h-5 text-[#7B1113]" />
+                <span>Automated Daily Database Backups (JSON)</span>
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Each day, the system exports all Course syllabi, Programmes, Users, and Master Data into date-stamped folders on the server (<code className="bg-slate-100 text-[#7B1113] px-1.5 py-0.5 rounded font-mono text-[11px]">/backups/YYYY-MM-DD/</code>). You can download today's backup file in JSON format to send directly to your professor or store securely.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => handleDownloadBackup()}
+                disabled={isDownloadingBackup}
+                className="px-4 py-2 bg-[#7B1113] hover:bg-[#600e0f] text-white rounded-xl text-xs font-bold flex items-center space-x-2 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+              >
+                {isDownloadingBackup ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-[#E2BF53]" />
+                ) : (
+                  <Download className="w-4 h-4 text-[#E2BF53]" />
+                )}
+                <span>Download JSON Backup</span>
+              </button>
+              <button
+                onClick={handleTriggerBackup}
+                disabled={isTriggeringBackup}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold flex items-center space-x-2 transition-all cursor-pointer disabled:opacity-50"
+              >
+                {isTriggeringBackup ? (
+                  <RefreshCw className="w-4 h-4 animate-spin text-slate-600" />
+                ) : (
+                  <HardDrive className="w-4 h-4 text-slate-600" />
+                )}
+                <span>Run Backup Now</span>
+              </button>
+              <button
+                onClick={loadBackups}
+                disabled={loadingBackups}
+                className="p-2 border border-slate-200 hover:bg-slate-50 rounded-xl text-slate-600 transition-colors"
+                title="Refresh backups list"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingBackups ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+          </div>
+
+          {backupSuccessMessage && (
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center space-x-3 text-emerald-800 text-xs font-semibold">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+              <span>{backupSuccessMessage}</span>
+            </div>
+          )}
+
+          {/* Quick Stat Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Daily Snapshots</span>
+              <span className="text-2xl font-black text-slate-900">{backupsList.length}</span>
+              <span className="text-[11px] text-slate-500 block">Date-stamped backup folders</span>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Latest Backup Date</span>
+              <span className="text-2xl font-black text-[#7B1113]">
+                {backupsList[0]?.date || 'None'}
+              </span>
+              <span className="text-[11px] text-slate-500 block">
+                {backupsList[0]?.metadata?.counts?.courses ? `${backupsList[0].metadata.counts.courses} courses archived` : 'Ready to export'}
+              </span>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Format & Compatibility</span>
+              <span className="text-2xl font-black text-emerald-700">JSON</span>
+              <span className="text-[11px] text-slate-500 block">Full schema & metadata included</span>
+            </div>
+          </div>
+
+          {/* Table of Daily Backups on Disk */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
+              <Calendar className="w-4 h-4 text-slate-600" />
+              <span>Existing Daily Backups on Server</span>
+            </h3>
+
+            {loadingBackups ? (
+              <div className="p-8 text-center text-slate-500 text-xs">
+                <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-[#7B1113]" />
+                <span>Loading backups list...</span>
+              </div>
+            ) : backupsList.length === 0 ? (
+              <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200">
+                <Database className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                <p className="text-xs font-semibold text-slate-600">No daily backup folders found on server yet.</p>
+                <p className="text-[11px] text-slate-400 mt-1">Click "Run Backup Now" to create today's first daily snapshot.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto border border-slate-200 rounded-2xl shadow-xs">
+                <table className="w-full text-xs text-left border-collapse">
+                  <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                    <tr>
+                      <th className="p-3">Backup Date</th>
+                      <th className="p-3">Courses Archived</th>
+                      <th className="p-3">Programmes</th>
+                      <th className="p-3">Users</th>
+                      <th className="p-3">Total Size</th>
+                      <th className="p-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {backupsList.map((bk, idx) => {
+                      const counts = bk.metadata?.counts;
+                      const sizeKb = ((bk.sizeBytes || 0) / 1024).toFixed(1);
+                      return (
+                        <tr key={bk.date} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
+                          <td className="p-3 font-bold text-slate-900 flex items-center space-x-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            <span className="font-mono text-sm">{bk.date}</span>
+                          </td>
+                          <td className="p-3 font-semibold text-slate-700">
+                            {counts?.courses !== undefined ? `${counts.courses} Courses` : '—'}
+                          </td>
+                          <td className="p-3 text-slate-600">
+                            {counts?.programmes !== undefined ? `${counts.programmes} Programmes` : '—'}
+                          </td>
+                          <td className="p-3 text-slate-600">
+                            {counts?.users !== undefined ? `${counts.users} Users` : '—'}
+                          </td>
+                          <td className="p-3 text-slate-500 font-mono">
+                            {sizeKb} KB
+                          </td>
+                          <td className="p-3 text-right">
+                            <button
+                              onClick={() => handleDownloadBackup(bk.date)}
+                              className="px-3 py-1.5 bg-[#7B1113] hover:bg-[#600e0f] text-white rounded-lg font-bold text-xs inline-flex items-center space-x-1.5 shadow-2xs transition-colors cursor-pointer"
+                            >
+                              <Download className="w-3.5 h-3.5 text-[#E2BF53]" />
+                              <span>Download JSON</span>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

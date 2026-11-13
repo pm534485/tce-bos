@@ -287,4 +287,36 @@ export const api = {
   getProgrammes: () => request<any[]>('/programmes'),
   getReadinessReport: (code: string) => request<any>(`/programmes/${code}/readiness`),
   bundleProgrammeUrl: (code: string) => `/api/programmes/${code}/bundle`,
+
+  // Daily JSON Database Backups
+  downloadBackupJson: async (dateStr?: string): Promise<Blob> => {
+    const endpoint = dateStr ? `/backup/download-dated/${dateStr}` : '/backup/download';
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+      headers: {
+        ...getAuthHeader(),
+      },
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to download backup: ${res.statusText}`);
+    }
+    return await res.blob();
+  },
+  triggerBackup: () =>
+    request<{
+      success: boolean;
+      message: string;
+      metadata: any;
+      folder: string;
+    }>('/backup/trigger', { method: 'POST' }),
+  listBackups: () =>
+    request<{
+      success: boolean;
+      backups: Array<{
+        date: string;
+        folderPath: string;
+        metadata?: any;
+        sizeBytes: number;
+      }>;
+      baseDir: string;
+    }>('/backup/list'),
 };

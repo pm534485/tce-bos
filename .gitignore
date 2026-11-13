@@ -21,3 +21,7 @@ yarn-error.log*
 
 # Scratch
 scratch/
+
+# Backups (daily JSON snapshots)
+backups/*
+!backups/.gitkeep

@@ -7,6 +7,8 @@ import authRoutes from './routes/auth.js';
 import masterRoutes from './routes/master.js';
 import courseRoutes from './routes/courses.js';
 import programmeRoutes from './routes/programmes.js';
+import backupRoutes from './routes/backup.js';
+import { createDailyBackup, getBackupBaseDir } from './services/backupService.js';
 dotenv.config();
 // Ensure SRV DNS resolution works properly on local Windows environments
 if (!process.env.VERCEL) {
@@ -119,6 +121,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/master', masterRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/programmes', programmeRoutes);
+app.use('/api/backup', backupRoutes);
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -161,6 +164,33 @@ async function startServer() {
     }
     app.listen(PORT, () => {
         console.log(`SyllabusForge API Server listening on http://localhost:${PORT}`);
+        // Auto-check daily backup on server start
+        try {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const todayFolder = path.join(getBackupBaseDir(), todayStr);
+            if (!fs.existsSync(todayFolder)) {
+                console.log(`[BACKUP] Initializing automatic daily backup for ${todayStr}...`);
+                createDailyBackup(todayStr)
+                    .then(res => console.log(`[BACKUP] Daily backup saved to ${res.folder} (${res.metadata.counts.courses} courses)`))
+                    .catch(e => console.warn('[BACKUP] Automatic daily backup error:', e.message));
+            }
+            else {
+                console.log(`[BACKUP] Today's backup already exists for ${todayStr}`);
+            }
+            // Schedule recurring backup check every 6 hours
+            setInterval(() => {
+                const checkDate = new Date().toISOString().split('T')[0];
+                const checkFolder = path.join(getBackupBaseDir(), checkDate);
+                if (!fs.existsSync(checkFolder)) {
+                    createDailyBackup(checkDate)
+                        .then(res => console.log(`[BACKUP] Daily backup saved to ${res.folder}`))
+                        .catch(e => console.warn('[BACKUP] Scheduled backup error:', e.message));
+                }
+            }, 6 * 60 * 60 * 1000);
+        }
+        catch (bkErr) {
+            console.warn('[BACKUP] Could not initialize automatic backup:', bkErr.message);
+        }
     });
 }
 if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {

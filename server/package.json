@@ -6,7 +6,9 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "seed": "tsx src/scripts/seed.ts"
+    "seed": "tsx src/scripts/seed.ts",
+    "backup": "tsx src/scripts/backup.ts",
+    "restore": "tsx src/scripts/restore.ts"
   },
   "dependencies": {
     "@syllabusforge/shared": "*",
