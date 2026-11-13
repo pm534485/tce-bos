@@ -15,7 +15,7 @@ import {
   VerticalMergeType,
   UnderlineType,
 } from 'docx';
-import { Course, getDisplayTeType, formatDesignerName } from '@syllabusforge/shared';
+import { Course, getDisplayTeType, formatDesignerName, LAB_OBJECTIVES_LEGEND_TEXT } from '@syllabusforge/shared';
 import { getDegreeProgramHeader } from './pdfGenerator.js';
 
 // Table cell borders helper: clean single solid borders
@@ -647,6 +647,17 @@ export function buildCourseDocxElements(
       width: { size: 100, type: WidthType.PERCENTAGE },
       rows: expRows,
     }));
+    children.push(new Paragraph({
+      children: [
+        new TextRun({
+          text: LAB_OBJECTIVES_LEGEND_TEXT,
+          italics: true,
+          size: 16,
+          font: 'Arial',
+        }),
+      ],
+      spacing: { before: 60, after: 120 },
+    }));
     children.push(createLineSpace());
 
     // 6. Course Designer(s) directly follows experiments
@@ -890,7 +901,16 @@ export function buildCourseDocxElements(
       let totalTcpExpHours = 0;
       experimentsList.forEach((exp, idx) => {
         if (exp.hours) totalTcpExpHours += Number(exp.hours) || 0;
-        const objText = (exp.objectiveNos && exp.objectiveNos.length > 0) ? exp.objectiveNos.join(', ') : '1, 3';
+        let objText = (exp.objectiveNos && exp.objectiveNos.length > 0) ? exp.objectiveNos.join(', ') : '';
+        if (!objText) {
+          const objSet = new Set<number>();
+          (exp.coNos || []).forEach((cNo) => {
+            const matched = (course.courseOutcomes || []).find((c) => c.coNo === cNo);
+            if (matched && matched.objectiveNo !== undefined) objSet.add(matched.objectiveNo);
+          });
+          const sorted = Array.from(objSet).sort((a: number, b: number) => a - b);
+          objText = sorted.length > 0 ? sorted.join(', ') : '—';
+        }
         const lvlText = String(exp.level || 1).replace(/^Level\s*/i, '');
         const hrsText = exp.hours !== undefined && exp.hours !== null ? String(exp.hours) : '-';
         expRows.push(new TableRow({
@@ -920,6 +940,17 @@ export function buildCourseDocxElements(
       children.push(new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         rows: expRows,
+      }));
+      children.push(new Paragraph({
+        children: [
+          new TextRun({
+            text: LAB_OBJECTIVES_LEGEND_TEXT,
+            italics: true,
+            size: 16,
+            font: 'Arial',
+          }),
+        ],
+        spacing: { before: 60, after: 120 },
       }));
       children.push(createLineSpace());
     }

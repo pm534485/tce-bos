@@ -1,4 +1,4 @@
-import { Course, getDisplayTeType, formatDesignerName } from '@syllabusforge/shared';
+import { Course, getDisplayTeType, formatDesignerName, LAB_OBJECTIVES_LEGEND_TEXT } from '@syllabusforge/shared';
 import { ConfigSettingsModel } from '../models/MasterData.js';
 
 export function getDegreeProgramHeader(course: Course): string {
@@ -589,6 +589,7 @@ export function buildCourseInnerHtml(
       ${experimentsRowsHtml}
     </tbody>
   </table>
+  <div style="font-size: 8pt; font-style: italic; color: #000; margin-top: 4px; margin-bottom: 6px;">${LAB_OBJECTIVES_LEGEND_TEXT}</div>
 
   <div class="line-space"></div>
 
@@ -699,6 +700,7 @@ export function buildCourseInnerHtml(
       ${experimentsRowsHtml}
     </tbody>
   </table>
+  <div style="font-size: 8pt; font-style: italic; color: #000; margin-top: 4px; margin-bottom: 6px;">${LAB_OBJECTIVES_LEGEND_TEXT}</div>
 
   <div class="line-space"></div>
   ` : ''}

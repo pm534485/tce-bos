@@ -43,6 +43,7 @@ export interface LabObjective {
     domain: 'Cognitive' | 'Psychomotor' | 'Affective';
 }
 export declare const LAB_OBJECTIVES: LabObjective[];
+export declare const LAB_OBJECTIVES_LEGEND_TEXT = "* Laboratory Objectives: 1. Instrumentation, 2. Models, 3. Experimentation, 4. Data Analysis, 5. Design, 6. Psychomotor Skills, 7. Sensory Awareness, 8. Learn from Failure, 9. Creativity, 10. Safety, 11. Communication, 12. Teamwork, 13. Ethics & Integrity";
 export interface GeneralCo {
     code: string;
     statement: string;

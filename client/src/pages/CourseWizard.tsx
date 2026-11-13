@@ -1017,6 +1017,224 @@ const CoMappingPopup: React.FC<CoMappingPopupProps> = ({ expLabel, courseOutcome
   );
 };
 
+// ── Laboratory Objectives Mapping Popup — select from official 13 TCE objectives ──
+interface ObjectiveMappingPopupProps {
+  expLabel: string;
+  selectedObjectiveNos: number[];
+  onToggle: (objNo: number) => void;
+  onSelectMultiple?: (objNos: number[]) => void;
+  courseOutcomes?: CourseOutcome[];
+  mappedCoNos?: string[];
+}
+
+const ObjectiveMappingPopup: React.FC<ObjectiveMappingPopupProps> = ({
+  expLabel,
+  selectedObjectiveNos,
+  onToggle,
+  onSelectMultiple,
+  courseOutcomes = [],
+  mappedCoNos = [],
+}) => {
+  const [open, setOpen] = useState(false);
+
+  const domainStyleMap: Record<'Cognitive' | 'Affective' | 'Psychomotor', {
+    pill: string;
+    unselectedPill: string;
+    selectedRow: string;
+    hoverRow: string;
+    checkColor: string;
+    badge: string;
+  }> = {
+    Cognitive: {
+      pill: 'bg-blue-600 text-white shadow-xs',
+      unselectedPill: 'bg-blue-100 text-blue-800 border border-blue-200',
+      selectedRow: 'bg-blue-100/70 hover:bg-blue-100/90',
+      hoverRow: 'hover:bg-blue-50/50',
+      checkColor: 'text-blue-600',
+      badge: 'bg-blue-50 text-blue-800 border-blue-200',
+    },
+    Affective: {
+      pill: 'bg-emerald-600 text-white shadow-xs',
+      unselectedPill: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+      selectedRow: 'bg-emerald-100/70 hover:bg-emerald-100/90',
+      hoverRow: 'hover:bg-emerald-50/50',
+      checkColor: 'text-emerald-600',
+      badge: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+    },
+    Psychomotor: {
+      pill: 'bg-violet-600 text-white shadow-xs',
+      unselectedPill: 'bg-violet-100 text-violet-800 border border-violet-200',
+      selectedRow: 'bg-violet-100/70 hover:bg-violet-100/90',
+      hoverRow: 'hover:bg-violet-50/50',
+      checkColor: 'text-violet-600',
+      badge: 'bg-violet-50 text-violet-800 border-violet-200',
+    },
+  };
+
+  // Derive objectives from mapped COs
+  const coDerivedObjNos = Array.from(new Set(
+    mappedCoNos
+      .map(coNo => courseOutcomes.find(c => c.coNo === coNo)?.objectiveNo)
+      .filter((no): no is number => typeof no === 'number' && no >= 1 && no <= 13)
+  )).sort((a, b) => a - b);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-300 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 hover:border-slate-400 transition-all cursor-pointer"
+      >
+        <Plus className="w-3 h-3" />
+        Select Objectives ({selectedObjectiveNos.length})
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setOpen(false)}>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div
+            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50 flex-shrink-0">
+              <div>
+                <h3 className="font-bold text-sm text-slate-800">Laboratory Objectives — {expLabel}</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Select the laboratory objectives (1–13) addressed by this experiment (TCE Regulation 2026)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-all cursor-pointer"
+                title="Close modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Quick Actions Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-2 px-6 py-2.5 bg-slate-100/70 border-b border-slate-200 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-slate-600">Quick Select:</span>
+                {coDerivedObjNos.length > 0 && onSelectMultiple && (
+                  <button
+                    type="button"
+                    onClick={() => onSelectMultiple(coDerivedObjNos)}
+                    className="px-2 py-1 rounded-md bg-white border border-slate-300 hover:bg-sky-50 hover:border-sky-300 text-sky-700 text-[11px] font-semibold transition-all cursor-pointer"
+                  >
+                    Sync from Mapped COs ({coDerivedObjNos.join(', ')})
+                  </button>
+                )}
+                {onSelectMultiple && (
+                  <button
+                    type="button"
+                    onClick={() => onSelectMultiple([1, 2, 3, 4, 5])}
+                    className="px-2 py-1 rounded-md bg-white border border-slate-300 hover:bg-blue-50 hover:border-blue-300 text-blue-700 text-[11px] font-semibold transition-all cursor-pointer"
+                  >
+                    All Cognitive (1–5)
+                  </button>
+                )}
+              </div>
+              {onSelectMultiple && selectedObjectiveNos.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => onSelectMultiple([])}
+                  className="px-2 py-1 rounded-md text-rose-600 hover:bg-rose-50 text-[11px] font-semibold transition-all cursor-pointer"
+                >
+                  Clear All
+                </button>
+              )}
+            </div>
+
+            {/* Objectives List Table */}
+            <div className="overflow-auto flex-1">
+              <table className="w-full text-xs border-collapse">
+                <thead className="sticky top-0 bg-slate-100 z-10 border-b border-slate-200">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-bold text-slate-700 w-16">No.</th>
+                    <th className="px-4 py-3 text-left font-bold text-slate-700 w-44">Objective</th>
+                    <th className="px-4 py-3 text-center font-bold text-slate-700 w-28">Domain</th>
+                    <th className="px-4 py-3 text-left font-bold text-slate-700">Description</th>
+                    <th className="px-4 py-3 text-center w-12"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {LAB_OBJECTIVES.map(obj => {
+                    const isSelected = selectedObjectiveNos.includes(obj.no);
+                    const dStyle = domainStyleMap[obj.domain];
+                    return (
+                      <tr
+                        key={obj.no}
+                        onClick={() => onToggle(obj.no)}
+                        className={`cursor-pointer transition-colors ${isSelected ? dStyle.selectedRow : dStyle.hoverRow}`}
+                      >
+                        <td className="px-4 py-3 align-middle font-bold text-slate-700">
+                          <span className={`inline-block px-2 py-0.5 rounded font-black text-[11px] ${isSelected ? dStyle.pill : dStyle.unselectedPill}`}>
+                            Obj {obj.no}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 align-middle font-bold text-slate-900">{obj.name}</td>
+                        <td className="px-4 py-3 align-middle text-center">
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${dStyle.badge}`}>
+                            {obj.domain}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 align-middle text-slate-600 leading-relaxed font-normal">{obj.description}</td>
+                        <td className="px-4 py-3 align-middle text-center">
+                          {isSelected ? (
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white shadow-xs">
+                              <Check className={`w-4 h-4 ${dStyle.checkColor}`} />
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-400 shadow-xs">
+                              <Plus className="w-3.5 h-3.5" />
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Modal footer — selected summary */}
+            <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex-shrink-0">
+              <div className="flex flex-wrap items-center gap-1.5 max-w-xl">
+                <span className="text-xs font-bold text-slate-600">Selected Objectives:</span>
+                {selectedObjectiveNos.length === 0 ? (
+                  <span className="text-xs text-slate-400 italic">None selected</span>
+                ) : (
+                  [...selectedObjectiveNos].sort((a, b) => a - b).map(no => {
+                    const matched = LAB_OBJECTIVES.find(o => o.no === no);
+                    const domain = matched?.domain || 'Cognitive';
+                    const dStyle = domainStyleMap[domain];
+                    return (
+                      <span key={no} className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${dStyle.pill}`}>
+                        Obj {no}: {matched?.name || no}
+                      </span>
+                    );
+                  })
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+
 // ── CO Domain Picker sub-component (must be a real component to use useState) ──
 interface CoDomainPickerProps {
   courseOutcomes: CourseOutcome[];
@@ -1341,6 +1559,7 @@ export const CourseWizard: React.FC = () => {
 
   // Local draft state for bulk experiments text input (single field auto-divides by numbers)
   const [bulkExperimentsText, setBulkExperimentsText] = useState<string>('');
+  const [showLabObjectivesRef, setShowLabObjectivesRef] = useState<boolean>(false);
 
   // Admin configured active regulation state
   const [adminRegulation, setAdminRegulation] = useState<{ year: number; code: string }>({ year: 2026, code: '26' });
@@ -5547,9 +5766,56 @@ export const CourseWizard: React.FC = () => {
                                   <Sparkles className="w-3.5 h-3.5 text-sky-600" />
                                   <span>Auto-map COs</span>
                                 </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setShowLabObjectivesRef(prev => !prev)}
+                                  className="px-2.5 py-1 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold flex items-center space-x-1.5 transition-colors self-start sm:self-auto cursor-pointer shadow-xs"
+                                  title="Show or hide the 13 Laboratory Objectives reference table"
+                                >
+                                  <Info className="w-3.5 h-3.5 text-indigo-600" />
+                                  <span>{showLabObjectivesRef ? 'Hide Objectives Guide' : 'View 13 Lab Objectives'}</span>
+                                </button>
                               </div>
                             );
                           })()}
+
+                          {/* Expandable 13 Laboratory Objectives Reference Banner */}
+                          {showLabObjectivesRef && (
+                            <div className="p-3.5 rounded-xl border border-indigo-200 bg-indigo-50/60 text-xs space-y-2 animate-in fade-in duration-150">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-indigo-900 text-xs">
+                                  TCE Regulation 2026 — 13 Laboratory Objectives Reference
+                                </span>
+                                <span className="text-[11px] text-indigo-600 font-medium">Mapped to Cognitive, Psychomotor & Affective Domains</span>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1 text-[11px]">
+                                <div className="p-2.5 rounded-lg bg-white border border-blue-200 shadow-xs space-y-1">
+                                  <span className="font-bold text-blue-700 block text-xs">Cognitive Domain (Obj 1–5)</span>
+                                  {LAB_OBJECTIVES.filter(o => o.domain === 'Cognitive').map(o => (
+                                    <div key={o.no} className="text-slate-700 leading-snug">
+                                      <span className="font-bold text-blue-900">{o.no}. {o.name}:</span> {o.description}
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="p-2.5 rounded-lg bg-white border border-violet-200 shadow-xs space-y-1">
+                                  <span className="font-bold text-violet-700 block text-xs">Psychomotor Domain (Obj 6–7)</span>
+                                  {LAB_OBJECTIVES.filter(o => o.domain === 'Psychomotor').map(o => (
+                                    <div key={o.no} className="text-slate-700 leading-snug">
+                                      <span className="font-bold text-violet-900">{o.no}. {o.name}:</span> {o.description}
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="p-2.5 rounded-lg bg-white border border-emerald-200 shadow-xs space-y-1">
+                                  <span className="font-bold text-emerald-700 block text-xs">Affective Domain (Obj 8–13)</span>
+                                  {LAB_OBJECTIVES.filter(o => o.domain === 'Affective').map(o => (
+                                    <div key={o.no} className="text-slate-700 leading-snug">
+                                      <span className="font-bold text-emerald-900">{o.no}. {o.name}:</span> {o.description}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )}
 
                           {(course.experiments || []).map((exp, idx) => (
                             <div key={idx} className="p-3 border border-slate-200 rounded-xl bg-slate-50/50 space-y-2.5">
@@ -5568,8 +5834,8 @@ export const CourseWizard: React.FC = () => {
                                 </button>
                               </div>
 
-                              <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-                                <div className="md:col-span-7">
+                              <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                                <div className={course.courseType === 'TCP' ? "md:col-span-5" : "md:col-span-6"}>
                                   <label className="block text-[11px] font-semibold text-slate-600 mb-1">
                                     Experiment Title <span className="text-rose-500">*</span>
                                   </label>
@@ -5587,29 +5853,31 @@ export const CourseWizard: React.FC = () => {
                                   />
                                 </div>
 
-                                <div className="md:col-span-2">
-                                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                                    Hours {course.courseType === 'TCP' && <span className="text-amber-600 font-bold">*</span>}
-                                  </label>
-                                  <input
-                                    type="number"
-                                    min={1}
-                                    max={40}
-                                    value={exp.hours ?? ''}
-                                    onChange={e => {
-                                      const val = e.target.value === '' ? undefined : Math.max(1, parseInt(e.target.value, 10) || 0);
-                                      const updated = [...(course.experiments || [])];
-                                      updated[idx] = { ...updated[idx], hours: val };
-                                      updateField('experiments', updated);
-                                      setBulkExperimentsText(updated.map((expItem, i) => `${expItem.slNo || i + 1}. ${expItem.name}${expItem.hours ? ` (${expItem.hours} hrs)` : ''}`).join('\n'));
-                                    }}
-                                    placeholder="e.g. 2"
-                                    className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white focus:outline-sky-500 text-center font-semibold"
-                                  />
-                                </div>
+                                {course.courseType === 'TCP' && (
+                                  <div className="md:col-span-2">
+                                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                                      Hours <span className="text-amber-600 font-bold">*</span>
+                                    </label>
+                                    <input
+                                      type="number"
+                                      min={1}
+                                      max={40}
+                                      value={exp.hours ?? ''}
+                                      onChange={e => {
+                                        const val = e.target.value === '' ? undefined : Math.max(1, parseInt(e.target.value, 10) || 0);
+                                        const updated = [...(course.experiments || [])];
+                                        updated[idx] = { ...updated[idx], hours: val };
+                                        updateField('experiments', updated);
+                                        setBulkExperimentsText(updated.map((expItem, i) => `${expItem.slNo || i + 1}. ${expItem.name}${expItem.hours ? ` (${expItem.hours} hrs)` : ''}`).join('\n'));
+                                      }}
+                                      placeholder="e.g. 2"
+                                      className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white focus:outline-sky-500 text-center font-semibold"
+                                    />
+                                  </div>
+                                )}
 
-                                <div className="md:col-span-3">
-                                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">Inquiry Level</label>
+                                <div className={course.courseType === 'TCP' ? "md:col-span-2" : "md:col-span-3"}>
+                                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">Level of Experiment</label>
                                   <select
                                     value={exp.level}
                                     onChange={e => {
@@ -5618,18 +5886,75 @@ export const CourseWizard: React.FC = () => {
                                       updated[idx] = { ...updated[idx], level: val };
                                       updateField('experiments', updated);
                                     }}
-                                    className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white focus:outline-sky-500"
+                                    className="w-full p-2 border border-slate-300 rounded-lg text-xs bg-white focus:outline-sky-500 font-medium"
                                   >
                                     <option value={1}>Level 1: Structured (Open answers)</option>
                                     <option value={2}>Level 2: Guided (Open methods)</option>
                                     <option value={3}>Level 3: Inquiry (Fully open)</option>
                                   </select>
                                 </div>
+
+                                <div className={course.courseType === 'TCP' ? "md:col-span-3" : "md:col-span-3"}>
+                                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">Objective(s)</label>
+                                  <ObjectiveMappingPopup
+                                    expLabel={`Exp. ${exp.slNo || idx + 1}`}
+                                    selectedObjectiveNos={exp.objectiveNos && exp.objectiveNos.length > 0 ? exp.objectiveNos : (
+                                      Array.from(new Set((exp.coNos || []).map(cNo => (course.courseOutcomes || []).find(c => c.coNo === cNo)?.objectiveNo).filter((n): n is number => typeof n === 'number')))
+                                    )}
+                                    courseOutcomes={course.courseOutcomes || []}
+                                    mappedCoNos={exp.coNos || []}
+                                    onToggle={(objNo) => {
+                                      const updated = [...(course.experiments || [])];
+                                      const current = updated[idx].objectiveNos && updated[idx].objectiveNos.length > 0
+                                        ? [...updated[idx].objectiveNos]
+                                        : Array.from(new Set((updated[idx].coNos || []).map(cNo => (course.courseOutcomes || []).find(c => c.coNo === cNo)?.objectiveNo).filter((n): n is number => typeof n === 'number')));
+                                      const exists = current.includes(objNo);
+                                      const next = exists ? current.filter(n => n !== objNo) : [...current, objNo];
+                                      updated[idx] = { ...updated[idx], objectiveNos: next.sort((a, b) => a - b) };
+                                      updateField('experiments', updated);
+                                    }}
+                                    onSelectMultiple={(objNos) => {
+                                      const updated = [...(course.experiments || [])];
+                                      updated[idx] = { ...updated[idx], objectiveNos: [...objNos].sort((a, b) => a - b) };
+                                      updateField('experiments', updated);
+                                    }}
+                                  />
+                                </div>
                               </div>
 
-                              {/* CO Mapping — popup button + summary */}
-                              <div className="pt-1.5 border-t border-slate-200/60">
-                                <div className="flex flex-wrap items-center gap-2">
+                              {/* Mapped Objectives & COs displayed side-by-side */}
+                              <div className="pt-2 border-t border-slate-200/60 space-y-1.5">
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <span className="text-[11px] font-semibold text-slate-500">Objectives:</span>
+                                  {(() => {
+                                    const activeObjNos = exp.objectiveNos && exp.objectiveNos.length > 0
+                                      ? exp.objectiveNos
+                                      : Array.from(new Set((exp.coNos || []).map(cNo => (course.courseOutcomes || []).find(c => c.coNo === cNo)?.objectiveNo).filter((n): n is number => typeof n === 'number')));
+                                    if (activeObjNos.length === 0) {
+                                      return <span className="text-[11px] text-slate-400 italic">None (click Select Objectives)</span>;
+                                    }
+                                    return activeObjNos.sort((a, b) => a - b).map(no => {
+                                      const obj = LAB_OBJECTIVES.find(o => o.no === no);
+                                      const domain = obj?.domain || 'Cognitive';
+                                      const color = domain === 'Psychomotor'
+                                        ? 'bg-violet-50 text-violet-700 border-violet-200'
+                                        : domain === 'Affective'
+                                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                          : 'bg-blue-50 text-blue-700 border-blue-200';
+                                      return (
+                                        <span
+                                          key={no}
+                                          className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border ${color}`}
+                                          title={obj?.description}
+                                        >
+                                          Obj {no}: {obj?.name || `Objective ${no}`}
+                                        </span>
+                                      );
+                                    });
+                                  })()}
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-1.5">
                                   <span className="text-[11px] font-semibold text-slate-500">Mapped COs:</span>
                                   {(exp.coNos || []).length === 0
                                     ? <span className="text-[11px] text-slate-400 italic">None</span>
@@ -5652,7 +5977,12 @@ export const CourseWizard: React.FC = () => {
                                       const updated = [...(course.experiments || [])];
                                       const current = updated[idx].coNos || [];
                                       const isSelected = current.includes(coNo);
-                                      updated[idx] = { ...updated[idx], coNos: isSelected ? current.filter(c => c !== coNo) : [...current, coNo] };
+                                      const nextCoNos = isSelected ? current.filter(c => c !== coNo) : [...current, coNo];
+                                      // If objectiveNos was empty or defaulted, keep it in sync with mapped COs
+                                      const autoObjs = Array.from(new Set(nextCoNos.map(c => (course.courseOutcomes || []).find(x => x.coNo === c)?.objectiveNo).filter((n): n is number => typeof n === 'number'))).sort((a, b) => a - b);
+                                      const currentObjs = updated[idx].objectiveNos || [];
+                                      const nextObjs = currentObjs.length === 0 ? autoObjs : currentObjs;
+                                      updated[idx] = { ...updated[idx], coNos: nextCoNos, objectiveNos: nextObjs };
                                       updateField('experiments', updated);
                                     }}
                                   />

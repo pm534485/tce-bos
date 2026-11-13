@@ -1,4 +1,4 @@
-import { getDisplayTeType, formatDesignerName } from '@syllabusforge/shared';
+import { getDisplayTeType, formatDesignerName, LAB_OBJECTIVES_LEGEND_TEXT } from '@syllabusforge/shared';
 export function getDegreeProgramHeader(course) {
     let progCode = (course.programmeCode || '').toUpperCase();
     if (!progCode && course.courseCode && course.courseCode.length >= 4) {
@@ -595,6 +595,7 @@ export function buildCourseInnerHtml(course, options) {
       ${experimentsRowsHtml}
     </tbody>
   </table>
+  <div style="font-size: 8pt; font-style: italic; color: #000; margin-top: 4px; margin-bottom: 6px;">${LAB_OBJECTIVES_LEGEND_TEXT}</div>
 
   <div class="line-space"></div>
 
@@ -705,6 +706,7 @@ export function buildCourseInnerHtml(course, options) {
       ${experimentsRowsHtml}
     </tbody>
   </table>
+  <div style="font-size: 8pt; font-style: italic; color: #000; margin-top: 4px; margin-bottom: 6px;">${LAB_OBJECTIVES_LEGEND_TEXT}</div>
 
   <div class="line-space"></div>
   ` : ''}
