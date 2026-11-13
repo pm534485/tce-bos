@@ -204,6 +204,12 @@ export function computeCredits(L, T, P, courseType) {
     const lNum = Number(L) || 0;
     const tNum = Number(T) || 0;
     const pNum = Number(P) || 0;
+    if (courseType === 'BAJAJ') {
+        // 1 Hour Lecture is equivalent to 1 credit
+        // 1 Hour Tutorial is equivalent to 1 credit
+        // 2 Hours Practical is equivalent to 1 credit (floor: e.g. P=2 -> 1, P=4 -> 2, P=5 -> 2)
+        return lNum + tNum + Math.floor(pNum / 2);
+    }
     return Number((lNum + tNum + pNum * 0.5).toFixed(1));
 }
 export function validateLtpCredits(courseType, categoryAbbr, L, T, P, credits) {
@@ -277,13 +283,24 @@ export function validateLtpCredits(courseType, categoryAbbr, L, T, P, credits) {
             });
         }
     }
-    const expectedCredits = computeCredits(L, T, P);
+    if (courseType === 'BAJAJ') {
+        if (L <= 0 && P <= 0) {
+            results.push({
+                id: 'B3_BAJAJ_HOURS_POSITIVE',
+                field: 'LTP',
+                severity: 'error',
+                message: 'Bajaj courses must have lecture (L) or practical (P) contact hours greater than 0.',
+                fixHint: 'Set contact hours L and/or P for Bajaj course.',
+            });
+        }
+    }
+    const expectedCredits = computeCredits(L, T, P, courseType);
     if (Math.abs(credits - expectedCredits) > 0.01) {
         results.push({
             id: 'B3_CREDIT_MISMATCH',
             field: 'credits',
             severity: 'error',
-            message: `Credits (${credits}) does not match formula L + T + P/2 = ${expectedCredits}.`,
+            message: `Credits (${credits}) does not match formula (${expectedCredits}).`,
             fixHint: `Set credits to computed value: ${expectedCredits}.`,
         });
     }
@@ -717,6 +734,9 @@ export function validateCourseOutcomes(cos, courseType, allowTps1 = false, credi
 // B6: Assessment Pattern Validation
 export function validateAssessmentPattern(courseType, cos, matrix, tolerance = 3, componentWeights = DEFAULT_CONFIG_SETTINGS.assessmentComponentWeights) {
     const results = [];
+    if (courseType === 'BAJAJ') {
+        return results;
+    }
     if (!matrix || matrix.length === 0) {
         results.push({
             id: 'B6_EMPTY_MATRIX',
@@ -1652,16 +1672,24 @@ export function validateCourse(course, existingProgrammeCodes = [], tolerance = 
     allResults.push(...validateCourseOutcomes(course.courseOutcomes, course.courseType, allowTps1, course.credits, course.department, course.programmeCode));
     // B6: Assessment Pattern
     allResults.push(...validateAssessmentPattern(course.courseType, course.courseOutcomes || [], course.assessmentMatrix || [], tolerance, componentWeights));
-    // B7: Syllabus Modules (Theory / TCP, and optional for Practical if modules provided)
+    // B7: Syllabus Modules (Theory / TCP, and optional for Practical/Bajaj if modules provided)
     if (course.courseType === 'THEORY' || course.courseType === 'TCP') {
         allResults.push(...validateSyllabusModules(course.modules, course.courseOutcomes || []));
     }
-    else if (course.courseType === 'PRACTICAL' && course.modules && course.modules.length > 0) {
+    else if ((course.courseType === 'PRACTICAL' || course.courseType === 'BAJAJ') && course.modules && course.modules.length > 0) {
         allResults.push(...validateSyllabusModules(course.modules, course.courseOutcomes || []));
     }
-    // B8: Lab-specific Sections (Practical / TCP)
-    if (course.courseType === 'PRACTICAL' || course.courseType === 'TCP') {
-        allResults.push(...validateExperimentsAndPlan(course.experiments || [], course.coursePlan || [], course.courseOutcomes || []));
+    // B8: Lab-specific Sections (Practical / TCP / Bajaj)
+    if (course.courseType === 'PRACTICAL' || course.courseType === 'TCP' || course.courseType === 'BAJAJ') {
+        if (course.courseType === 'BAJAJ') {
+            // For Bajaj, validate experiments only if added
+            if (course.experiments && course.experiments.length > 0) {
+                allResults.push(...validateExperimentsAndPlan(course.experiments || [], course.coursePlan || [], course.courseOutcomes || []));
+            }
+        }
+        else {
+            allResults.push(...validateExperimentsAndPlan(course.experiments || [], course.coursePlan || [], course.courseOutcomes || []));
+        }
     }
     // B9: Lecture Schedule (Theory / TCP)
     if (course.courseType === 'THEORY' || course.courseType === 'TCP') {

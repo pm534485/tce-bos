@@ -20,6 +20,8 @@ const CourseOutcomeSchema = new Schema({
   generalCoRef: { type: String },
   sdgNo: { type: Schema.Types.Mixed, default: 'NC' },
   sdgLevel: { type: Number, default: 0 },
+  expectedProficiency: { type: Number, default: 70 },
+  expectedAttainment: { type: Number, default: 60 },
   questionLevelSplit: {
     ownLevelPercent: { type: Number },
     lowerLevelPercent: { type: Number },
@@ -157,7 +159,7 @@ const CourseHistorySchema = new Schema({
 
 const CourseSchema = new Schema<ICourseDocument>(
   {
-    courseType: { type: String, enum: ['THEORY', 'PRACTICAL', 'TCP', 'AUDIT'], required: false },
+    courseType: { type: String, enum: ['THEORY', 'PRACTICAL', 'TCP', 'AUDIT', 'BAJAJ'], required: false },
     regulationYear: { type: Number, default: 2026 },
     regulationCode: { type: String, default: '26' },
     programmeCode: { type: String, required: false, uppercase: true },
@@ -188,6 +190,7 @@ const CourseSchema = new Schema<ICourseDocument>(
     experiments: [LabExperimentSchema],
     coursePlan: [LabCoursePlanItemSchema],
     poPsoMapping: [PoPsoMappingSchema],
+    bajajAssessmentPattern: { type: Schema.Types.Mixed },
     cognitiveAssessmentPattern: [CognitiveAssessmentRowSchema],
     courseAssessmentQuestions: [CourseOutcomeQuestionsSchema],
     lectureScheduleItems: [LectureScheduleItemSchema],

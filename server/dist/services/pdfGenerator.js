@@ -94,11 +94,67 @@ export function buildCourseInnerHtml(course, options) {
     const matrix = course.assessmentMatrix || [];
     const isTcp = course.courseType === 'TCP';
     const isPractical = course.courseType === 'PRACTICAL';
+    const isBajaj = course.courseType === 'BAJAJ';
     let totalCol1 = 0;
     let totalCol2 = 0;
     let totalCol3 = 0;
     let totalCol4 = 0;
     let totalCol5 = 0;
+    // Bajaj Assessment Pattern
+    const bajajPattern = course.bajajAssessmentPattern;
+    const bajajTheoryTpsLevels = bajajPattern?.theoryTpsLevels || [1, 2, 3];
+    const bajajPracticalTpsLevels = bajajPattern?.practicalTpsLevels || [1, 2, 3];
+    const bajajTerminalTpsLevels = bajajPattern?.terminalTpsLevels || [1, 2, 3];
+    const bajajCatName = bajajPattern?.catName || 'Assessment CAT – 1';
+    const defaultBajajRows = [
+        { coNo: 'CO1', theory: { 2: 10 }, practical: { 3: 20 }, terminal: { 3: 20 } },
+        { coNo: 'CO2', theory: { 2: 5, 3: 15 }, practical: { 3: 20 }, terminal: { 3: 20 } },
+        { coNo: 'CO3', theory: { 2: 5, 3: 15 }, practical: { 3: 20 }, terminal: { 3: 20 } },
+        { coNo: 'CO4', theory: { 3: 20 }, practical: { 3: 20 }, terminal: { 3: 20 } },
+        { coNo: 'CO5', theory: { 2: 5, 3: 10 }, practical: { 3: 10 }, terminal: { 3: 10 } },
+        { coNo: 'CO6', theory: { 2: 5, 3: 10 }, practical: { 3: 10 }, terminal: { 3: 10 } },
+    ];
+    const bajajRows = coList.map((co, idx) => {
+        const existing = bajajPattern?.rows?.find(r => r.coNo === co.coNo);
+        const fallback = defaultBajajRows[idx] || { theory: {}, practical: {}, terminal: {} };
+        return {
+            coNo: co.coNo,
+            theoryMarks: (existing?.theoryMarks && Object.keys(existing.theoryMarks).length > 0) ? existing.theoryMarks : fallback.theory,
+            practicalMarks: (existing?.practicalMarks && Object.keys(existing.practicalMarks).length > 0) ? existing.practicalMarks : fallback.practical,
+            terminalMarks: (existing?.terminalMarks && Object.keys(existing.terminalMarks).length > 0) ? existing.terminalMarks : fallback.terminal,
+        };
+    });
+    // Bajaj PO-PSO Mapping rows
+    const defaultPoPsoRows = [
+        { coNo: 'CO1', po1: 'M', po2: 'L', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso1: 'L', pso3: 'L' },
+        { coNo: 'CO2', po1: 'S', po2: 'M', po3: 'L', po4: 'L', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso2: 'L', pso3: 'L' },
+        { coNo: 'CO3', po1: 'S', po2: 'M', po3: 'L', po5: 'S', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso1: 'M', pso2: 'L', pso3: 'L' },
+        { coNo: 'CO4', po1: 'S', po2: 'M', po3: 'L', po4: 'L', po5: 'S', po6: 'L', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso1: 'M', pso2: 'L', pso3: 'L' },
+        { coNo: 'CO5', po1: 'S', po2: 'M', po3: 'L', po4: 'L', po6: 'L', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso1: 'M', pso3: 'L' },
+        { coNo: 'CO6', po1: 'S', po2: 'L', po3: 'L', po4: 'L', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso2: 'L', pso3: 'L' },
+    ];
+    const poPsoRows = coList.map((co, idx) => {
+        const existing = (course.poPsoMapping || []).find(r => r.coNo === co.coNo);
+        const fallback = defaultPoPsoRows[idx] || {};
+        return {
+            coNo: co.coNo,
+            po1: existing?.po1 || fallback.po1 || '-',
+            po2: existing?.po2 || fallback.po2 || '-',
+            po3: existing?.po3 || fallback.po3 || '-',
+            po4: existing?.po4 || fallback.po4 || '-',
+            po5: existing?.po5 || fallback.po5 || '-',
+            po6: existing?.po6 || fallback.po6 || '-',
+            po7: existing?.po7 || fallback.po7 || '-',
+            po8: existing?.po8 || fallback.po8 || '-',
+            po9: existing?.po9 || fallback.po9 || '-',
+            po10: existing?.po10 || fallback.po10 || '-',
+            po11: existing?.po11 || fallback.po11 || '-',
+            po12: existing?.po12 || fallback.po12 || '-',
+            pso1: existing?.pso1 || fallback.pso1 || '-',
+            pso2: existing?.pso2 || fallback.pso2 || '-',
+            pso3: existing?.pso3 || fallback.pso3 || '-',
+        };
+    });
     // Practical totals
     let totalPracticalCa = 0;
     let totalPracticalModel = 0;
@@ -406,6 +462,37 @@ export function buildCourseInnerHtml(course, options) {
     const bodyHtml = `
   <!-- ==================== PAGE 1 ==================== -->
   <!-- Header Table -->
+  ${isBajaj ? `
+  <table>
+    <tr>
+      <td rowspan="3" class="center font-bold" style="width: 16%; font-size: 11pt;">${course.courseCode}</td>
+      <td rowspan="3" class="center font-bold" style="width: 40%; font-size: 11pt;">
+        <div style="text-transform: uppercase;">${titleCaps}</div>
+        ${subtitleFormatted ? `<div style="font-weight: normal; font-size: 9pt; text-transform: none; margin-top: 3px;">${subtitleFormatted}</div>` : ''}
+      </td>
+      <td class="center" style="width: 12%;">Category</td>
+      <td class="center" style="width: 5%;">L</td>
+      <td class="center" style="width: 5%;">T</td>
+      <td class="center" style="width: 5%;">P</td>
+      <td rowspan="2" class="center font-bold" style="width: 7%;">C</td>
+      <td rowspan="2" class="center font-bold" style="width: 10%;">Total<br>Hours</td>
+    </tr>
+    <tr>
+      <td class="center">${course.categoryAbbr || 'PCC'}</td>
+      <td class="center">${course.L !== undefined && course.L !== null ? course.L : 0}</td>
+      <td class="center">${course.T !== undefined && course.T !== null ? course.T : 0}</td>
+      <td class="center">${course.P !== undefined && course.P !== null ? course.P : 0}</td>
+    </tr>
+    <tr>
+      <td class="center font-bold">Hours</td>
+      <td class="center">${(Number(course.L) || 0) * 14}</td>
+      <td class="center">${(Number(course.T) || 0) * 14}</td>
+      <td class="center">${(Number(course.P) || 0) * 14}</td>
+      <td class="center font-bold">${course.credits !== undefined && course.credits !== null ? course.credits : 0}</td>
+      <td class="center font-bold">${((Number(course.L) || 0) + (Number(course.T) || 0) + (Number(course.P) || 0)) * 14}</td>
+    </tr>
+  </table>
+  ` : `
   <table>
     <tr>
       <td rowspan="2" class="center font-bold" style="width: ${isTcp ? '16%' : '18%'}; font-size: 11pt;">${course.courseCode}</td>
@@ -429,6 +516,7 @@ export function buildCourseInnerHtml(course, options) {
       ${isTcp ? `<td class="center font-bold">${getDisplayTeType(course.teExamType)}</td>` : ''}
     </tr>
   </table>
+  `}
 
   <!-- Line space between each section -->
   <div class="line-space"></div>
@@ -451,9 +539,18 @@ export function buildCourseInnerHtml(course, options) {
 
   <!-- Course Outcomes -->
   <div class="gray-banner">Course Outcomes</div>
-  <p class="section-p" style="margin-top: 4px; margin-bottom: 6px;">After the successful completion of the course, students will be able to:</p>
+  ${!isBajaj ? '<p class="section-p" style="margin-top: 4px; margin-bottom: 6px;">After the successful completion of the course, students will be able to:</p>' : '<div class="line-space-sm"></div>'}
   <table>
     <thead>
+      ${isBajaj ? `
+      <tr>
+        <th class="center" style="width: 10%;">CO#</th>
+        <th style="width: 52%; text-align: left;">Course Outcomes</th>
+        <th class="center" style="width: 16%;">TCE<br>Proficiency Scale</th>
+        <th class="center" style="width: 11%;">Expected<br>Outcome in %</th>
+        <th class="center" style="width: 11%;">Expected<br>Attainment Level %</th>
+      </tr>
+      ` : `
       <tr>
         <th style="width: 7%; text-align: center;">No.</th>
         <th style="width: ${isPg ? '55%' : '45%'}; text-align: left;">Course Outcome</th>
@@ -463,17 +560,97 @@ export function buildCourseInnerHtml(course, options) {
         <th style="width: ${isPg ? '9%' : '8%'}; text-align: center;">SDG<br>addressed</th>
         <th style="width: 6%; text-align: center;">SDG<br>Level</th>
       </tr>
+      `}
     </thead>
     <tbody>
-      ${coRowsHtml}
+      ${isBajaj ? coList.map(co => `
+        <tr>
+          <td class="center font-bold">${co.coNo}</td>
+          <td>${co.statement}</td>
+          <td class="center font-bold">TPS${co.tpsLevel || 3}</td>
+          <td class="center">${co.expectedProficiency !== undefined ? co.expectedProficiency : 70}</td>
+          <td class="center">${co.expectedAttainment !== undefined ? co.expectedAttainment : 60}</td>
+        </tr>
+      `).join('') : coRowsHtml}
     </tbody>
   </table>
+
+  ${isBajaj ? `
+  <div class="line-space"></div>
+  <div class="gray-banner">Mapping with Programme Outcomes</div>
+  <table style="table-layout: fixed;">
+    <thead>
+      <tr>
+        <th class="center font-bold" style="width: 7%;">COs</th>
+        ${Array.from({ length: 12 }, (_, i) => `<th class="center font-bold">PO ${i + 1}</th>`).join('')}
+        ${Array.from({ length: 3 }, (_, i) => `<th class="center font-bold">PSO ${i + 1}</th>`).join('')}
+      </tr>
+    </thead>
+    <tbody>
+      ${poPsoRows.map(row => `
+        <tr>
+          <td class="center font-bold">${row.coNo}</td>
+          ${Array.from({ length: 12 }, (_, i) => `<td class="center">${row['po' + (i + 1)] || '-'}</td>`).join('')}
+          ${Array.from({ length: 3 }, (_, i) => `<td class="center">${row['pso' + (i + 1)] || '-'}</td>`).join('')}
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+  <div style="font-size: 9pt; font-weight: bold; margin-top: 4px;">S- Strong; M-Medium; L-Low</div>
+  ` : ''}
 
   <!-- Line space between each section -->
   <div class="line-space"></div>
 
   <!-- Assessment Pattern -->
-  ${isPractical ? `
+  ${isBajaj ? `
+  <div class="gray-banner">Assessment Pattern</div>
+  <div class="line-space-sm"></div>
+  <table style="table-layout: fixed;">
+    <thead>
+      <tr>
+        <th rowspan="3" class="center font-bold" style="width: 10%;">CO</th>
+        <th colspan="${bajajTheoryTpsLevels.length + bajajPracticalTpsLevels.length}" class="center font-bold">${bajajCatName}</th>
+        <th colspan="${bajajTerminalTpsLevels.length}" class="center font-bold">Terminal Exam Practical</th>
+      </tr>
+      <tr>
+        <th colspan="${bajajTheoryTpsLevels.length}" class="center font-bold">Theory</th>
+        <th colspan="${bajajPracticalTpsLevels.length}" class="center font-bold">Practical</th>
+        <th colspan="${bajajTerminalTpsLevels.length}" class="center font-bold">Practical</th>
+      </tr>
+      <tr>
+        ${bajajTheoryTpsLevels.map(lvl => `<th class="center font-bold" style="font-size: 10pt;">${lvl}</th>`).join('')}
+        ${bajajPracticalTpsLevels.map(lvl => `<th class="center font-bold" style="font-size: 10pt;">${lvl}</th>`).join('')}
+        ${bajajTerminalTpsLevels.map(lvl => `<th class="center font-bold" style="font-size: 10pt;">${lvl}</th>`).join('')}
+      </tr>
+    </thead>
+    <tbody>
+      ${bajajRows.map(r => `
+        <tr>
+          <td class="center font-bold">${r.coNo}</td>
+          ${bajajTheoryTpsLevels.map(lvl => `<td class="center">${r.theoryMarks[lvl] && r.theoryMarks[lvl] > 0 ? r.theoryMarks[lvl] : ''}</td>`).join('')}
+          ${bajajPracticalTpsLevels.map(lvl => `<td class="center">${r.practicalMarks[lvl] && r.practicalMarks[lvl] > 0 ? r.practicalMarks[lvl] : ''}</td>`).join('')}
+          ${bajajTerminalTpsLevels.map(lvl => `<td class="center">${r.terminalMarks[lvl] && r.terminalMarks[lvl] > 0 ? r.terminalMarks[lvl] : ''}</td>`).join('')}
+        </tr>
+      `).join('')}
+      <tr>
+        <td class="center font-bold">Total</td>
+        ${bajajTheoryTpsLevels.map(lvl => {
+        const sum = bajajRows.reduce((acc, r) => acc + (Number(r.theoryMarks[lvl]) || 0), 0);
+        return `<td class="center font-bold">${sum > 0 ? sum : ''}</td>`;
+    }).join('')}
+        ${bajajPracticalTpsLevels.map(lvl => {
+        const sum = bajajRows.reduce((acc, r) => acc + (Number(r.practicalMarks[lvl]) || 0), 0);
+        return `<td class="center font-bold">${sum > 0 ? sum : ''}</td>`;
+    }).join('')}
+        ${bajajTerminalTpsLevels.map(lvl => {
+        const sum = bajajRows.reduce((acc, r) => acc + (Number(r.terminalMarks[lvl]) || 0), 0);
+        return `<td class="center font-bold">${sum > 0 ? sum : ''}</td>`;
+    }).join('')}
+      </tr>
+    </tbody>
+  </table>
+  ` : isPractical ? `
   <div class="gray-banner">Assessment Pattern</div>
   <div class="line-space-sm"></div>
   <table style="width: 100%; border-collapse: collapse;">
@@ -609,7 +786,76 @@ export function buildCourseInnerHtml(course, options) {
   </div>
   ` : ''}
 
-  ${!isPractical ? `
+  ${isBajaj ? `
+  <!-- ==================== BAJAJ SYLLABUS, RESOURCES & SCHEDULE ==================== -->
+  <div class="line-space"></div>
+  <div class="gray-banner">Syllabus</div>
+  <div class="line-space"></div>
+
+  <div style="font-weight: bold; margin-bottom: 4px;">Theory (${(Number(course.L) || 0) * 14} Hours):</div>
+  ${(course.modules || []).map(mod => `
+    <div class="section-p" style="margin-bottom: 4px;">
+      <b>${mod.mainTopic}:</b> ${Array.isArray(mod.subtopics) ? mod.subtopics.join(' – ') : ''}${mod.periods ? ` <b>[${mod.periods} Hours]</b>` : ''}
+    </div>
+  `).join('')}
+  <div style="text-align: right; font-weight: bold; margin-top: 4px; margin-bottom: 8px;">Total Theory: ${(Number(course.L) || 0) * 14} Hours</div>
+
+  <div style="font-weight: bold; margin-top: 8px; margin-bottom: 4px;">Practical Experiments: (${(Number(course.P) || 0) * 14} Hours)</div>
+  <ol class="bullet-list" style="list-style-type: decimal;">
+    ${(course.experiments || []).map(exp => `
+      <li>${exp.name}${exp.hours ? ` (${exp.hours})` : ''}</li>
+    `).join('')}
+  </ol>
+  <div style="text-align: right; font-weight: bold; margin-top: 4px; margin-bottom: 8px;">Total: ${((Number(course.L) || 0) + (Number(course.P) || 0)) * 14} Hours</div>
+
+  <div class="line-space"></div>
+  <div class="gray-banner">Reference Books & web resources</div>
+  <div class="line-space"></div>
+  <ul class="bullet-list">
+    ${(course.referenceBooks || []).map(b => `<li>${formatCitation(b)}</li>`).join('')}
+  </ul>
+
+  <div class="line-space"></div>
+  <div class="gray-banner">Course Contents and Lecture Schedule</div>
+  <div class="line-space"></div>
+  <table>
+    <thead>
+      <tr>
+        <th class="center" style="width: 10%;">#</th>
+        <th style="width: 72%; text-align: left;">Topic</th>
+        <th class="center" style="width: 18%;">Lecture<br>Hours</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${scheduleItems.map(item => `
+        <tr>
+          <td class="center font-bold">${item.moduleNo || ''}</td>
+          <td>${item.topic || ''}</td>
+          <td class="center">${item.periods !== undefined && item.periods !== null && item.periods !== '' ? item.periods : ''}</td>
+        </tr>
+      `).join('')}
+      <tr>
+        <td colspan="2" class="center font-bold">Theory</td>
+        <td class="center font-bold">${(Number(course.L) || 0) * 14}</td>
+      </tr>
+      <tr>
+        <td colspan="2" class="center font-bold">Practical</td>
+        <td class="center font-bold">${(Number(course.P) || 0) * 14}</td>
+      </tr>
+      <tr style="background-color: #F2F2F2;">
+        <td colspan="2" class="center font-bold">Total</td>
+        <td class="center font-bold">${((Number(course.L) || 0) + (Number(course.P) || 0)) * 14}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="line-space"></div>
+  <div class="gray-banner">Course Designer(s):</div>
+  <div class="line-space"></div>
+  <div class="section-p">
+    ${designersHtml}
+  </div>
+  ` : !isPractical ? `
   <!-- ==================== PAGE 2 (THEORY & TCP) ==================== -->
   <div class="line-space"></div>
 

@@ -169,65 +169,145 @@ export function buildCourseDocxElements(
 
   // 1. Course Header Table
   const isTcp = course.courseType === 'TCP';
-  const headerRow1 = new TableRow({
-    children: [
-      createCell(course.courseCode, {
-        bold: true,
-        widthPercent: isTcp ? 16 : 18,
-        verticalMerge: VerticalMergeType.RESTART,
-        align: AlignmentType.CENTER,
-        size: 22,
-      }),
-      subtitleFormatted
-        ? new TableCell({
-            borders: cellBorders,
-            width: { size: isTcp ? 38 : 44, type: WidthType.PERCENTAGE },
-            verticalMerge: VerticalMergeType.RESTART,
-            children: [
-              new Paragraph({
-                alignment: AlignmentType.CENTER,
-                children: [createText(titleText, { bold: true, size: 22 })],
-              }),
-              new Paragraph({
-                alignment: AlignmentType.CENTER,
-                spacing: { before: 40 },
-                children: [createText(subtitleFormatted, { bold: false, size: 18 })],
-              }),
-            ],
-          })
-        : createCell(titleText, {
-            bold: true,
-            widthPercent: isTcp ? 38 : 44,
-            verticalMerge: VerticalMergeType.RESTART,
-            align: AlignmentType.CENTER,
-            size: 22,
-          }),
-      createCell('Category', { widthPercent: isTcp ? 12 : 14, align: AlignmentType.CENTER }),
-      createCell('L', { widthPercent: isTcp ? 5 : 6, align: AlignmentType.CENTER }),
-      createCell('T', { widthPercent: isTcp ? 5 : 6, align: AlignmentType.CENTER }),
-      createCell('P', { widthPercent: isTcp ? 5 : 6, align: AlignmentType.CENTER }),
-      createCell('Credits', { widthPercent: isTcp ? 7 : 6, align: AlignmentType.CENTER }),
-      ...(isTcp ? [createCell('TE Type', { widthPercent: 12, align: AlignmentType.CENTER })] : []),
-    ],
-  });
+  const isBajaj = course.courseType === 'BAJAJ';
 
-  const headerRow2 = new TableRow({
-    children: [
-      createCell('', { widthPercent: isTcp ? 16 : 18, verticalMerge: VerticalMergeType.CONTINUE }),
-      createCell('', { widthPercent: isTcp ? 38 : 44, verticalMerge: VerticalMergeType.CONTINUE }),
-      createCell(course.categoryAbbr || 'PCC', { widthPercent: isTcp ? 12 : 14, align: AlignmentType.CENTER }),
-      createCell(String(course.L), { widthPercent: isTcp ? 5 : 6, align: AlignmentType.CENTER }),
-      createCell(String(course.T), { widthPercent: isTcp ? 5 : 6, align: AlignmentType.CENTER }),
-      createCell(String(course.P), { widthPercent: isTcp ? 5 : 6, align: AlignmentType.CENTER }),
-      createCell(String(course.credits), { bold: true, widthPercent: isTcp ? 7 : 6, align: AlignmentType.CENTER }),
-      ...(isTcp ? [createCell(getDisplayTeType(course.teExamType), { bold: true, widthPercent: 12, align: AlignmentType.CENTER })] : []),
-    ],
-  });
+  let headerTable: Table;
+  if (isBajaj) {
+    const bjHeaderRow1 = new TableRow({
+      children: [
+        createCell(course.courseCode, {
+          bold: true,
+          widthPercent: 16,
+          verticalMerge: VerticalMergeType.RESTART,
+          align: AlignmentType.CENTER,
+          size: 22,
+        }),
+        subtitleFormatted
+          ? new TableCell({
+              borders: cellBorders,
+              width: { size: 40, type: WidthType.PERCENTAGE },
+              verticalMerge: VerticalMergeType.RESTART,
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.CENTER,
+                  children: [createText(titleText, { bold: true, size: 22 })],
+                }),
+                new Paragraph({
+                  alignment: AlignmentType.CENTER,
+                  spacing: { before: 40 },
+                  children: [createText(subtitleFormatted, { bold: false, size: 18 })],
+                }),
+              ],
+            })
+          : createCell(titleText, {
+              bold: true,
+              widthPercent: 40,
+              verticalMerge: VerticalMergeType.RESTART,
+              align: AlignmentType.CENTER,
+              size: 22,
+            }),
+        createCell('Category', { widthPercent: 12, align: AlignmentType.CENTER }),
+        createCell('L', { widthPercent: 5, align: AlignmentType.CENTER }),
+        createCell('T', { widthPercent: 5, align: AlignmentType.CENTER }),
+        createCell('P', { widthPercent: 5, align: AlignmentType.CENTER }),
+        createCell('C', { bold: true, widthPercent: 7, verticalMerge: VerticalMergeType.RESTART, align: AlignmentType.CENTER }),
+        createCell('Total Hours', { bold: true, widthPercent: 10, verticalMerge: VerticalMergeType.RESTART, align: AlignmentType.CENTER }),
+      ],
+    });
 
-  children.push(new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    rows: [headerRow1, headerRow2],
-  }));
+    const bjHeaderRow2 = new TableRow({
+      children: [
+        createCell('', { widthPercent: 16, verticalMerge: VerticalMergeType.CONTINUE }),
+        createCell('', { widthPercent: 40, verticalMerge: VerticalMergeType.CONTINUE }),
+        createCell(course.categoryAbbr || 'PCC', { widthPercent: 12, align: AlignmentType.CENTER }),
+        createCell(String(course.L ?? 0), { widthPercent: 5, align: AlignmentType.CENTER }),
+        createCell(String(course.T ?? 0), { widthPercent: 5, align: AlignmentType.CENTER }),
+        createCell(String(course.P ?? 0), { widthPercent: 5, align: AlignmentType.CENTER }),
+        createCell('', { widthPercent: 7, verticalMerge: VerticalMergeType.CONTINUE }),
+        createCell('', { widthPercent: 10, verticalMerge: VerticalMergeType.CONTINUE }),
+      ],
+    });
+
+    const bjHeaderRow3 = new TableRow({
+      children: [
+        createCell('', { widthPercent: 16, verticalMerge: VerticalMergeType.CONTINUE }),
+        createCell('', { widthPercent: 40, verticalMerge: VerticalMergeType.CONTINUE }),
+        createCell('Hours', { bold: true, widthPercent: 12, align: AlignmentType.CENTER }),
+        createCell(String((Number(course.L) || 0) * 14), { widthPercent: 5, align: AlignmentType.CENTER }),
+        createCell(String((Number(course.T) || 0) * 14), { widthPercent: 5, align: AlignmentType.CENTER }),
+        createCell(String((Number(course.P) || 0) * 14), { widthPercent: 5, align: AlignmentType.CENTER }),
+        createCell(String(course.credits ?? 0), { bold: true, widthPercent: 7, align: AlignmentType.CENTER }),
+        createCell(String(((Number(course.L) || 0) + (Number(course.T) || 0) + (Number(course.P) || 0)) * 14), { bold: true, widthPercent: 10, align: AlignmentType.CENTER }),
+      ],
+    });
+
+    headerTable = new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [bjHeaderRow1, bjHeaderRow2, bjHeaderRow3],
+    });
+  } else {
+    const headerRow1 = new TableRow({
+      children: [
+        createCell(course.courseCode, {
+          bold: true,
+          widthPercent: isTcp ? 16 : 18,
+          verticalMerge: VerticalMergeType.RESTART,
+          align: AlignmentType.CENTER,
+          size: 22,
+        }),
+        subtitleFormatted
+          ? new TableCell({
+              borders: cellBorders,
+              width: { size: isTcp ? 38 : 44, type: WidthType.PERCENTAGE },
+              verticalMerge: VerticalMergeType.RESTART,
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.CENTER,
+                  children: [createText(titleText, { bold: true, size: 22 })],
+                }),
+                new Paragraph({
+                  alignment: AlignmentType.CENTER,
+                  spacing: { before: 40 },
+                  children: [createText(subtitleFormatted, { bold: false, size: 18 })],
+                }),
+              ],
+            })
+          : createCell(titleText, {
+              bold: true,
+              widthPercent: isTcp ? 38 : 44,
+              verticalMerge: VerticalMergeType.RESTART,
+              align: AlignmentType.CENTER,
+              size: 22,
+            }),
+        createCell('Category', { widthPercent: isTcp ? 12 : 14, align: AlignmentType.CENTER }),
+        createCell('L', { widthPercent: isTcp ? 5 : 6, align: AlignmentType.CENTER }),
+        createCell('T', { widthPercent: isTcp ? 5 : 6, align: AlignmentType.CENTER }),
+        createCell('P', { widthPercent: isTcp ? 5 : 6, align: AlignmentType.CENTER }),
+        createCell('Credits', { widthPercent: isTcp ? 7 : 6, align: AlignmentType.CENTER }),
+        ...(isTcp ? [createCell('TE Type', { widthPercent: 12, align: AlignmentType.CENTER })] : []),
+      ],
+    });
+
+    const headerRow2 = new TableRow({
+      children: [
+        createCell('', { widthPercent: isTcp ? 16 : 18, verticalMerge: VerticalMergeType.CONTINUE }),
+        createCell('', { widthPercent: isTcp ? 38 : 44, verticalMerge: VerticalMergeType.CONTINUE }),
+        createCell(course.categoryAbbr || 'PCC', { widthPercent: isTcp ? 12 : 14, align: AlignmentType.CENTER }),
+        createCell(String(course.L), { widthPercent: isTcp ? 5 : 6, align: AlignmentType.CENTER }),
+        createCell(String(course.T), { widthPercent: isTcp ? 5 : 6, align: AlignmentType.CENTER }),
+        createCell(String(course.P), { widthPercent: isTcp ? 5 : 6, align: AlignmentType.CENTER }),
+        createCell(String(course.credits), { bold: true, widthPercent: isTcp ? 7 : 6, align: AlignmentType.CENTER }),
+        ...(isTcp ? [createCell(getDisplayTeType(course.teExamType), { bold: true, widthPercent: 12, align: AlignmentType.CENTER })] : []),
+      ],
+    });
+
+    headerTable = new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [headerRow1, headerRow2],
+    });
+  }
+
+  children.push(headerTable);
 
   // Line space between sections
   children.push(createLineSpace());
@@ -294,39 +374,67 @@ export function buildCourseDocxElements(
 
   // 4. Course Outcomes
   children.push(createShadedBanner('Course Outcomes'));
-  children.push(new Paragraph({
-    spacing: { before: 60, after: 60 },
-    children: [createText('After the successful completion of the course, students will be able to:')],
-  }));
+  if (!isBajaj) {
+    children.push(new Paragraph({
+      spacing: { before: 60, after: 60 },
+      children: [createText('After the successful completion of the course, students will be able to:')],
+    }));
+  }
 
   const isPg = isPgCourse(course);
   const coList = course.courseOutcomes || [];
-  const coHeaderRow = new TableRow({
-    children: [
-      createCell('No.', { bold: true, widthPercent: 7, align: AlignmentType.CENTER }),
-      createCell('Course Outcome', { bold: true, widthPercent: isPg ? 55 : 45 }),
-      createCell('TPS Level', { bold: true, widthPercent: isPg ? 13 : 10, align: AlignmentType.CENTER }),
-      ...(!isPg ? [createCell('Performance Indicator', { bold: true, widthPercent: 14, align: AlignmentType.CENTER })] : []),
-      createCell('CO Weightage', { bold: true, widthPercent: 10, align: AlignmentType.CENTER }),
-      createCell('SDG addressed', { bold: true, widthPercent: isPg ? 9 : 8, align: AlignmentType.CENTER }),
-      createCell('SDG Level', { bold: true, widthPercent: 6, align: AlignmentType.CENTER }),
-    ],
-  });
 
-  const coRows = [coHeaderRow];
-  coList.forEach(co => {
-    coRows.push(new TableRow({
+  let coRows: TableRow[] = [];
+  if (isBajaj) {
+    const bjCoHeaderRow = new TableRow({
       children: [
-        createCell(co.coNo, { widthPercent: 7, align: AlignmentType.CENTER }),
-        createCell(co.statement, { widthPercent: isPg ? 55 : 45 }),
-        createCell(`TPS${co.tpsLevel}`, { widthPercent: isPg ? 13 : 10, align: AlignmentType.CENTER }),
-        ...(!isPg ? [createCell(co.pi, { widthPercent: 14, align: AlignmentType.CENTER })] : []),
-        createCell(co.weightage !== undefined ? String(co.weightage) : '', { widthPercent: 10, align: AlignmentType.CENTER }),
-        createCell(co.sdgNo && co.sdgNo !== 'NC' ? (String(co.sdgNo).includes(',') ? `SDGs ${co.sdgNo}` : `SDG ${co.sdgNo}`) : 'NC', { widthPercent: isPg ? 9 : 8, align: AlignmentType.CENTER }),
-        createCell(co.sdgLevel !== undefined ? String(co.sdgLevel) : '', { widthPercent: 6, align: AlignmentType.CENTER }),
+        createCell('CO#', { bold: true, widthPercent: 10, align: AlignmentType.CENTER }),
+        createCell('Course Outcomes', { bold: true, widthPercent: 52 }),
+        createCell('TCE Proficiency Scale', { bold: true, widthPercent: 16, align: AlignmentType.CENTER }),
+        createCell('Expected Outcome in %', { bold: true, widthPercent: 11, align: AlignmentType.CENTER }),
+        createCell('Expected Attainment Level %', { bold: true, widthPercent: 11, align: AlignmentType.CENTER }),
       ],
-    }));
-  });
+    });
+    coRows.push(bjCoHeaderRow);
+    coList.forEach(co => {
+      coRows.push(new TableRow({
+        children: [
+          createCell(co.coNo, { bold: true, widthPercent: 10, align: AlignmentType.CENTER }),
+          createCell(co.statement, { widthPercent: 52 }),
+          createCell(`TPS${co.tpsLevel || 3}`, { widthPercent: 16, align: AlignmentType.CENTER }),
+          createCell(String(co.expectedProficiency !== undefined ? co.expectedProficiency : 70), { widthPercent: 11, align: AlignmentType.CENTER }),
+          createCell(String(co.expectedAttainment !== undefined ? co.expectedAttainment : 60), { widthPercent: 11, align: AlignmentType.CENTER }),
+        ],
+      }));
+    });
+  } else {
+    const coHeaderRow = new TableRow({
+      children: [
+        createCell('No.', { bold: true, widthPercent: 7, align: AlignmentType.CENTER }),
+        createCell('Course Outcome', { bold: true, widthPercent: isPg ? 55 : 45 }),
+        createCell('TPS Level', { bold: true, widthPercent: isPg ? 13 : 10, align: AlignmentType.CENTER }),
+        ...(!isPg ? [createCell('Performance Indicator', { bold: true, widthPercent: 14, align: AlignmentType.CENTER })] : []),
+        createCell('CO Weightage', { bold: true, widthPercent: 10, align: AlignmentType.CENTER }),
+        createCell('SDG addressed', { bold: true, widthPercent: isPg ? 9 : 8, align: AlignmentType.CENTER }),
+        createCell('SDG Level', { bold: true, widthPercent: 6, align: AlignmentType.CENTER }),
+      ],
+    });
+
+    coRows.push(coHeaderRow);
+    coList.forEach(co => {
+      coRows.push(new TableRow({
+        children: [
+          createCell(co.coNo, { widthPercent: 7, align: AlignmentType.CENTER }),
+          createCell(co.statement, { widthPercent: isPg ? 55 : 45 }),
+          createCell(`TPS${co.tpsLevel}`, { widthPercent: isPg ? 13 : 10, align: AlignmentType.CENTER }),
+          ...(!isPg ? [createCell(co.pi, { widthPercent: 14, align: AlignmentType.CENTER })] : []),
+          createCell(co.weightage !== undefined ? String(co.weightage) : '', { widthPercent: 10, align: AlignmentType.CENTER }),
+          createCell(co.sdgNo && co.sdgNo !== 'NC' ? (String(co.sdgNo).includes(',') ? `SDGs ${co.sdgNo}` : `SDG ${co.sdgNo}`) : 'NC', { widthPercent: isPg ? 9 : 8, align: AlignmentType.CENTER }),
+          createCell(co.sdgLevel !== undefined ? String(co.sdgLevel) : '', { widthPercent: 6, align: AlignmentType.CENTER }),
+        ],
+      }));
+    });
+  }
 
   children.push(new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -336,6 +444,68 @@ export function buildCourseDocxElements(
   // Line space between sections
   children.push(createLineSpace());
 
+  // Bajaj Mapping with Programme Outcomes
+  if (isBajaj) {
+    children.push(createShadedBanner('Mapping with Programme Outcomes'));
+    children.push(new Paragraph({ spacing: { before: 40, after: 40 }, children: [] }));
+
+    const defaultPoPsoRows = [
+      { coNo: 'CO1', po1: 'M', po2: 'L', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso1: 'L', pso3: 'L' },
+      { coNo: 'CO2', po1: 'S', po2: 'M', po3: 'L', po4: 'L', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso2: 'L', pso3: 'L' },
+      { coNo: 'CO3', po1: 'S', po2: 'M', po3: 'L', po5: 'S', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso1: 'M', pso2: 'L', pso3: 'L' },
+      { coNo: 'CO4', po1: 'S', po2: 'M', po3: 'L', po4: 'L', po5: 'S', po6: 'L', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso1: 'M', pso2: 'L', pso3: 'L' },
+      { coNo: 'CO5', po1: 'S', po2: 'M', po3: 'L', po4: 'L', po6: 'L', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso1: 'M', pso3: 'L' },
+      { coNo: 'CO6', po1: 'S', po2: 'L', po3: 'L', po4: 'L', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso2: 'L', pso3: 'L' },
+    ];
+
+    const poPsoHeaderRow = new TableRow({
+      children: [
+        createCell('COs', { bold: true, widthPercent: 7, align: AlignmentType.CENTER }),
+        ...Array.from({ length: 12 }, (_, i) => createCell(`PO ${i + 1}`, { bold: true, widthPercent: 6, align: AlignmentType.CENTER })),
+        ...Array.from({ length: 3 }, (_, i) => createCell(`PSO ${i + 1}`, { bold: true, widthPercent: 7, align: AlignmentType.CENTER })),
+      ],
+    });
+
+    const poPsoRows = [poPsoHeaderRow];
+    coList.forEach((co, idx) => {
+      const existing = (course.poPsoMapping || []).find(r => r.coNo === co.coNo);
+      const fallback = defaultPoPsoRows[idx] || {};
+      const getVal = (f: string) => existing ? (existing as any)[f] || '-' : (fallback as any)[f] || '-';
+      poPsoRows.push(new TableRow({
+        children: [
+          createCell(co.coNo, { bold: true, widthPercent: 7, align: AlignmentType.CENTER }),
+          createCell(getVal('po1'), { widthPercent: 6, align: AlignmentType.CENTER }),
+          createCell(getVal('po2'), { widthPercent: 6, align: AlignmentType.CENTER }),
+          createCell(getVal('po3'), { widthPercent: 6, align: AlignmentType.CENTER }),
+          createCell(getVal('po4'), { widthPercent: 6, align: AlignmentType.CENTER }),
+          createCell(getVal('po5'), { widthPercent: 6, align: AlignmentType.CENTER }),
+          createCell(getVal('po6'), { widthPercent: 6, align: AlignmentType.CENTER }),
+          createCell(getVal('po7'), { widthPercent: 6, align: AlignmentType.CENTER }),
+          createCell(getVal('po8'), { widthPercent: 6, align: AlignmentType.CENTER }),
+          createCell(getVal('po9'), { widthPercent: 6, align: AlignmentType.CENTER }),
+          createCell(getVal('po10'), { widthPercent: 6, align: AlignmentType.CENTER }),
+          createCell(getVal('po11'), { widthPercent: 6, align: AlignmentType.CENTER }),
+          createCell(getVal('po12'), { widthPercent: 6, align: AlignmentType.CENTER }),
+          createCell(getVal('pso1'), { widthPercent: 7, align: AlignmentType.CENTER }),
+          createCell(getVal('pso2'), { widthPercent: 7, align: AlignmentType.CENTER }),
+          createCell(getVal('pso3'), { widthPercent: 7, align: AlignmentType.CENTER }),
+        ],
+      }));
+    });
+
+    children.push(new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: poPsoRows,
+    }));
+
+    children.push(new Paragraph({
+      spacing: { before: 40, after: 60 },
+      children: [createText('S- Strong; M-Medium; L-Low', { bold: true, size: 20 })],
+    }));
+
+    children.push(createLineSpace());
+  }
+
   // 5. Assessment Pattern
   children.push(createShadedBanner('Assessment Pattern'));
   children.push(new Paragraph({ spacing: { before: 40, after: 40 }, children: [] }));
@@ -343,7 +513,103 @@ export function buildCourseDocxElements(
   const isPractical = course.courseType === 'PRACTICAL';
   const matrix = course.assessmentMatrix || [];
 
-  if (isPractical) {
+  if (isBajaj) {
+    const bajajPattern = course.bajajAssessmentPattern;
+    const theoryLvls = bajajPattern?.theoryTpsLevels || [1, 2, 3];
+    const practicalLvls = bajajPattern?.practicalTpsLevels || [1, 2, 3];
+    const terminalLvls = bajajPattern?.terminalTpsLevels || [1, 2, 3];
+    const catName = bajajPattern?.catName || 'Assessment CAT – 1';
+
+    const defaultBajajRows: Array<{ coNo: string; theory: Record<number, number>; practical: Record<number, number>; terminal: Record<number, number> }> = [
+      { coNo: 'CO1', theory: { 2: 10 }, practical: { 3: 20 }, terminal: { 3: 20 } },
+      { coNo: 'CO2', theory: { 2: 5, 3: 15 }, practical: { 3: 20 }, terminal: { 3: 20 } },
+      { coNo: 'CO3', theory: { 2: 5, 3: 15 }, practical: { 3: 20 }, terminal: { 3: 20 } },
+      { coNo: 'CO4', theory: { 3: 20 }, practical: { 3: 20 }, terminal: { 3: 20 } },
+      { coNo: 'CO5', theory: { 2: 5, 3: 10 }, practical: { 3: 10 }, terminal: { 3: 10 } },
+      { coNo: 'CO6', theory: { 2: 5, 3: 10 }, practical: { 3: 10 }, terminal: { 3: 10 } },
+    ];
+
+    const bjAssessHeader1 = new TableRow({
+      children: [
+        createCell('CO', { bold: true, widthPercent: 10, align: AlignmentType.CENTER, verticalMerge: VerticalMergeType.RESTART }),
+        createCell(catName, { bold: true, widthPercent: 60, align: AlignmentType.CENTER, colSpan: theoryLvls.length + practicalLvls.length }),
+        createCell('Terminal Exam Practical', { bold: true, widthPercent: 30, align: AlignmentType.CENTER, colSpan: terminalLvls.length }),
+      ],
+    });
+
+    const bjAssessHeader2 = new TableRow({
+      children: [
+        createCell('', { widthPercent: 10, verticalMerge: VerticalMergeType.CONTINUE }),
+        createCell('Theory', { bold: true, widthPercent: 30, align: AlignmentType.CENTER, colSpan: theoryLvls.length }),
+        createCell('Practical', { bold: true, widthPercent: 30, align: AlignmentType.CENTER, colSpan: practicalLvls.length }),
+        createCell('Practical', { bold: true, widthPercent: 30, align: AlignmentType.CENTER, colSpan: terminalLvls.length }),
+      ],
+    });
+
+    const bjAssessHeader3 = new TableRow({
+      children: [
+        createCell('', { widthPercent: 10, verticalMerge: VerticalMergeType.CONTINUE }),
+        ...theoryLvls.map(lvl => createCell(String(lvl), { bold: true, widthPercent: 10, align: AlignmentType.CENTER, size: 20 })),
+        ...practicalLvls.map(lvl => createCell(String(lvl), { bold: true, widthPercent: 10, align: AlignmentType.CENTER, size: 20 })),
+        ...terminalLvls.map(lvl => createCell(String(lvl), { bold: true, widthPercent: 10, align: AlignmentType.CENTER, size: 20 })),
+      ],
+    });
+
+    const bjDataRows = coList.map((co, idx) => {
+      const existing = bajajPattern?.rows?.find(r => r.coNo === co.coNo);
+      const fallback = defaultBajajRows[idx] || { theory: {}, practical: {}, terminal: {} };
+      const thMarks = (existing?.theoryMarks && Object.keys(existing.theoryMarks).length > 0) ? existing.theoryMarks : fallback.theory;
+      const prMarks = (existing?.practicalMarks && Object.keys(existing.practicalMarks).length > 0) ? existing.practicalMarks : fallback.practical;
+      const teMarks = (existing?.terminalMarks && Object.keys(existing.terminalMarks).length > 0) ? existing.terminalMarks : fallback.terminal;
+
+      return new TableRow({
+        children: [
+          createCell(co.coNo, { bold: true, widthPercent: 10, align: AlignmentType.CENTER }),
+          ...theoryLvls.map(lvl => createCell(thMarks[lvl] && thMarks[lvl] > 0 ? String(thMarks[lvl]) : '', { widthPercent: 10, align: AlignmentType.CENTER })),
+          ...practicalLvls.map(lvl => createCell(prMarks[lvl] && prMarks[lvl] > 0 ? String(prMarks[lvl]) : '', { widthPercent: 10, align: AlignmentType.CENTER })),
+          ...terminalLvls.map(lvl => createCell(teMarks[lvl] && teMarks[lvl] > 0 ? String(teMarks[lvl]) : '', { widthPercent: 10, align: AlignmentType.CENTER })),
+        ],
+      });
+    });
+
+    const bjTotalRow = new TableRow({
+      children: [
+        createCell('Total', { bold: true, widthPercent: 10, align: AlignmentType.CENTER }),
+        ...theoryLvls.map(lvl => {
+          const sum = coList.reduce((acc, co, idx) => {
+            const existing = bajajPattern?.rows?.find(r => r.coNo === co.coNo);
+            const fallback = defaultBajajRows[idx] || { theory: {} };
+            const thMarks = (existing?.theoryMarks && Object.keys(existing.theoryMarks).length > 0) ? existing.theoryMarks : fallback.theory;
+            return acc + (Number((thMarks as any)[lvl]) || 0);
+          }, 0);
+          return createCell(sum > 0 ? String(sum) : '', { bold: true, widthPercent: 10, align: AlignmentType.CENTER });
+        }),
+        ...practicalLvls.map(lvl => {
+          const sum = coList.reduce((acc, co, idx) => {
+            const existing = bajajPattern?.rows?.find(r => r.coNo === co.coNo);
+            const fallback = defaultBajajRows[idx] || { practical: {} };
+            const prMarks = (existing?.practicalMarks && Object.keys(existing.practicalMarks).length > 0) ? existing.practicalMarks : fallback.practical;
+            return acc + (Number((prMarks as any)[lvl]) || 0);
+          }, 0);
+          return createCell(sum > 0 ? String(sum) : '', { bold: true, widthPercent: 10, align: AlignmentType.CENTER });
+        }),
+        ...terminalLvls.map(lvl => {
+          const sum = coList.reduce((acc, co, idx) => {
+            const existing = bajajPattern?.rows?.find(r => r.coNo === co.coNo);
+            const fallback = defaultBajajRows[idx] || { terminal: {} };
+            const teMarks = (existing?.terminalMarks && Object.keys(existing.terminalMarks).length > 0) ? existing.terminalMarks : fallback.terminal;
+            return acc + (Number((teMarks as any)[lvl]) || 0);
+          }, 0);
+          return createCell(sum > 0 ? String(sum) : '', { bold: true, widthPercent: 10, align: AlignmentType.CENTER });
+        }),
+      ],
+    });
+
+    children.push(new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [bjAssessHeader1, bjAssessHeader2, bjAssessHeader3, ...bjDataRows, bjTotalRow],
+    }));
+  } else if (isPractical) {
     const assessHeader1 = new TableRow({
       children: [
         createCell('CO', { bold: true, widthPercent: 16, align: AlignmentType.CENTER, verticalMerge: VerticalMergeType.RESTART }),
@@ -702,6 +968,88 @@ export function buildCourseDocxElements(
         ],
       }));
     }
+  } else if (isBajaj) {
+    // ==================== BAJAJ SYLLABUS & RESOURCES ====================
+    children.push(createShadedBanner('Syllabus'));
+    children.push(createLineSpace());
+
+    // Theory Component
+    children.push(new Paragraph({
+      spacing: { before: 40, after: 40 },
+      children: [createText(`Theory (${(Number(course.L) || 0) * 14} Hours):`, { bold: true })],
+    }));
+
+    if (modulesList.length > 0) {
+      modulesList.forEach(mod => {
+        const modHours = mod.periods ? ` [${mod.periods} Hours]` : '';
+        children.push(new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          spacing: { before: 20, after: 40 },
+          children: [
+            createText(`${mod.mainTopic}: `, { bold: true }),
+            createText(Array.isArray(mod.subtopics) ? mod.subtopics.join(' – ') : ''),
+            ...(modHours ? [createText(modHours, { bold: true })] : []),
+          ],
+        }));
+      });
+      children.push(new Paragraph({
+        alignment: AlignmentType.RIGHT,
+        spacing: { before: 40, after: 60 },
+        children: [createText(`Total Theory: ${(Number(course.L) || 0) * 14} Hours`, { bold: true })],
+      }));
+    }
+
+    // Practical Experiments Component
+    children.push(new Paragraph({
+      spacing: { before: 80, after: 40 },
+      children: [createText(`Practical Experiments: (${(Number(course.P) || 0) * 14} Hours)`, { bold: true })],
+    }));
+
+    if (experimentsList.length > 0) {
+      experimentsList.forEach((exp, idx) => {
+        children.push(new Paragraph({
+          indent: { left: 360, hanging: 240 },
+          spacing: { before: 30, after: 30 },
+          alignment: AlignmentType.JUSTIFIED,
+          children: [
+            createText(`${idx + 1}.  ${exp.name || ''}${exp.hours ? ` (${exp.hours})` : ''}`),
+          ],
+        }));
+      });
+      children.push(new Paragraph({
+        alignment: AlignmentType.RIGHT,
+        spacing: { before: 40, after: 60 },
+        children: [createText(`Total: ${((Number(course.L) || 0) + (Number(course.P) || 0)) * 14} Hours`, { bold: true })],
+      }));
+    }
+    children.push(createLineSpace());
+
+    // Reference Books & Web Resources
+    children.push(createShadedBanner('Reference Books & web resources'));
+    children.push(createLineSpace());
+
+    (course.referenceBooks || []).forEach(b => {
+      children.push(new Paragraph({
+        bullet: { level: 0 },
+        alignment: AlignmentType.JUSTIFIED,
+        children: [createText(formatCitation(b))],
+      }));
+    });
+
+    const validNptel = (course.webResources || [])
+      .map(w => formatNptel(w))
+      .filter((t: string) => Boolean(t && t.trim().length > 0));
+
+    if (validNptel.length > 0) {
+      validNptel.forEach((text: string) => {
+        children.push(new Paragraph({
+          bullet: { level: 0 },
+          alignment: AlignmentType.JUSTIFIED,
+          children: [createText(text)],
+        }));
+      });
+    }
+    children.push(createLineSpace());
   } else {
     // ==================== PAGE 2 (THEORY & TCP) ====================
     children.push(createShadedBanner('Syllabus'));
@@ -839,39 +1187,83 @@ export function buildCourseDocxElements(
       children.push(createShadedBanner('Course Contents and Lecture Schedule'));
       children.push(createLineSpace());
 
-      const schedHeaderRow = new TableRow({
-        children: [
-          createCell('Module No', { bold: true, widthPercent: 12, align: AlignmentType.CENTER }),
-          createCell('Topics', { bold: true, widthPercent: 58 }),
-          createCell('No of Periods', { bold: true, widthPercent: 14, align: AlignmentType.CENTER }),
-          createCell('Course Outcomes', { bold: true, widthPercent: 16, align: AlignmentType.CENTER }),
-        ],
-      });
+      let schedRows: TableRow[] = [];
+      if (isBajaj) {
+        const bjSchedHeaderRow = new TableRow({
+          children: [
+            createCell('#', { bold: true, widthPercent: 10, align: AlignmentType.CENTER }),
+            createCell('Topic', { bold: true, widthPercent: 72 }),
+            createCell('Lecture Hours', { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
+          ],
+        });
+        schedRows.push(bjSchedHeaderRow);
 
-      let totalPeriods = 0;
-      const schedRows = [schedHeaderRow];
-      scheduleItems.forEach(item => {
-        const p = Number(item.periods) || 0;
-        totalPeriods += p;
-        const periodDisplay = item.periods !== undefined && item.periods !== null && item.periods !== '' ? String(item.periods) : '';
-        const coDisplay = Array.isArray(item.coMapping) ? item.coMapping.join(', ') : (item.coMapping || '');
+        scheduleItems.forEach(item => {
+          const periodDisplay = item.periods !== undefined && item.periods !== null && item.periods !== '' ? String(item.periods) : '';
+          schedRows.push(new TableRow({
+            children: [
+              createCell(item.moduleNo || '', { widthPercent: 10, align: AlignmentType.CENTER }),
+              createCell(item.topic || '', { widthPercent: 72 }),
+              createCell(periodDisplay, { widthPercent: 18, align: AlignmentType.CENTER }),
+            ],
+          }));
+        });
+
         schedRows.push(new TableRow({
           children: [
-            createCell(item.moduleNo || '', { widthPercent: 12, align: AlignmentType.CENTER }),
-            createCell(item.topic || '', { widthPercent: 58 }),
-            createCell(periodDisplay, { widthPercent: 14, align: AlignmentType.CENTER }),
-            createCell(coDisplay, { widthPercent: 16, align: AlignmentType.CENTER }),
+            createCell('Theory', { bold: true, widthPercent: 82, colSpan: 2, align: AlignmentType.CENTER }),
+            createCell(String((Number(course.L) || 0) * 14), { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
           ],
         }));
-      });
 
-      schedRows.push(new TableRow({
-        children: [
-          createCell('Total Periods', { bold: true, widthPercent: 70, colSpan: 2, align: AlignmentType.CENTER }),
-          createCell(String(totalPeriods), { bold: true, widthPercent: 14, align: AlignmentType.CENTER }),
-          createCell('', { widthPercent: 16, align: AlignmentType.CENTER }),
-        ],
-      }));
+        schedRows.push(new TableRow({
+          children: [
+            createCell('Practical', { bold: true, widthPercent: 82, colSpan: 2, align: AlignmentType.CENTER }),
+            createCell(String((Number(course.P) || 0) * 14), { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
+          ],
+        }));
+
+        schedRows.push(new TableRow({
+          children: [
+            createCell('Total', { bold: true, widthPercent: 82, colSpan: 2, align: AlignmentType.CENTER }),
+            createCell(String(((Number(course.L) || 0) + (Number(course.P) || 0)) * 14), { bold: true, widthPercent: 18, align: AlignmentType.CENTER }),
+          ],
+        }));
+      } else {
+        const schedHeaderRow = new TableRow({
+          children: [
+            createCell('Module No', { bold: true, widthPercent: 12, align: AlignmentType.CENTER }),
+            createCell('Topics', { bold: true, widthPercent: 58 }),
+            createCell('No of Periods', { bold: true, widthPercent: 14, align: AlignmentType.CENTER }),
+            createCell('Course Outcomes', { bold: true, widthPercent: 16, align: AlignmentType.CENTER }),
+          ],
+        });
+
+        let totalPeriods = 0;
+        schedRows.push(schedHeaderRow);
+        scheduleItems.forEach(item => {
+          const p = Number(item.periods) || 0;
+          totalPeriods += p;
+          const periodDisplay = item.periods !== undefined && item.periods !== null && item.periods !== '' ? String(item.periods) : '';
+          const coDisplay = Array.isArray(item.coMapping) ? item.coMapping.join(', ') : (item.coMapping || '');
+          schedRows.push(new TableRow({
+            children: [
+              createCell(item.moduleNo || '', { widthPercent: 12, align: AlignmentType.CENTER }),
+              createCell(item.topic || '', { widthPercent: 58 }),
+              createCell(periodDisplay, { widthPercent: 14, align: AlignmentType.CENTER }),
+              createCell(coDisplay, { widthPercent: 16, align: AlignmentType.CENTER }),
+            ],
+          }));
+        });
+
+        schedRows.push(new TableRow({
+          children: [
+            createCell('Total Periods', { bold: true, widthPercent: 70, colSpan: 2, align: AlignmentType.CENTER }),
+            createCell(String(totalPeriods), { bold: true, widthPercent: 14, align: AlignmentType.CENTER }),
+            createCell('', { widthPercent: 16, align: AlignmentType.CENTER }),
+          ],
+        }));
+      }
 
       children.push(new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },

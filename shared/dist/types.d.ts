@@ -1,5 +1,5 @@
 import { CategoryAbbreviation } from './constants.js';
-export type CourseType = 'THEORY' | 'PRACTICAL' | 'TCP' | 'AUDIT';
+export type CourseType = 'THEORY' | 'PRACTICAL' | 'TCP' | 'AUDIT' | 'BAJAJ';
 export type CourseStatus = 'DRAFT' | 'SUBMITTED' | 'RETURNED' | 'APPROVED' | 'FINALIZED';
 export type UserRole = 'FACULTY' | 'HOD' | 'BOS_COORDINATOR' | 'ADMIN';
 export interface User {
@@ -29,10 +29,25 @@ export interface CourseOutcome {
     generalCoRef?: string;
     sdgNo: number | 'NC' | string;
     sdgLevel: number;
+    expectedProficiency?: number;
+    expectedAttainment?: number;
     questionLevelSplit?: {
         ownLevelPercent: number;
         lowerLevelPercent: number;
     };
+}
+export interface BajajAssessmentRow {
+    coNo: string;
+    theoryMarks?: Record<number, number>;
+    practicalMarks?: Record<number, number>;
+    terminalMarks?: Record<number, number>;
+}
+export interface BajajAssessmentPattern {
+    catName?: string;
+    theoryTpsLevels: number[];
+    practicalTpsLevels: number[];
+    terminalTpsLevels: number[];
+    rows: BajajAssessmentRow[];
 }
 export interface AssessmentMatrixCell {
     coNo: string;
@@ -179,6 +194,7 @@ export interface Course {
     experiments?: LabExperiment[];
     coursePlan?: LabCoursePlanItem[];
     poPsoMapping?: PoPsoMappingRow[];
+    bajajAssessmentPattern?: BajajAssessmentPattern;
     cognitiveAssessmentPattern?: CognitiveAssessmentRow[];
     courseAssessmentQuestions?: CourseOutcomeQuestions[];
     lectureScheduleItems?: LectureScheduleItem[];

@@ -2,7 +2,7 @@
 
 import { CategoryAbbreviation } from './constants.js';
 
-export type CourseType = 'THEORY' | 'PRACTICAL' | 'TCP' | 'AUDIT';
+export type CourseType = 'THEORY' | 'PRACTICAL' | 'TCP' | 'AUDIT' | 'BAJAJ';
 
 export type CourseStatus = 'DRAFT' | 'SUBMITTED' | 'RETURNED' | 'APPROVED' | 'FINALIZED';
 
@@ -37,11 +37,28 @@ export interface CourseOutcome {
   generalCoRef?: string; // e.g., 'CO-C1'
   sdgNo: number | 'NC' | string; // 1-17, 'NC', or multiple comma-separated e.g. '4, 9'
   sdgLevel: number; // 0-5
+  expectedProficiency?: number; // e.g. 70 (%)
+  expectedAttainment?: number; // e.g. 60 (%)
   // Optional question level split (Section 4.2)
   questionLevelSplit?: {
     ownLevelPercent: number; // 70-100%
     lowerLevelPercent: number; // 0-30%
   };
+}
+
+export interface BajajAssessmentRow {
+  coNo: string;
+  theoryMarks?: Record<number, number>; // e.g. { 1: 0, 2: 10, 3: 0, 4: 0 }
+  practicalMarks?: Record<number, number>; // e.g. { 1: 0, 2: 20, 3: 0, 4: 0 }
+  terminalMarks?: Record<number, number>; // e.g. { 1: 0, 2: 20, 3: 0, 4: 0 }
+}
+
+export interface BajajAssessmentPattern {
+  catName?: string; // e.g. 'Assessment CAT – 1'
+  theoryTpsLevels: number[]; // e.g. [1, 2, 3] or [2, 3, 4]
+  practicalTpsLevels: number[]; // e.g. [1, 2, 3] or [2, 3, 4]
+  terminalTpsLevels: number[]; // e.g. [1, 2, 3] or [2, 3, 4]
+  rows: BajajAssessmentRow[];
 }
 
 export interface AssessmentMatrixCell {
@@ -202,6 +219,7 @@ export interface Course {
   experiments?: LabExperiment[];
   coursePlan?: LabCoursePlanItem[];
   poPsoMapping?: PoPsoMappingRow[];
+  bajajAssessmentPattern?: BajajAssessmentPattern;
   cognitiveAssessmentPattern?: CognitiveAssessmentRow[];
   courseAssessmentQuestions?: CourseOutcomeQuestions[];
   lectureScheduleItems?: LectureScheduleItem[];

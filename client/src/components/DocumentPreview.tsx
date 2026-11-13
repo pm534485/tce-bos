@@ -390,11 +390,72 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
   const matrix = course.assessmentMatrix || [];
   const isTcp = course.courseType === 'TCP';
   const isPractical = course.courseType === 'PRACTICAL';
+  const isBajaj = course.courseType === 'BAJAJ';
   let totalCol1 = 0;
   let totalCol2 = 0;
   let totalCol3 = 0;
   let totalCol4 = 0;
   let totalCol5 = 0;
+
+  // Bajaj Assessment Pattern
+  const bajajPattern = course.bajajAssessmentPattern;
+  const bajajTheoryTpsLevels = bajajPattern?.theoryTpsLevels || [1, 2, 3];
+  const bajajPracticalTpsLevels = bajajPattern?.practicalTpsLevels || [1, 2, 3];
+  const bajajTerminalTpsLevels = bajajPattern?.terminalTpsLevels || [1, 2, 3];
+  const bajajCatName = bajajPattern?.catName || 'Assessment CAT – 1';
+
+  const defaultBajajRows: Array<{ coNo: string; theory: Record<number, number>; practical: Record<number, number>; terminal: Record<number, number> }> = [
+    { coNo: 'CO1', theory: { 2: 10 }, practical: { 3: 20 }, terminal: { 3: 20 } },
+    { coNo: 'CO2', theory: { 2: 5, 3: 15 }, practical: { 3: 20 }, terminal: { 3: 20 } },
+    { coNo: 'CO3', theory: { 2: 5, 3: 15 }, practical: { 3: 20 }, terminal: { 3: 20 } },
+    { coNo: 'CO4', theory: { 3: 20 }, practical: { 3: 20 }, terminal: { 3: 20 } },
+    { coNo: 'CO5', theory: { 2: 5, 3: 10 }, practical: { 3: 10 }, terminal: { 3: 10 } },
+    { coNo: 'CO6', theory: { 2: 5, 3: 10 }, practical: { 3: 10 }, terminal: { 3: 10 } },
+  ];
+
+  const bajajRows = coList.map((co, idx) => {
+    const existing = bajajPattern?.rows?.find(r => r.coNo === co.coNo);
+    const fallback = defaultBajajRows[idx] || { theory: {}, practical: {}, terminal: {} };
+    return {
+      coNo: co.coNo,
+      theoryMarks: (existing?.theoryMarks && Object.keys(existing.theoryMarks).length > 0) ? existing.theoryMarks : fallback.theory,
+      practicalMarks: (existing?.practicalMarks && Object.keys(existing.practicalMarks).length > 0) ? existing.practicalMarks : fallback.practical,
+      terminalMarks: (existing?.terminalMarks && Object.keys(existing.terminalMarks).length > 0) ? existing.terminalMarks : fallback.terminal,
+    };
+  });
+
+  // Bajaj PO-PSO Mapping rows
+  const defaultPoPsoRows = [
+    { coNo: 'CO1', po1: 'M', po2: 'L', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso1: 'L', pso3: 'L' },
+    { coNo: 'CO2', po1: 'S', po2: 'M', po3: 'L', po4: 'L', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso2: 'L', pso3: 'L' },
+    { coNo: 'CO3', po1: 'S', po2: 'M', po3: 'L', po5: 'S', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso1: 'M', pso2: 'L', pso3: 'L' },
+    { coNo: 'CO4', po1: 'S', po2: 'M', po3: 'L', po4: 'L', po5: 'S', po6: 'L', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso1: 'M', pso2: 'L', pso3: 'L' },
+    { coNo: 'CO5', po1: 'S', po2: 'M', po3: 'L', po4: 'L', po6: 'L', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso1: 'M', pso3: 'L' },
+    { coNo: 'CO6', po1: 'S', po2: 'L', po3: 'L', po4: 'L', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso2: 'L', pso3: 'L' },
+  ];
+
+  const poPsoRows = coList.map((co, idx) => {
+    const existing = (course.poPsoMapping || []).find(r => r.coNo === co.coNo);
+    const fallback = defaultPoPsoRows[idx] || {};
+    return {
+      coNo: co.coNo,
+      po1: existing?.po1 || (fallback as any).po1 || '-',
+      po2: existing?.po2 || (fallback as any).po2 || '-',
+      po3: existing?.po3 || (fallback as any).po3 || '-',
+      po4: existing?.po4 || (fallback as any).po4 || '-',
+      po5: existing?.po5 || (fallback as any).po5 || '-',
+      po6: existing?.po6 || (fallback as any).po6 || '-',
+      po7: existing?.po7 || (fallback as any).po7 || '-',
+      po8: existing?.po8 || (fallback as any).po8 || '-',
+      po9: existing?.po9 || (fallback as any).po9 || '-',
+      po10: existing?.po10 || (fallback as any).po10 || '-',
+      po11: existing?.po11 || (fallback as any).po11 || '-',
+      po12: existing?.po12 || (fallback as any).po12 || '-',
+      pso1: existing?.pso1 || (fallback as any).pso1 || '-',
+      pso2: existing?.pso2 || (fallback as any).pso2 || '-',
+      pso3: existing?.pso3 || (fallback as any).pso3 || '-',
+    };
+  });
 
   // Practical Assessment Pattern (Mark Distribution)
   let totalLabCa = 0;
@@ -635,43 +696,85 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
         </div>
 
         {/* 1. Header Table */}
-        <table className="w-full border-collapse border border-black mb-0 text-xs">
-          <tbody>
-            <tr>
-              <td rowSpan={2} className={`${isTcp ? 'w-[16%]' : 'w-[18%]'} font-bold text-center align-middle border border-black p-2 text-sm`}>
-                {course.courseCode || '______'}
-              </td>
-              <td rowSpan={2} className={`${isTcp ? 'w-[38%]' : 'w-[44%]'} font-bold text-center align-middle border border-black p-2 text-sm`}>
-                <div className="uppercase">{titleCaps || '____________________'}</div>
-                {course.courseSubtitle && course.courseSubtitle.trim() && (
-                  <div className="text-[11px] font-normal normal-case text-slate-700 mt-0.5 tracking-normal">
-                    {course.courseSubtitle.trim().startsWith('(') && course.courseSubtitle.trim().endsWith(')')
-                      ? course.courseSubtitle.trim()
-                      : `(${course.courseSubtitle.trim()})`}
-                  </div>
+        {isBajaj ? (
+          <table className="w-full border-collapse border border-black mb-0 text-xs">
+            <tbody>
+              <tr>
+                <td rowSpan={3} className="w-[16%] font-bold text-center align-middle border border-black p-2 text-sm">
+                  {course.courseCode || '______'}
+                </td>
+                <td rowSpan={3} className="w-[40%] font-bold text-center align-middle border border-black p-2 text-sm uppercase">
+                  <div>{titleCaps || '____________________'}</div>
+                  {course.courseSubtitle && course.courseSubtitle.trim() && (
+                    <div className="text-[11px] font-normal normal-case text-slate-700 mt-0.5 tracking-normal">
+                      {course.courseSubtitle.trim().startsWith('(') && course.courseSubtitle.trim().endsWith(')')
+                        ? course.courseSubtitle.trim()
+                        : `(${course.courseSubtitle.trim()})`}
+                    </div>
+                  )}
+                </td>
+                <td className="text-center border border-black p-1.5 w-[12%]">Category</td>
+                <td className="text-center border border-black p-1.5 w-[5%]">L</td>
+                <td className="text-center border border-black p-1.5 w-[5%]">T</td>
+                <td className="text-center border border-black p-1.5 w-[5%]">P</td>
+                <td rowSpan={2} className="text-center font-bold border border-black p-1.5 w-[7%] align-middle">C</td>
+                <td rowSpan={2} className="text-center font-bold border border-black p-1.5 w-[10%] align-middle">Total<br />Hours</td>
+              </tr>
+              <tr>
+                <td className="text-center border border-black p-1.5">{course.categoryAbbr || 'PCC'}</td>
+                <td className="text-center border border-black p-1.5">{course.L !== undefined && course.L !== null ? course.L : 0}</td>
+                <td className="text-center border border-black p-1.5">{course.T !== undefined && course.T !== null ? course.T : 0}</td>
+                <td className="text-center border border-black p-1.5">{course.P !== undefined && course.P !== null ? course.P : 0}</td>
+              </tr>
+              <tr>
+                <td className="text-center font-bold border border-black p-1.5">Hours</td>
+                <td className="text-center border border-black p-1.5">{(Number(course.L) || 0) * 14}</td>
+                <td className="text-center border border-black p-1.5">{(Number(course.T) || 0) * 14}</td>
+                <td className="text-center border border-black p-1.5">{(Number(course.P) || 0) * 14}</td>
+                <td className="text-center font-bold border border-black p-1.5">{course.credits !== undefined && course.credits !== null ? course.credits : 0}</td>
+                <td className="text-center font-bold border border-black p-1.5">{((Number(course.L) || 0) + (Number(course.T) || 0) + (Number(course.P) || 0)) * 14}</td>
+              </tr>
+            </tbody>
+          </table>
+        ) : (
+          <table className="w-full border-collapse border border-black mb-0 text-xs">
+            <tbody>
+              <tr>
+                <td rowSpan={2} className={`${isTcp ? 'w-[16%]' : 'w-[18%]'} font-bold text-center align-middle border border-black p-2 text-sm`}>
+                  {course.courseCode || '______'}
+                </td>
+                <td rowSpan={2} className={`${isTcp ? 'w-[38%]' : 'w-[44%]'} font-bold text-center align-middle border border-black p-2 text-sm`}>
+                  <div className="uppercase">{titleCaps || '____________________'}</div>
+                  {course.courseSubtitle && course.courseSubtitle.trim() && (
+                    <div className="text-[11px] font-normal normal-case text-slate-700 mt-0.5 tracking-normal">
+                      {course.courseSubtitle.trim().startsWith('(') && course.courseSubtitle.trim().endsWith(')')
+                        ? course.courseSubtitle.trim()
+                        : `(${course.courseSubtitle.trim()})`}
+                    </div>
+                  )}
+                </td>
+                <td className={`text-center border border-black p-1.5 ${isTcp ? 'w-[12%]' : 'w-[14%]'}`}>Category</td>
+                <td className={`text-center border border-black p-1.5 ${isTcp ? 'w-[5%]' : 'w-[6%]'}`}>L</td>
+                <td className={`text-center border border-black p-1.5 ${isTcp ? 'w-[5%]' : 'w-[6%]'}`}>T</td>
+                <td className={`text-center border border-black p-1.5 ${isTcp ? 'w-[5%]' : 'w-[6%]'}`}>P</td>
+                <td className={`text-center border border-black p-1.5 ${isTcp ? 'w-[7%]' : 'w-[6%]'}`}>Credits</td>
+                {isTcp && (
+                  <td className="text-center border border-black p-1.5 w-[12%]">TE Type</td>
                 )}
-              </td>
-              <td className={`text-center border border-black p-1.5 ${isTcp ? 'w-[12%]' : 'w-[14%]'}`}>Category</td>
-              <td className={`text-center border border-black p-1.5 ${isTcp ? 'w-[5%]' : 'w-[6%]'}`}>L</td>
-              <td className={`text-center border border-black p-1.5 ${isTcp ? 'w-[5%]' : 'w-[6%]'}`}>T</td>
-              <td className={`text-center border border-black p-1.5 ${isTcp ? 'w-[5%]' : 'w-[6%]'}`}>P</td>
-              <td className={`text-center border border-black p-1.5 ${isTcp ? 'w-[7%]' : 'w-[6%]'}`}>Credits</td>
-              {isTcp && (
-                <td className="text-center border border-black p-1.5 w-[12%]">TE Type</td>
-              )}
-            </tr>
-            <tr>
-              <td className="text-center border border-black p-1.5">{course.categoryAbbr || '—'}</td>
-              <td className="text-center border border-black p-1.5">{course.L !== undefined && course.L !== null ? course.L : '_'}</td>
-              <td className="text-center border border-black p-1.5">{course.T !== undefined && course.T !== null ? course.T : '_'}</td>
-              <td className="text-center border border-black p-1.5">{course.P !== undefined && course.P !== null ? course.P : '_'}</td>
-              <td className="text-center font-bold border border-black p-1.5">{course.credits !== undefined && course.credits !== null ? course.credits : '_'}</td>
-              {isTcp && (
-                <td className="text-center font-bold border border-black p-1.5">{getDisplayTeType(course.teExamType)}</td>
-              )}
-            </tr>
-          </tbody>
-        </table>
+              </tr>
+              <tr>
+                <td className="text-center border border-black p-1.5">{course.categoryAbbr || '—'}</td>
+                <td className="text-center border border-black p-1.5">{course.L !== undefined && course.L !== null ? course.L : '_'}</td>
+                <td className="text-center border border-black p-1.5">{course.T !== undefined && course.T !== null ? course.T : '_'}</td>
+                <td className="text-center border border-black p-1.5">{course.P !== undefined && course.P !== null ? course.P : '_'}</td>
+                <td className="text-center font-bold border border-black p-1.5">{course.credits !== undefined && course.credits !== null ? course.credits : '_'}</td>
+                {isTcp && (
+                  <td className="text-center font-bold border border-black p-1.5">{getDisplayTeType(course.teExamType)}</td>
+                )}
+              </tr>
+            </tbody>
+          </table>
+        )}
 
         {/* Preamble */}
         <div className="section-block">
@@ -706,10 +809,35 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
           <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1.5 print:bg-[#D9D9D9]">
             Course Outcomes
           </div>
-          <p className="text-xs text-black mt-1 mb-1.5">
-            On the successful completion of the course, students will be able to
-          </p>
-          {(() => {
+          {!isBajaj && (
+            <p className="text-xs text-black mt-1 mb-1.5">
+              On the successful completion of the course, students will be able to
+            </p>
+          )}
+          {isBajaj ? (
+            <table className="w-full border-collapse border border-black mb-0 text-xs">
+              <thead>
+                <tr className="border-b border-black">
+                  <th className="border border-black p-1.5 text-center w-[10%]">CO#</th>
+                  <th className="border border-black p-1.5 text-left w-[52%]">Course Outcomes</th>
+                  <th className="border border-black p-1.5 text-center w-[16%]">TCE<br />Proficiency Scale</th>
+                  <th className="border border-black p-1.5 text-center w-[11%]">Expected<br />Proficiency in %</th>
+                  <th className="border border-black p-1.5 text-center w-[11%]">Expected<br />Attainment Level %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {coList.map(co => (
+                  <tr key={co.coNo} className="border-b border-black">
+                    <td className="border border-black p-1.5 text-center font-bold">{co.coNo}</td>
+                    <td className="border border-black p-1.5 text-left">{co.statement}</td>
+                    <td className="border border-black p-1.5 text-center font-semibold">TPS{co.tpsLevel || 3}</td>
+                    <td className="border border-black p-1.5 text-center">{co.expectedProficiency !== undefined ? co.expectedProficiency : 70}</td>
+                    <td className="border border-black p-1.5 text-center">{co.expectedAttainment !== undefined ? co.expectedAttainment : 60}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (() => {
             const isPg = isPgCourse(course);
             return (
               <table className="w-full border-collapse border border-black mb-0 text-xs">
@@ -746,8 +874,148 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
           })()}
         </div>
 
+        {/* Bajaj Mapping with Programme Outcomes Table */}
+        {isBajaj && (
+          <div className="section-block">
+            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1.5 print:bg-[#D9D9D9]">
+              Mapping with Programme Outcomes
+            </div>
+            <table className="w-full border-collapse border border-black mb-0 text-xs table-fixed">
+              <thead>
+                <tr className="border-b border-black">
+                  <th className="border border-black p-1 text-center font-bold w-[7%]">COs</th>
+                  <th className="border border-black p-1 text-center font-bold">PO 1</th>
+                  <th className="border border-black p-1 text-center font-bold">PO 2</th>
+                  <th className="border border-black p-1 text-center font-bold">PO 3</th>
+                  <th className="border border-black p-1 text-center font-bold">PO 4</th>
+                  <th className="border border-black p-1 text-center font-bold">PO 5</th>
+                  <th className="border border-black p-1 text-center font-bold">PO 6</th>
+                  <th className="border border-black p-1 text-center font-bold">PO 7</th>
+                  <th className="border border-black p-1 text-center font-bold">PO 8</th>
+                  <th className="border border-black p-1 text-center font-bold">PO 9</th>
+                  <th className="border border-black p-1 text-center font-bold">PO 10</th>
+                  <th className="border border-black p-1 text-center font-bold">PO 11</th>
+                  <th className="border border-black p-1 text-center font-bold">PO 12</th>
+                  <th className="border border-black p-1 text-center font-bold">PSO 1</th>
+                  <th className="border border-black p-1 text-center font-bold">PSO 2</th>
+                  <th className="border border-black p-1 text-center font-bold">PSO 3</th>
+                </tr>
+              </thead>
+              <tbody>
+                {poPsoRows.map(row => (
+                  <tr key={row.coNo} className="border-b border-black">
+                    <td className="border border-black p-1 text-center font-bold">{row.coNo}</td>
+                    <td className="border border-black p-1 text-center">{row.po1}</td>
+                    <td className="border border-black p-1 text-center">{row.po2}</td>
+                    <td className="border border-black p-1 text-center">{row.po3}</td>
+                    <td className="border border-black p-1 text-center">{row.po4}</td>
+                    <td className="border border-black p-1 text-center">{row.po5}</td>
+                    <td className="border border-black p-1 text-center">{row.po6}</td>
+                    <td className="border border-black p-1 text-center">{row.po7}</td>
+                    <td className="border border-black p-1 text-center">{row.po8}</td>
+                    <td className="border border-black p-1 text-center">{row.po9}</td>
+                    <td className="border border-black p-1 text-center">{row.po10}</td>
+                    <td className="border border-black p-1 text-center">{row.po11}</td>
+                    <td className="border border-black p-1 text-center">{row.po12}</td>
+                    <td className="border border-black p-1 text-center">{row.pso1}</td>
+                    <td className="border border-black p-1 text-center">{row.pso2}</td>
+                    <td className="border border-black p-1 text-center">{row.pso3}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="text-xs text-black mt-1 font-semibold">
+              S- Strong; M-Medium; L-Low
+            </div>
+          </div>
+        )}
+
         {/* Assessment Pattern */}
-        {isPractical ? (
+        {isBajaj ? (
+          <div className="section-block">
+            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1.5 print:bg-[#D9D9D9]">
+              Assessment Pattern
+            </div>
+            <table className="w-full border-collapse border border-black mb-0 text-xs table-fixed">
+              <thead>
+                <tr>
+                  <th rowSpan={3} className="border border-black p-1 text-center align-middle font-bold w-[10%]">CO</th>
+                  <th colSpan={bajajTheoryTpsLevels.length + bajajPracticalTpsLevels.length} className="border border-black p-1 text-center font-bold">
+                    {bajajCatName}
+                  </th>
+                  <th colSpan={bajajTerminalTpsLevels.length} className="border border-black p-1 text-center font-bold">
+                    Terminal Exam Practical
+                  </th>
+                </tr>
+                <tr>
+                  <th colSpan={bajajTheoryTpsLevels.length} className="border border-black p-1 text-center font-bold">Theory</th>
+                  <th colSpan={bajajPracticalTpsLevels.length} className="border border-black p-1 text-center font-bold">Practical</th>
+                  <th colSpan={bajajTerminalTpsLevels.length} className="border border-black p-1 text-center font-bold">Practical</th>
+                </tr>
+                <tr>
+                  {bajajTheoryTpsLevels.map(lvl => (
+                    <th key={`th-${lvl}`} className="border border-black p-1 text-center font-bold text-[10px]">{lvl}</th>
+                  ))}
+                  {bajajPracticalTpsLevels.map(lvl => (
+                    <th key={`pr-${lvl}`} className="border border-black p-1 text-center font-bold text-[10px]">{lvl}</th>
+                  ))}
+                  {bajajTerminalTpsLevels.map(lvl => (
+                    <th key={`te-${lvl}`} className="border border-black p-1 text-center font-bold text-[10px]">{lvl}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {bajajRows.map(r => (
+                  <tr key={r.coNo} className="border-b border-black">
+                    <td className="border border-black p-1 text-center font-bold">{r.coNo}</td>
+                    {bajajTheoryTpsLevels.map(lvl => (
+                      <td key={`th-${lvl}`} className="border border-black p-1 text-center">
+                        {r.theoryMarks[lvl] && r.theoryMarks[lvl] > 0 ? r.theoryMarks[lvl] : ''}
+                      </td>
+                    ))}
+                    {bajajPracticalTpsLevels.map(lvl => (
+                      <td key={`pr-${lvl}`} className="border border-black p-1 text-center">
+                        {r.practicalMarks[lvl] && r.practicalMarks[lvl] > 0 ? r.practicalMarks[lvl] : ''}
+                      </td>
+                    ))}
+                    {bajajTerminalTpsLevels.map(lvl => (
+                      <td key={`te-${lvl}`} className="border border-black p-1 text-center">
+                        {r.terminalMarks[lvl] && r.terminalMarks[lvl] > 0 ? r.terminalMarks[lvl] : ''}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+                <tr className="font-bold border-t border-black">
+                  <td className="border border-black p-1 text-center font-bold">Total</td>
+                  {bajajTheoryTpsLevels.map(lvl => {
+                    const sum = bajajRows.reduce((acc, r) => acc + (Number(r.theoryMarks[lvl]) || 0), 0);
+                    return (
+                      <td key={`tot-th-${lvl}`} className="border border-black p-1 text-center font-bold">
+                        {sum > 0 ? sum : ''}
+                      </td>
+                    );
+                  })}
+                  {bajajPracticalTpsLevels.map(lvl => {
+                    const sum = bajajRows.reduce((acc, r) => acc + (Number(r.practicalMarks[lvl]) || 0), 0);
+                    return (
+                      <td key={`tot-pr-${lvl}`} className="border border-black p-1 text-center font-bold">
+                        {sum > 0 ? sum : ''}
+                      </td>
+                    );
+                  })}
+                  {bajajTerminalTpsLevels.map(lvl => {
+                    const sum = bajajRows.reduce((acc, r) => acc + (Number(r.terminalMarks[lvl]) || 0), 0);
+                    return (
+                      <td key={`tot-te-${lvl}`} className="border border-black p-1 text-center font-bold">
+                        {sum > 0 ? sum : ''}
+                      </td>
+                    );
+                  })}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        ) : isPractical ? (
           <div className="section-block">
             <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1 text-left print:bg-[#D9D9D9]">
               Assessment Pattern
@@ -837,7 +1105,62 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
         )}
 
         {/* Syllabus (Theory/TCP) OR List of Experiments with CO Mapping (Practical) */}
-        {isPractical ? (
+        {/* Syllabus */}
+        {isBajaj ? (
+          <div className="section-block">
+            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1.5 print:bg-[#D9D9D9]">
+              Syllabus
+            </div>
+            <div className="h-1" />
+
+            {/* Theory */}
+            <div>
+              <div className="font-bold text-xs text-black mb-1">
+                Theory ({((Number(course.L) || 0) * 14)} Hours):
+              </div>
+              {(course.modules && course.modules.length > 0) ? (
+                <div className="space-y-1.5">
+                  {course.modules.map((mod, idx) => (
+                    <div key={idx} className="text-xs leading-snug text-justify">
+                      <span className="font-bold text-black">{mod.mainTopic}: </span>
+                      <span className="text-black">{Array.isArray(mod.subtopics) ? mod.subtopics.join(' – ') : ''}</span>
+                      {mod.periods ? <span className="font-semibold text-slate-800"> [{mod.periods} Hours]</span> : ''}
+                    </div>
+                  ))}
+                  <div className="text-xs font-bold text-right pt-1">
+                    Total Theory: {((Number(course.L) || 0) * 14)} Hours
+                  </div>
+                </div>
+              ) : (
+                <div className="text-xs italic text-slate-500 py-0.5">No theory modules added yet.</div>
+              )}
+            </div>
+
+            {/* Practical Experiments */}
+            <div className="mt-3">
+              <div className="font-bold text-xs text-black mb-1">
+                Practical Experiments: ({((Number(course.P) || 0) * 14)} Hours)
+              </div>
+              {(course.experiments && course.experiments.length > 0) ? (
+                <div>
+                  <ol className="list-decimal pl-5 space-y-1 text-xs text-black">
+                    {course.experiments.map((exp, idx) => (
+                      <li key={idx} className="text-justify">
+                        {exp.name}
+                        {exp.hours ? ` (${exp.hours})` : ''}
+                      </li>
+                    ))}
+                  </ol>
+                  <div className="text-xs font-bold text-right pt-1">
+                    Total: {(((Number(course.L) || 0) + (Number(course.P) || 0)) * 14)} Hours
+                  </div>
+                </div>
+              ) : (
+                <div className="text-xs italic text-slate-500 py-0.5">No practical experiments added yet.</div>
+              )}
+            </div>
+          </div>
+        ) : isPractical ? (
           <div className="section-block">
             <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1.5 print:bg-[#D9D9D9]">
               List of Experiments with CO Mapping
@@ -990,35 +1313,70 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
             </div>
             <div className="h-2" />
 
-            <table className="w-full border-collapse border border-black mb-0 text-xs">
-              <thead>
-                <tr className="border-b border-black">
-                  <th className="border border-black p-1.5 text-center w-[12%]">Module<br />No</th>
-                  <th className="border border-black p-1.5 text-left w-[58%]">Topics</th>
-                  <th className="border border-black p-1.5 text-center w-[14%]">No of<br />Periods</th>
-                  <th className="border border-black p-1.5 text-center w-[16%]">Course<br />Outcomes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {scheduleItems.map((item, idx) => (
-                  <tr key={idx} className="border-b border-black">
-                    <td className="border border-black p-1.5 text-center">{item.moduleNo || ''}</td>
-                    <td className="border border-black p-1.5 text-left">{item.topic || ''}</td>
-                    <td className="border border-black p-1.5 text-center">
-                      {item.periods !== undefined && item.periods !== null && item.periods !== '' ? String(item.periods) : ''}
-                    </td>
-                    <td className="border border-black p-1.5 text-center">
-                      {Array.isArray(item.coMapping) ? item.coMapping.join(', ') : (item.coMapping || '')}
-                    </td>
+            {isBajaj ? (
+              <table className="w-full border-collapse border border-black mb-0 text-xs">
+                <thead>
+                  <tr className="border-b border-black">
+                    <th className="border border-black p-1.5 text-center w-[10%]">#</th>
+                    <th className="border border-black p-1.5 text-left w-[72%]">Topic</th>
+                    <th className="border border-black p-1.5 text-center w-[18%]">Lecture<br />Hours</th>
                   </tr>
-                ))}
-                <tr className="font-bold">
-                  <td colSpan={2} className="border border-black p-1.5 text-center">Total Periods</td>
-                  <td className="border border-black p-1.5 text-center">{totalPeriods}</td>
-                  <td className="border border-black p-1.5 text-center"></td>
-                </tr>
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {scheduleItems.map((item, idx) => (
+                    <tr key={idx} className="border-b border-black">
+                      <td className="border border-black p-1.5 text-center font-semibold">{item.moduleNo || ''}</td>
+                      <td className="border border-black p-1.5 text-left">{item.topic || ''}</td>
+                      <td className="border border-black p-1.5 text-center">
+                        {item.periods !== undefined && item.periods !== null && item.periods !== '' ? String(item.periods) : ''}
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="font-bold border-t border-black">
+                    <td colSpan={2} className="border border-black p-1.5 text-center">Theory</td>
+                    <td className="border border-black p-1.5 text-center">{(Number(course.L) || 0) * 14}</td>
+                  </tr>
+                  <tr className="font-bold">
+                    <td colSpan={2} className="border border-black p-1.5 text-center">Practical</td>
+                    <td className="border border-black p-1.5 text-center">{(Number(course.P) || 0) * 14}</td>
+                  </tr>
+                  <tr className="font-bold bg-[#F2F2F2]">
+                    <td colSpan={2} className="border border-black p-1.5 text-center">Total</td>
+                    <td className="border border-black p-1.5 text-center">{((Number(course.L) || 0) + (Number(course.P) || 0)) * 14}</td>
+                  </tr>
+                </tbody>
+              </table>
+            ) : (
+              <table className="w-full border-collapse border border-black mb-0 text-xs">
+                <thead>
+                  <tr className="border-b border-black">
+                    <th className="border border-black p-1.5 text-center w-[12%]">Module<br />No</th>
+                    <th className="border border-black p-1.5 text-left w-[58%]">Topics</th>
+                    <th className="border border-black p-1.5 text-center w-[14%]">No of<br />Periods</th>
+                    <th className="border border-black p-1.5 text-center w-[16%]">Course<br />Outcomes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {scheduleItems.map((item, idx) => (
+                    <tr key={idx} className="border-b border-black">
+                      <td className="border border-black p-1.5 text-center">{item.moduleNo || ''}</td>
+                      <td className="border border-black p-1.5 text-left">{item.topic || ''}</td>
+                      <td className="border border-black p-1.5 text-center">
+                        {item.periods !== undefined && item.periods !== null && item.periods !== '' ? String(item.periods) : ''}
+                      </td>
+                      <td className="border border-black p-1.5 text-center">
+                        {Array.isArray(item.coMapping) ? item.coMapping.join(', ') : (item.coMapping || '')}
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="font-bold">
+                    <td colSpan={2} className="border border-black p-1.5 text-center">Total Periods</td>
+                    <td className="border border-black p-1.5 text-center">{totalPeriods}</td>
+                    <td className="border border-black p-1.5 text-center"></td>
+                  </tr>
+                </tbody>
+              </table>
+            )}
           </div>
         )}
 

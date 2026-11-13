@@ -284,6 +284,24 @@ export const Navbar: React.FC<NavbarProps> = ({ onNewCourse }) => {
                   </div>
                 </div>
               </button>
+
+              {/* 5. Bajaj Course */}
+              <button
+                onClick={() => handleSelectType('BAJAJ')}
+                className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-blue-600 hover:bg-blue-50/40 transition-all flex items-start space-x-3.5 group"
+              >
+                <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-sm group-hover:bg-blue-600 group-hover:text-white transition-all flex-shrink-0">
+                  BJ
+                </div>
+                <div>
+                  <div className="font-bold text-slate-900 group-hover:text-blue-700 text-sm">
+                    5. Bajaj Course
+                  </div>
+                  <div className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                    Industry-supported curriculum (e.g., Electronic Manufacturing Systems). Formula: 1 hr L = 14 hrs, 2 hrs P = 28 hrs, Credits = L + T + floor(P/2). Includes Theory CAT, Practical CA, and Terminal Practical Exam.
+                  </div>
+                </div>
+              </button>
             </div>
 
             {/* Modal Footer */}

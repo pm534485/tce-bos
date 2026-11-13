@@ -33,7 +33,7 @@ export interface CategoryCode {
     code: string;
     name: string;
     defaultAbbr: string;
-    allowedTypes: ('THEORY' | 'PRACTICAL' | 'TCP')[];
+    allowedTypes: ('THEORY' | 'PRACTICAL' | 'TCP' | 'BAJAJ')[];
 }
 export declare const CATEGORY_CODES: CategoryCode[];
 export interface CourseCategoryTable3 {

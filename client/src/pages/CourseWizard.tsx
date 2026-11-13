@@ -1971,6 +1971,12 @@ export const CourseWizard: React.FC = () => {
           badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200',
           dotClass: 'bg-amber-500',
         };
+      case 'BAJAJ':
+        return {
+          label: 'Bajaj Course',
+          badgeClass: 'bg-blue-100 text-blue-900 border border-blue-300',
+          dotClass: 'bg-blue-600',
+        };
       default:
         return {
           label: 'Theory Course',
@@ -2728,8 +2734,8 @@ export const CourseWizard: React.FC = () => {
     { id: 'assessment', title: '4. Assessment Pattern',         desc: 'Continuous & Terminal exam' },
     {
       id: 'syllabus',
-      title: isPracticalCourse ? '5. List of Experiments with CO Mapping' : (course.courseType === 'TCP' ? '5. Syllabus & Experiments' : '5. Syllabus & Content'),
-      desc:  isPracticalCourse ? 'Experiments with CO Mapping' : (course.courseType === 'TCP' ? 'Modules, Schedule & Experiments' : 'Modules & Schedule'),
+      title: isPracticalCourse ? '5. List of Experiments with CO Mapping' : ((course.courseType === 'TCP' || course.courseType === 'BAJAJ') ? '5. Syllabus & Experiments' : '5. Syllabus & Content'),
+      desc:  isPracticalCourse ? 'Experiments with CO Mapping' : ((course.courseType === 'TCP' || course.courseType === 'BAJAJ') ? 'Modules, Schedule & Experiments' : 'Modules & Schedule'),
     },
     ...(isPracticalCourse ? [] : [{ id: 'resources', title: '6. Learning Resources', desc: 'Text & reference books' }]),
     { id: 'designers', title: isPracticalCourse ? '6. Course Designers' : '7. Course Designers', desc: 'Faculty details & emails' },
@@ -2741,7 +2747,7 @@ export const CourseWizard: React.FC = () => {
 
   // Auto-populate lecture schedule items if empty but modules exist, or derive modules if schedule exists
   useEffect(() => {
-    if (activeStepId === 'syllabus' && (course.courseType === 'THEORY' || course.courseType === 'TCP')) {
+    if (activeStepId === 'syllabus' && (course.courseType === 'THEORY' || course.courseType === 'TCP' || course.courseType === 'BAJAJ')) {
       if (course.modules && course.modules.length > 0 && (!course.lectureScheduleItems || course.lectureScheduleItems.length === 0)) {
         const synced = syncModulesToSchedule(course.modules, [], course.courseOutcomes || []);
         if (synced.length > 0) {
@@ -3164,7 +3170,7 @@ export const CourseWizard: React.FC = () => {
                       {/* Column 3: Category, LTP & Credits Table */}
                       <div
                         onClick={() => setCurrentStep(0)}
-                        className={`md:col-span-4 grid ${course.courseType === 'TCP' ? 'grid-cols-6' : 'grid-cols-5'} border-collapse text-center cursor-pointer hover:bg-slate-50 transition-colors`}
+                        className={`md:col-span-4 grid ${(course.courseType === 'TCP' || course.courseType === 'BAJAJ') ? 'grid-cols-6' : 'grid-cols-5'} border-collapse text-center cursor-pointer hover:bg-slate-50 transition-colors`}
                         title="Click to edit Category, L-T-P and Credits"
                       >
                         {/* Header Row */}
@@ -3180,12 +3186,17 @@ export const CourseWizard: React.FC = () => {
                         <div className="p-2 text-xs font-semibold text-slate-800 border-b border-r border-slate-900 bg-white">
                           P
                         </div>
-                        <div className={`p-2 text-xs font-semibold text-slate-800 border-b ${course.courseType === 'TCP' ? 'border-r' : ''} border-slate-900 bg-white`}>
+                        <div className={`p-2 text-xs font-semibold text-slate-800 border-b ${(course.courseType === 'TCP' || course.courseType === 'BAJAJ') ? 'border-r' : ''} border-slate-900 bg-white`}>
                           Credits
                         </div>
                         {course.courseType === 'TCP' && (
                           <div className="p-2 text-xs font-semibold text-slate-800 border-b border-slate-900 bg-white">
                             TE Type
+                          </div>
+                        )}
+                        {course.courseType === 'BAJAJ' && (
+                          <div className="p-2 text-xs font-semibold text-slate-800 border-b border-slate-900 bg-white">
+                            Total Hours
                           </div>
                         )}
 
@@ -3218,7 +3229,7 @@ export const CourseWizard: React.FC = () => {
                             <span className="text-slate-400 font-bold select-none">—</span>
                           )}
                         </div>
-                        <div className={`p-2.5 text-xs sm:text-sm font-black text-slate-950 flex items-center justify-center ${course.courseType === 'TCP' ? 'border-r border-slate-900' : ''}`}>
+                        <div className={`p-2.5 text-xs sm:text-sm font-black text-slate-950 flex items-center justify-center ${(course.courseType === 'TCP' || course.courseType === 'BAJAJ') ? 'border-r border-slate-900' : ''}`}>
                           {course.credits !== undefined && course.credits !== null && course.credits !== ('' as any) && Number(course.credits) > 0 ? (
                             course.credits
                           ) : (
@@ -3228,6 +3239,11 @@ export const CourseWizard: React.FC = () => {
                         {course.courseType === 'TCP' && (
                           <div className="p-2.5 text-xs sm:text-sm font-black text-[#7B1113] flex items-center justify-center">
                             {getDisplayTeType(course.teExamType)}
+                          </div>
+                        )}
+                        {course.courseType === 'BAJAJ' && (
+                          <div className="p-2.5 text-xs sm:text-sm font-black text-blue-900 flex items-center justify-center">
+                            {((Number(course.L) || 0) + (Number(course.T) || 0) + (Number(course.P) || 0)) * 14} hrs
                           </div>
                         )}
                       </div>
@@ -3587,6 +3603,21 @@ export const CourseWizard: React.FC = () => {
                         <p className="text-[11px] text-slate-500 mt-1.5">
                           Practical course titles must end with the full word <strong className="text-slate-700">"Laboratory"</strong>. (If omitted or misspelled, it will automatically normalize to "Laboratory").
                         </p>
+                      )}
+                      {course.courseType === 'BAJAJ' && (
+                        <div className="mt-2.5 p-3 bg-blue-50/90 border border-blue-200 rounded-xl text-xs text-blue-900 flex flex-wrap items-center justify-between gap-2 shadow-2xs">
+                          <div className="font-medium space-x-1">
+                            <span className="font-bold text-blue-950">Bajaj Semester Contact Hours (1 hr/wk = 14 hrs):</span>
+                            <span>Lecture: <strong className="text-blue-950">{(course.L || 0) * 14} hrs</strong> ({(course.L || 0)} cr)</span>
+                            <span>•</span>
+                            <span>Tutorial: <strong className="text-blue-950">{(course.T || 0) * 14} hrs</strong> ({(course.T || 0)} cr)</span>
+                            <span>•</span>
+                            <span>Practical: <strong className="text-blue-950">{(course.P || 0) * 14} hrs</strong> ({Math.floor((course.P || 0) / 2)} cr)</span>
+                          </div>
+                          <div className="font-bold text-blue-800 bg-blue-100/90 px-2.5 py-1 rounded-lg border border-blue-300">
+                            Total Hours: {((Number(course.L) || 0) + (Number(course.T) || 0) + (Number(course.P) || 0)) * 14} hrs | Credits: {course.credits || 0}
+                          </div>
+                        </div>
                       )}
                       <InlineFieldError field="courseName" />
                     </div>
@@ -4098,6 +4129,75 @@ export const CourseWizard: React.FC = () => {
                             </div>
 
                             {/* ROW 2: Performance Indicators (UG only), CO Weightage, SDG Addressed, SDG Level */}
+                            {course.courseType === 'BAJAJ' ? (
+                              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-1 items-start">
+                                {/* Expected Outcome / Proficiency in % */}
+                                <div className="sm:col-span-5">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <label className="block text-[11px] font-bold text-blue-900">
+                                      Expected Outcome in %
+                                    </label>
+                                    <span className="text-[10px] text-blue-600 font-semibold">Standard: 70%</span>
+                                  </div>
+                                  <input
+                                    type="number"
+                                    min={10}
+                                    max={100}
+                                    value={co.expectedProficiency !== undefined ? co.expectedProficiency : 70}
+                                    onChange={e => {
+                                      const val = parseInt(e.target.value) || 0;
+                                      const updated = [...(course.courseOutcomes || [])];
+                                      updated[idx] = { ...updated[idx], expectedProficiency: val };
+                                      updateField('courseOutcomes', updated);
+                                    }}
+                                    className="w-full p-2 border border-blue-300 bg-blue-50/50 rounded-lg text-xs font-bold text-center text-blue-950 focus:ring-2 focus:ring-blue-500"
+                                  />
+                                </div>
+
+                                {/* Expected Attainment Level % */}
+                                <div className="sm:col-span-5">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <label className="block text-[11px] font-bold text-blue-900">
+                                      Expected Attainment Level %
+                                    </label>
+                                    <span className="text-[10px] text-blue-600 font-semibold">Standard: 60%</span>
+                                  </div>
+                                  <input
+                                    type="number"
+                                    min={10}
+                                    max={100}
+                                    value={co.expectedAttainment !== undefined ? co.expectedAttainment : 60}
+                                    onChange={e => {
+                                      const val = parseInt(e.target.value) || 0;
+                                      const updated = [...(course.courseOutcomes || [])];
+                                      updated[idx] = { ...updated[idx], expectedAttainment: val };
+                                      updateField('courseOutcomes', updated);
+                                    }}
+                                    className="w-full p-2 border border-blue-300 bg-blue-50/50 rounded-lg text-xs font-bold text-center text-blue-950 focus:ring-2 focus:ring-blue-500"
+                                  />
+                                </div>
+
+                                {/* Weightage */}
+                                <div className="sm:col-span-2">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <label className="block text-[11px] font-bold text-slate-600">
+                                      Weightage %
+                                    </label>
+                                  </div>
+                                  <input
+                                    type="number"
+                                    value={co.weightage !== undefined ? co.weightage : ''}
+                                    onChange={e => {
+                                      const val = e.target.value === '' ? ('' as any) : parseInt(e.target.value);
+                                      const updated = [...(course.courseOutcomes || [])];
+                                      updated[idx] = { ...updated[idx], weightage: val };
+                                      updateField('courseOutcomes', updated);
+                                    }}
+                                    className="w-full p-2 border border-slate-300 rounded-lg text-xs text-center font-bold bg-white"
+                                  />
+                                </div>
+                              </div>
+                            ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-1 items-start">
                               {/* Performance Indicators */}
                               {!isPg ? (
@@ -4217,6 +4317,7 @@ export const CourseWizard: React.FC = () => {
                                 />
                               </div>
                             </div>
+                            )}
                           </div>
                         );
                       })}
@@ -4248,6 +4349,137 @@ export const CourseWizard: React.FC = () => {
                         <Plus className="w-4 h-4" />
                         <span>Add Course Outcome</span>
                       </button>
+
+                      {/* Bajaj: Mapping with Programme Outcomes (PO 1 - PO 12 & PSO 1 - PSO 3) */}
+                      {course.courseType === 'BAJAJ' && (
+                        <div className="mt-8 space-y-4 p-5 bg-white border border-blue-200 rounded-2xl shadow-xs">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                              <h3 className="text-base font-bold text-blue-950 flex items-center gap-2">
+                                <span>Mapping with Programme Outcomes (POs & PSOs)</span>
+                                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                                  Bajaj Requirement
+                                </span>
+                              </h3>
+                              <p className="text-xs text-slate-500 mt-0.5">
+                                Map each Course Outcome against PO 1 to PO 12 and PSO 1 to PSO 3. Click any cell to cycle through correlation levels: <strong>S (Strong) → M (Medium) → L (Low) → - (None)</strong>.
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const coList = course.courseOutcomes || [];
+                                  const defaultRows = [
+                                    { coNo: 'CO1', po1: 'S', po2: 'M', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso1: 'L' },
+                                    { coNo: 'CO2', po1: 'S', po2: 'S', po3: 'L', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso1: 'M' },
+                                    { coNo: 'CO3', po1: 'S', po2: 'S', po3: 'M', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso1: 'S' },
+                                    { coNo: 'CO4', po1: 'S', po2: 'S', po3: 'S', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso1: 'S' },
+                                    { coNo: 'CO5', po1: 'S', po2: 'S', po3: 'M', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso1: 'M', pso3: 'L' },
+                                    { coNo: 'CO6', po1: 'S', po2: 'L', po3: 'L', po4: 'L', po8: 'L', po9: 'L', po10: 'L', po11: 'L', po12: 'L', pso2: 'L', pso3: 'L' },
+                                  ];
+                                  const populated = coList.map((co, idx) => {
+                                    const def = defaultRows[idx] || { coNo: co.coNo };
+                                    return { ...def, coNo: co.coNo };
+                                  });
+                                  updateField('poPsoMapping', populated);
+                                }}
+                                className="px-3 py-1.5 rounded-lg border border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-xs"
+                              >
+                                <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                                <span>Auto-fill Recommended POs</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const coList = course.courseOutcomes || [];
+                                  updateField('poPsoMapping', coList.map(co => ({ coNo: co.coNo })));
+                                }}
+                                className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-xs"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                                <span>Clear All</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-xs">
+                            <table className="w-full text-xs text-center border-collapse">
+                              <thead className="bg-slate-100 text-slate-700 font-bold">
+                                <tr>
+                                  <th className="p-2 border-b w-16 bg-slate-200 text-slate-800">COs</th>
+                                  {Array.from({ length: 12 }, (_, i) => (
+                                    <th key={i} className="p-2 border-b">PO {i + 1}</th>
+                                  ))}
+                                  <th className="p-2 border-b bg-amber-50 text-amber-900">PSO 1</th>
+                                  <th className="p-2 border-b bg-amber-50 text-amber-900">PSO 2</th>
+                                  <th className="p-2 border-b bg-amber-50 text-amber-900">PSO 3</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {(course.courseOutcomes || []).map((co, cIdx) => {
+                                  const rowData = (course.poPsoMapping || []).find(r => r.coNo === co.coNo) || { coNo: co.coNo };
+                                  const cycleVal = (current?: string) => {
+                                    if (current === 'S') return 'M';
+                                    if (current === 'M') return 'L';
+                                    if (current === 'L') return '-';
+                                    return 'S';
+                                  };
+                                  const updateCell = (field: string) => {
+                                    const currentList = [...(course.poPsoMapping || [])];
+                                    const existingIdx = currentList.findIndex(r => r.coNo === co.coNo);
+                                    const curRow = existingIdx !== -1 ? { ...currentList[existingIdx] } : { coNo: co.coNo };
+                                    (curRow as any)[field] = cycleVal((curRow as any)[field]);
+                                    if (existingIdx !== -1) {
+                                      currentList[existingIdx] = curRow;
+                                    } else {
+                                      currentList.push(curRow);
+                                    }
+                                    updateField('poPsoMapping', currentList);
+                                  };
+                                  const renderCell = (field: string) => {
+                                    const val = (rowData as any)[field] || '-';
+                                    let badgeColor = 'bg-slate-50 text-slate-400 hover:bg-slate-100';
+                                    if (val === 'S') badgeColor = 'bg-emerald-100 text-emerald-800 font-bold border border-emerald-300';
+                                    if (val === 'M') badgeColor = 'bg-blue-100 text-blue-800 font-bold border border-blue-300';
+                                    if (val === 'L') badgeColor = 'bg-amber-100 text-amber-800 font-bold border border-amber-300';
+                                    return (
+                                      <button
+                                        type="button"
+                                        onClick={() => updateCell(field)}
+                                        className={`w-7 h-7 rounded-md text-xs font-semibold flex items-center justify-center mx-auto transition-all cursor-pointer ${badgeColor}`}
+                                        title={`Toggle ${co.coNo} -> ${field.toUpperCase()}`}
+                                      >
+                                        {val}
+                                      </button>
+                                    );
+                                  };
+                                  return (
+                                    <tr key={co.coNo} className={cIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
+                                      <td className="p-2 border-b font-bold text-slate-900 bg-slate-100/70">{co.coNo}</td>
+                                      {Array.from({ length: 12 }, (_, i) => (
+                                        <td key={i} className="p-1.5 border-b">
+                                          {renderCell(`po${i + 1}`)}
+                                        </td>
+                                      ))}
+                                      <td className="p-1.5 border-b bg-amber-50/30">{renderCell('pso1')}</td>
+                                      <td className="p-1.5 border-b bg-amber-50/30">{renderCell('pso2')}</td>
+                                      <td className="p-1.5 border-b bg-amber-50/30">{renderCell('pso3')}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                          <div className="flex items-center gap-4 text-xs font-semibold text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                            <span className="font-bold text-slate-800">Legend:</span>
+                            <span className="flex items-center gap-1.5"><span className="w-5 h-5 rounded bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-[10px]">S</span> Strong</span>
+                            <span className="flex items-center gap-1.5"><span className="w-5 h-5 rounded bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-[10px]">M</span> Medium</span>
+                            <span className="flex items-center gap-1.5"><span className="w-5 h-5 rounded bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-[10px]">L</span> Low</span>
+                            <span className="flex items-center gap-1.5"><span className="w-5 h-5 rounded bg-slate-100 text-slate-400 flex items-center justify-center font-bold text-[10px]">-</span> None</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -4923,6 +5155,268 @@ export const CourseWizard: React.FC = () => {
                       </div>
                     </div>
                   )}
+
+                    {/* Bajaj Assessment Pattern */}
+                    {course.courseType === 'BAJAJ' && (
+                      <div className="space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div>
+                            <h3 className="text-base font-bold text-blue-950 flex items-center gap-2">
+                              <span>Bajaj Assessment Pattern</span>
+                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                                CAT & Terminal Practical
+                              </span>
+                            </h3>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              Configure mark distribution across Continuous Assessment (Theory CAT, Practical CAT) and Terminal Exam Practical for each Course Outcome. Each subtotal must sum to exactly 100%.
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const coList = course.courseOutcomes || [];
+                                const defaultRows = [
+                                  { coNo: 'CO1', theory: { 2: 10 }, practical: { 3: 20 }, terminal: { 3: 20 } },
+                                  { coNo: 'CO2', theory: { 2: 5, 3: 15 }, practical: { 3: 20 }, terminal: { 3: 20 } },
+                                  { coNo: 'CO3', theory: { 2: 5, 3: 15 }, practical: { 3: 20 }, terminal: { 3: 20 } },
+                                  { coNo: 'CO4', theory: { 3: 20 }, practical: { 3: 20 }, terminal: { 3: 20 } },
+                                  { coNo: 'CO5', theory: { 2: 5, 3: 10 }, practical: { 3: 10 }, terminal: { 3: 10 } },
+                                  { coNo: 'CO6', theory: { 2: 5, 3: 10 }, practical: { 3: 10 }, terminal: { 3: 10 } },
+                                ];
+                                const populatedRows = coList.map((co, idx) => {
+                                  const def = defaultRows[idx] || { theory: {}, practical: {}, terminal: {} };
+                                  return {
+                                    coNo: co.coNo,
+                                    theoryMarks: def.theory,
+                                    practicalMarks: def.practical,
+                                    terminalMarks: def.terminal,
+                                  };
+                                });
+                                updateField('bajajAssessmentPattern', {
+                                  catName: 'Assessment CAT – 1',
+                                  theoryTpsLevels: [1, 2, 3],
+                                  practicalTpsLevels: [1, 2, 3],
+                                  terminalTpsLevels: [1, 2, 3],
+                                  rows: populatedRows,
+                                });
+                              }}
+                              className="px-3 py-1.5 rounded-lg border border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-xs"
+                              title="Automatically populate standard Bajaj assessment marks distribution"
+                            >
+                              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                              <span>Auto-fill Standard Pattern</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const coList = course.courseOutcomes || [];
+                                updateField('bajajAssessmentPattern', {
+                                  catName: 'Assessment CAT – 1',
+                                  theoryTpsLevels: [1, 2, 3],
+                                  practicalTpsLevels: [1, 2, 3],
+                                  terminalTpsLevels: [1, 2, 3],
+                                  rows: coList.map(co => ({ coNo: co.coNo, theoryMarks: {}, practicalMarks: {}, terminalMarks: {} })),
+                                });
+                              }}
+                              className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-xs"
+                              title="Reset all values to 0"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                              <span>Reset (Clear)</span>
+                            </button>
+                            <div className="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-800 rounded-lg border border-blue-200">
+                              {(course.courseOutcomes || []).length} COs Configured
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Interactive Matrix Table */}
+                        {(() => {
+                          const pattern = course.bajajAssessmentPattern || {
+                            catName: 'Assessment CAT – 1',
+                            theoryTpsLevels: [1, 2, 3],
+                            practicalTpsLevels: [1, 2, 3],
+                            terminalTpsLevels: [1, 2, 3],
+                            rows: [],
+                          };
+                          const theoryLevels = pattern.theoryTpsLevels || [1, 2, 3];
+                          const practicalLevels = pattern.practicalTpsLevels || [1, 2, 3];
+                          const terminalLevels = pattern.terminalTpsLevels || [1, 2, 3];
+                          const rows = pattern.rows || [];
+
+                          // Calculate column sums
+                          let sumTheory = 0;
+                          let sumPractical = 0;
+                          let sumTerminal = 0;
+
+                          (course.courseOutcomes || []).forEach(co => {
+                            const r = rows.find(x => x.coNo === co.coNo);
+                            theoryLevels.forEach(lvl => {
+                              sumTheory += Number((r?.theoryMarks as any)?.[lvl]) || 0;
+                            });
+                            practicalLevels.forEach(lvl => {
+                              sumPractical += Number((r?.practicalMarks as any)?.[lvl]) || 0;
+                            });
+                            terminalLevels.forEach(lvl => {
+                              sumTerminal += Number((r?.terminalMarks as any)?.[lvl]) || 0;
+                            });
+                          });
+
+                          const updateCell = (coNo: string, section: 'theoryMarks' | 'practicalMarks' | 'terminalMarks', level: number, val: number) => {
+                            const currentRows = [...(pattern.rows || [])];
+                            const idx = currentRows.findIndex(r => r.coNo === coNo);
+                            const curRow = idx !== -1 ? { ...currentRows[idx] } : { coNo };
+                            const curMarks = { ...((curRow as any)[section] || {}) };
+                            if (val > 0) {
+                              curMarks[level] = val;
+                            } else {
+                              delete curMarks[level];
+                            }
+                            (curRow as any)[section] = curMarks;
+                            if (idx !== -1) {
+                              currentRows[idx] = curRow;
+                            } else {
+                              currentRows.push(curRow);
+                            }
+                            updateField('bajajAssessmentPattern', {
+                              ...pattern,
+                              rows: currentRows,
+                            });
+                          };
+
+                          return (
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-3">
+                                <label className="text-xs font-bold text-slate-700">CAT Exam Label:</label>
+                                <input
+                                  type="text"
+                                  value={pattern.catName || 'Assessment CAT – 1'}
+                                  onChange={e => updateField('bajajAssessmentPattern', { ...pattern, catName: e.target.value })}
+                                  className="p-1.5 text-xs border border-slate-300 rounded-lg w-56 font-medium"
+                                  placeholder="Assessment CAT – 1"
+                                />
+                              </div>
+
+                              <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-xs">
+                                <table className="w-full text-xs text-center border-collapse">
+                                  <thead>
+                                    <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
+                                      <th rowSpan={3} className="p-2 border-r border-slate-300 w-24 bg-slate-200">Course Outcomes</th>
+                                      <th colSpan={theoryLevels.length + practicalLevels.length} className="p-2 border-b border-r border-slate-300 bg-blue-50/80 text-blue-950 font-bold">
+                                        {pattern.catName || 'Assessment CAT – 1'}
+                                      </th>
+                                      <th colSpan={terminalLevels.length} className="p-2 border-b border-slate-300 bg-indigo-50/80 text-indigo-950 font-bold">
+                                        Terminal Exam Practical
+                                      </th>
+                                    </tr>
+                                    <tr className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 text-[11px]">
+                                      <th colSpan={theoryLevels.length} className="p-1.5 border-r border-slate-300 bg-sky-50/60 text-sky-950">Theory</th>
+                                      <th colSpan={practicalLevels.length} className="p-1.5 border-r border-slate-300 bg-emerald-50/60 text-emerald-950">Practical</th>
+                                      <th colSpan={terminalLevels.length} className="p-1.5 bg-indigo-50/60 text-indigo-950">Practical</th>
+                                    </tr>
+                                    <tr className="bg-slate-100/70 text-slate-600 font-bold border-b border-slate-300 text-[10px]">
+                                      {theoryLevels.map(lvl => (
+                                        <th key={`th-${lvl}`} className="p-1.5 border-r border-slate-200">TPS {lvl}</th>
+                                      ))}
+                                      {practicalLevels.map(lvl => (
+                                        <th key={`pr-${lvl}`} className="p-1.5 border-r border-slate-200">TPS {lvl}</th>
+                                      ))}
+                                      {terminalLevels.map(lvl => (
+                                        <th key={`te-${lvl}`} className="p-1.5 border-r border-slate-200">TPS {lvl}</th>
+                                      ))}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {(course.courseOutcomes || []).map((co, cIdx) => {
+                                      const rowData = rows.find(r => r.coNo === co.coNo);
+                                      return (
+                                        <tr key={co.coNo} className={cIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
+                                          <td className="p-2 font-bold text-slate-900 border-r border-b border-slate-200 bg-slate-100/50">
+                                            {co.coNo}
+                                          </td>
+                                          {theoryLevels.map(lvl => {
+                                            const val = (rowData?.theoryMarks as any)?.[lvl] ?? '';
+                                            return (
+                                              <td key={`th-${lvl}`} className="p-1 border-r border-b border-slate-200">
+                                                <input
+                                                  type="number"
+                                                  min={0}
+                                                  max={100}
+                                                  value={val}
+                                                  onChange={e => updateCell(co.coNo, 'theoryMarks', lvl, parseInt(e.target.value) || 0)}
+                                                  className="w-12 p-1 text-center font-bold text-xs border border-slate-300 rounded bg-white focus:ring-1 focus:ring-blue-500"
+                                                  placeholder="-"
+                                                />
+                                              </td>
+                                            );
+                                          })}
+                                          {practicalLevels.map(lvl => {
+                                            const val = (rowData?.practicalMarks as any)?.[lvl] ?? '';
+                                            return (
+                                              <td key={`pr-${lvl}`} className="p-1 border-r border-b border-slate-200 bg-emerald-50/20">
+                                                <input
+                                                  type="number"
+                                                  min={0}
+                                                  max={100}
+                                                  value={val}
+                                                  onChange={e => updateCell(co.coNo, 'practicalMarks', lvl, parseInt(e.target.value) || 0)}
+                                                  className="w-12 p-1 text-center font-bold text-xs border border-slate-300 rounded bg-white focus:ring-1 focus:ring-emerald-500"
+                                                  placeholder="-"
+                                                />
+                                              </td>
+                                            );
+                                          })}
+                                          {terminalLevels.map(lvl => {
+                                            const val = (rowData?.terminalMarks as any)?.[lvl] ?? '';
+                                            return (
+                                              <td key={`te-${lvl}`} className="p-1 border-r border-b border-slate-200 bg-indigo-50/20">
+                                                <input
+                                                  type="number"
+                                                  min={0}
+                                                  max={100}
+                                                  value={val}
+                                                  onChange={e => updateCell(co.coNo, 'terminalMarks', lvl, parseInt(e.target.value) || 0)}
+                                                  className="w-12 p-1 text-center font-bold text-xs border border-slate-300 rounded bg-white focus:ring-1 focus:ring-indigo-500"
+                                                  placeholder="-"
+                                                />
+                                              </td>
+                                            );
+                                          })}
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                  <tfoot>
+                                    <tr className="bg-slate-100 font-extrabold text-xs border-t-2 border-slate-300">
+                                      <td className="p-2 border-r border-slate-300 text-slate-800">Total</td>
+                                      <td colSpan={theoryLevels.length} className={`p-2 border-r border-slate-300 text-center ${sumTheory === 100 ? 'text-emerald-700 bg-emerald-50' : 'text-rose-600 bg-red-50'}`}>
+                                        <div className="flex items-center justify-center gap-1">
+                                          <span>Theory: {sumTheory}%</span>
+                                          {sumTheory === 100 ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <span className="text-[10px] text-rose-500">(!=100)</span>}
+                                        </div>
+                                      </td>
+                                      <td colSpan={practicalLevels.length} className={`p-2 border-r border-slate-300 text-center ${sumPractical === 100 ? 'text-emerald-700 bg-emerald-50' : 'text-rose-600 bg-red-50'}`}>
+                                        <div className="flex items-center justify-center gap-1">
+                                          <span>Practical: {sumPractical}%</span>
+                                          {sumPractical === 100 ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <span className="text-[10px] text-rose-500">(!=100)</span>}
+                                        </div>
+                                      </td>
+                                      <td colSpan={terminalLevels.length} className={`p-2 text-center ${sumTerminal === 100 ? 'text-emerald-700 bg-emerald-50' : 'text-rose-600 bg-red-50'}`}>
+                                        <div className="flex items-center justify-center gap-1">
+                                          <span>Terminal: {sumTerminal}%</span>
+                                          {sumTerminal === 100 ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <span className="text-[10px] text-rose-500">(!=100)</span>}
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  </tfoot>
+                                </table>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -4933,7 +5427,7 @@ export const CourseWizard: React.FC = () => {
                       <h2 className="text-xl font-bold text-slate-900">
                         {course.courseType === 'PRACTICAL'
                           ? '5. Laboratory Experiments'
-                          : (course.courseType === 'TCP' ? '5. Syllabus, Schedule & Experiments' : '5. Syllabus Modules & Lecture Schedule')}
+                          : ((course.courseType === 'TCP' || course.courseType === 'BAJAJ') ? '5. Syllabus, Schedule & Experiments' : '5. Syllabus Modules & Lecture Schedule')}
                       </h2>
                       <p className="text-sm text-slate-500 mt-1">
                         {course.courseType === 'PRACTICAL'
@@ -4942,8 +5436,8 @@ export const CourseWizard: React.FC = () => {
                       </p>
                     </div>
 
-                    {/* Syllabus Modules & Lecture Schedule (Theory and TCP courses only; Practical courses only have experiments) */}
-                    {(course.courseType === 'THEORY' || course.courseType === 'TCP') && (
+                    {/* Syllabus Modules & Lecture Schedule (Theory, TCP, and Bajaj courses; Practical courses only have experiments) */}
+                    {(course.courseType === 'THEORY' || course.courseType === 'TCP' || course.courseType === 'BAJAJ') && (
                       <div className="space-y-2.5">
                         {(course.modules || []).map((mod, idx) => (
                           <div key={idx} className="p-3 border border-slate-200 rounded-xl bg-slate-50/50 space-y-2">
@@ -5068,8 +5562,10 @@ export const CourseWizard: React.FC = () => {
                         {/* Hierarchical Course Contents and Lecture Schedule */}
                         <div className="pt-6 border-t border-slate-200 space-y-4">
                           {(() => {
-                            const effectiveLectureCredits = ((course.courseType === 'TCP') && (course.L || 0) > 0) ? course.L : course.credits;
-                            const lectureCriteria = getExpectedHoursCriteria(effectiveLectureCredits);
+                            const effectiveLectureCredits = ((course.courseType === 'TCP' || course.courseType === 'BAJAJ') && (course.L || 0) > 0) ? course.L : course.credits;
+                            const lectureCriteria = course.courseType === 'BAJAJ'
+                              ? { minHours: (Number(course.L) || 0) * 14, maxHours: (Number(course.L) || 0) * 14, description: `${(Number(course.L) || 0) * 14} Lecture Hours (14 hrs/credit)` }
+                              : getExpectedHoursCriteria(effectiveLectureCredits);
 
                             const handleSyncFromModules = () => {
                               if (!course.modules || course.modules.length === 0) return;
@@ -5745,7 +6241,7 @@ export const CourseWizard: React.FC = () => {
                     )}
 
                     {/* Practical Experiments */}
-                    {(course.courseType === 'PRACTICAL' || course.courseType === 'TCP') && (() => {
+                    {(course.courseType === 'PRACTICAL' || course.courseType === 'TCP' || course.courseType === 'BAJAJ') && (() => {
                       // Parser helper: Auto-splits single text by numbers (1., 2., 3., etc.) into individual experiments
                       const parseExperimentsText = (raw: string): LabExperiment[] => {
                         if (!raw || !raw.trim()) return [];
@@ -5895,7 +6391,7 @@ export const CourseWizard: React.FC = () => {
                           {/* List of Experiments Cards */}
                           {(() => {
                             const totalExpHours = (course.experiments || []).reduce((sum, e) => sum + (Number(e.hours) || 0), 0);
-                            const targetPracticalHours = (course.P || 0) * 12;
+                            const targetPracticalHours = course.courseType === 'BAJAJ' ? (course.P || 0) * 14 : ((course.P || 0) * 12);
 
                             return (
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2">
@@ -5904,7 +6400,7 @@ export const CourseWizard: React.FC = () => {
                                     <span className="font-bold text-xs text-slate-800">Divided Experiment Cards (Editable):</span>
                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
                                       Total: {totalExpHours} hrs
-                                      {course.courseType === 'TCP' && (course.P || 0) > 0 && (
+                                      {(course.courseType === 'TCP' || course.courseType === 'BAJAJ') && (course.P || 0) > 0 && (
                                         <span className="font-normal text-slate-500"> / Target ~{targetPracticalHours} hrs (P={course.P})</span>
                                       )}
                                     </span>
@@ -6011,7 +6507,7 @@ export const CourseWizard: React.FC = () => {
                               </div>
 
                               <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-                                <div className={course.courseType === 'TCP' ? "md:col-span-5" : "md:col-span-6"}>
+                                <div className={(course.courseType === 'TCP' || course.courseType === 'BAJAJ') ? "md:col-span-5" : "md:col-span-6"}>
                                   <label className="block text-[11px] font-semibold text-slate-600 mb-1">
                                     Experiment Title <span className="text-rose-500">*</span>
                                   </label>
@@ -6029,7 +6525,7 @@ export const CourseWizard: React.FC = () => {
                                   />
                                 </div>
 
-                                {course.courseType === 'TCP' && (
+                                {(course.courseType === 'TCP' || course.courseType === 'BAJAJ') && (
                                   <div className="md:col-span-2">
                                     <label className="block text-[11px] font-semibold text-slate-600 mb-1">
                                       Hours <span className="text-amber-600 font-bold">*</span>
@@ -6052,7 +6548,7 @@ export const CourseWizard: React.FC = () => {
                                   </div>
                                 )}
 
-                                <div className={course.courseType === 'TCP' ? "md:col-span-2" : "md:col-span-3"}>
+                                <div className={(course.courseType === 'TCP' || course.courseType === 'BAJAJ') ? "md:col-span-2" : "md:col-span-3"}>
                                   <label className="block text-[11px] font-semibold text-slate-600 mb-1">Level of Experiment</label>
                                   <select
                                     value={exp.level}
@@ -6070,7 +6566,7 @@ export const CourseWizard: React.FC = () => {
                                   </select>
                                 </div>
 
-                                <div className={course.courseType === 'TCP' ? "md:col-span-3" : "md:col-span-3"}>
+                                <div className={(course.courseType === 'TCP' || course.courseType === 'BAJAJ') ? "md:col-span-3" : "md:col-span-3"}>
                                   <label className="block text-[11px] font-semibold text-slate-600 mb-1">Objective(s)</label>
                                   <ObjectiveMappingPopup
                                     expLabel={`Exp. ${exp.slNo || idx + 1}`}
@@ -6177,7 +6673,7 @@ export const CourseWizard: React.FC = () => {
                               const newExp: LabExperiment = {
                                 slNo: n,
                                 name: '',
-                                hours: course.courseType === 'TCP' ? 2 : undefined,
+                                hours: (course.courseType === 'TCP' || course.courseType === 'BAJAJ') ? 2 : undefined,
                                 level: 1,
                                 objectiveNos: [1],
                                 coNos: [assignedCo],
