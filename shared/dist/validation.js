@@ -1,5 +1,6 @@
 // Institutional Validation Engine for SyllabusForge (Regulation 2026)
 import { PROGRAMME_CODES, CATEGORY_CODES, CATEGORY_ABBREVIATIONS, TPS_VERBS, PERFORMANCE_INDICATORS, DEFAULT_CONFIG_SETTINGS, } from './constants.js';
+import { getDepartmentPerformanceIndicators } from './departmentPerformanceIndicators.js';
 // Helper: Word count for string
 export function countWords(text) {
     if (!text)
@@ -356,7 +357,7 @@ export function validatePreamble(preamble, coStatements = []) {
     return results;
 }
 // B5: Course Outcomes Validation
-export function validateCourseOutcomes(cos, courseType, allowTps1 = false, credits) {
+export function validateCourseOutcomes(cos, courseType, allowTps1 = false, credits, department, programmeCode) {
     const results = [];
     if (!cos || cos.length === 0) {
         results.push({
@@ -491,8 +492,9 @@ export function validateCourseOutcomes(cos, courseType, allowTps1 = false, credi
                 });
             }
             // Check if any entered PI matches known master list and TPS
+            const deptPis = getDepartmentPerformanceIndicators(department, programmeCode, PERFORMANCE_INDICATORS);
             const matchedPis = piValues
-                .map(p => PERFORMANCE_INDICATORS.find(pi => pi.piNumber === p))
+                .map(p => deptPis.find(pi => pi.piNumber.toLowerCase() === p.toLowerCase()))
                 .filter(Boolean);
             if (matchedPis.length > 0 && !matchedPis.some(p => p.tpsLevel === co.tpsLevel)) {
                 results.push({
@@ -1626,7 +1628,7 @@ export function validateCourse(course, existingProgrammeCodes = [], tolerance = 
     // B4: Preamble
     allResults.push(...validatePreamble(course.preamble, (course.courseOutcomes || []).map(c => c.statement)));
     // B5: Course Outcomes
-    allResults.push(...validateCourseOutcomes(course.courseOutcomes, course.courseType, allowTps1, course.credits));
+    allResults.push(...validateCourseOutcomes(course.courseOutcomes, course.courseType, allowTps1, course.credits, course.department, course.programmeCode));
     // B6: Assessment Pattern
     allResults.push(...validateAssessmentPattern(course.courseType, course.courseOutcomes || [], course.assessmentMatrix || [], tolerance, componentWeights));
     // B7: Syllabus Modules (Theory / TCP, and optional for Practical if modules provided)

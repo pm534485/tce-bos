@@ -19,7 +19,8 @@ import {
   suggestCoWeightages,
 } from './validation.js';
 import { Course, CourseOutcome, SyllabusModule, LearningResource, SdgActivity } from './types.js';
-import { getDisplayTeType } from './constants.js';
+import { getDisplayTeType, PERFORMANCE_INDICATORS } from './constants.js';
+import { getDepartmentPerformanceIndicators } from './departmentPerformanceIndicators.js';
 
 describe('B1: Course Name Validation', () => {
   it('should accept valid alphanumeric Title Case name <= 60 chars', () => {
@@ -738,5 +739,63 @@ describe('B13: 17-Point Theory Compliance Checklist Auto-Evaluation', () => {
     const report = validateCourse(testCourse);
     expect(report.isValid).toBe(true);
     expect(report.errors).toHaveLength(0);
+  });
+
+  describe('Department-Specific Performance Indicators', () => {
+    it('should return department-specific PIs for all 7 designated departments', () => {
+      // 1. Mechanical
+      const mechPis = getDepartmentPerformanceIndicators('Mechanical Engineering', 'ME', PERFORMANCE_INDICATORS);
+      expect(mechPis.length).toBe(82);
+      expect(mechPis.some(p => p.descriptor.includes('mechanical engineering problems'))).toBe(true);
+
+      // 2. Mechatronics
+      const mtPis = getDepartmentPerformanceIndicators('Mechatronics Engineering', 'MT', PERFORMANCE_INDICATORS);
+      expect(mtPis.length).toBe(83);
+      expect(mtPis[0].descriptor).toContain('mechatronics');
+
+      // 3. EEE
+      const eeePis = getDepartmentPerformanceIndicators('Electrical and Electronics Engineering', 'EE', PERFORMANCE_INDICATORS);
+      expect(eeePis.length).toBe(82);
+      expect(eeePis.some(p => p.descriptor.includes('electrical and electronics engineering problems'))).toBe(true);
+
+      // 4. ECE
+      const ecePis = getDepartmentPerformanceIndicators('Electronics and Communication Engineering', 'EC', PERFORMANCE_INDICATORS);
+      expect(ecePis.length).toBe(82);
+      expect(ecePis[0].descriptor).toContain('electronics and communication');
+
+      // 5. Civil
+      const civilPis = getDepartmentPerformanceIndicators('Civil Engineering', 'CE', PERFORMANCE_INDICATORS);
+      expect(civilPis.length).toBe(82);
+      expect(civilPis.some(p => p.descriptor.includes('Civil engineering problems'))).toBe(true);
+
+      // 6. AMCS
+      const amcsPis = getDepartmentPerformanceIndicators('Data Science', 'DS', PERFORMANCE_INDICATORS);
+      expect(amcsPis.length).toBe(83);
+      expect(amcsPis.some(p => p.descriptor.includes('data science problems'))).toBe(true);
+
+      // 7. CSE branches
+      const csePis = getDepartmentPerformanceIndicators('Computer Science and Engineering', 'CS', PERFORMANCE_INDICATORS);
+      expect(csePis.length).toBe(48);
+      expect(csePis[0].descriptor).toContain('discrete structures');
+
+      const itPis = getDepartmentPerformanceIndicators('Information Technology', 'IT', PERFORMANCE_INDICATORS);
+      expect(itPis.length).toBe(48);
+
+      const csbsPis = getDepartmentPerformanceIndicators('Computer Science and Business Systems', 'CB', PERFORMANCE_INDICATORS);
+      expect(csbsPis.length).toBe(48);
+
+      const aimlPis = getDepartmentPerformanceIndicators('Artificial Intelligence and Machine Learning', 'AM', PERFORMANCE_INDICATORS);
+      expect(aimlPis.length).toBe(48);
+
+      // Unprovided departments keep default
+      const ftPis = getDepartmentPerformanceIndicators('Fashion Technology', 'FT', PERFORMANCE_INDICATORS);
+      expect(ftPis).toBe(PERFORMANCE_INDICATORS);
+
+      const erPis = getDepartmentPerformanceIndicators('Electrical and Computer Engineering', 'ER', PERFORMANCE_INDICATORS);
+      expect(erPis).toBe(PERFORMANCE_INDICATORS);
+
+      const elPis = getDepartmentPerformanceIndicators('Electronics Engineering (VLSI)', 'EL', PERFORMANCE_INDICATORS);
+      expect(elPis).toBe(PERFORMANCE_INDICATORS);
+    });
   });
 });

@@ -32,6 +32,8 @@ import {
   LAB_OBJECTIVES,
   GENERAL_CO_POOL,
   PERFORMANCE_INDICATORS,
+  PerformanceIndicator,
+  getDepartmentPerformanceIndicators,
   SDG_LIST,
   DOMAIN_TO_SDG_MAP,
   TCP_WEIGHTAGE_TABLE,
@@ -194,9 +196,19 @@ interface PiCheckboxSelectorProps {
   value: string;
   onChange: (newPi: string, matchedTpsLevel?: number) => void;
   coNo: string;
+  department?: string;
+  programmeCode?: string;
+  performanceIndicators?: PerformanceIndicator[];
 }
 
-const PiCheckboxSelector: React.FC<PiCheckboxSelectorProps> = ({ value, onChange, coNo }) => {
+const PiCheckboxSelector: React.FC<PiCheckboxSelectorProps> = ({
+  value,
+  onChange,
+  coNo,
+  department,
+  programmeCode,
+  performanceIndicators,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [activeIndex, setActiveIndex] = useState<number>(-1);
@@ -205,6 +217,14 @@ const PiCheckboxSelector: React.FC<PiCheckboxSelectorProps> = ({ value, onChange
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLElement | null)[]>([]);
+
+  // Resolve department-specific performance indicators list (or fallback)
+  const activePis = useMemo(() => {
+    if (performanceIndicators && performanceIndicators.length > 0) {
+      return performanceIndicators;
+    }
+    return getDepartmentPerformanceIndicators(department, programmeCode, PERFORMANCE_INDICATORS);
+  }, [performanceIndicators, department, programmeCode]);
 
   // Parse existing selected PIs from the comma/semicolon/space-separated string
   const selectedPis = (value || '')
@@ -238,7 +258,7 @@ const PiCheckboxSelector: React.FC<PiCheckboxSelectorProps> = ({ value, onChange
 
   // Live filter standard PIs based on input text
   const trimmedInput = inputValue.trim();
-  const filteredPis = PERFORMANCE_INDICATORS.filter(pi => {
+  const filteredPis = activePis.filter(pi => {
     if (!trimmedInput) return true;
     const q = trimmedInput.toLowerCase();
     return (
@@ -249,7 +269,7 @@ const PiCheckboxSelector: React.FC<PiCheckboxSelectorProps> = ({ value, onChange
   });
 
   // Check if typed text matches an existing standard PI or is already selected
-  const hasExactChecklistMatch = PERFORMANCE_INDICATORS.some(
+  const hasExactChecklistMatch = activePis.some(
     pi => pi.piNumber.toLowerCase() === trimmedInput.toLowerCase()
   );
   const isInputAlreadySelected = selectedPis.some(
@@ -279,7 +299,7 @@ const PiCheckboxSelector: React.FC<PiCheckboxSelectorProps> = ({ value, onChange
       // Prevent duplicates (case-insensitive check)
       if (!updatedList.some(p => p.toLowerCase() === token.toLowerCase())) {
         updatedList.push(token);
-        const matched = PERFORMANCE_INDICATORS.find(
+        const matched = activePis.find(
           p => p.piNumber.toLowerCase() === token.toLowerCase()
         );
         if (matched?.tpsLevel) {
@@ -306,7 +326,7 @@ const PiCheckboxSelector: React.FC<PiCheckboxSelectorProps> = ({ value, onChange
       nextList = selectedPis.filter(p => p.toLowerCase() !== trimmed.toLowerCase());
     } else {
       nextList = [...selectedPis, trimmed];
-      const matched = PERFORMANCE_INDICATORS.find(
+      const matched = activePis.find(
         p => p.piNumber.toLowerCase() === trimmed.toLowerCase()
       );
       matchedTpsLevel = matched?.tpsLevel;
@@ -4022,6 +4042,8 @@ export const CourseWizard: React.FC = () => {
                                 <PiCheckboxSelector
                                   value={co.pi || ''}
                                   coNo={co.coNo}
+                                  department={course.department}
+                                  programmeCode={course.programmeCode}
                                   onChange={(newPi, matchedTpsLevel) => {
                                     const updated = [...(course.courseOutcomes || [])];
                                     const otherTps2 = (course.courseOutcomes || []).filter((c, i) => i !== idx && c.tpsLevel === 2).length;

@@ -11,6 +11,7 @@ import {
   DEFAULT_CONFIG_SETTINGS,
   CategoryAbbreviation,
 } from './constants.js';
+import { getDepartmentPerformanceIndicators } from './departmentPerformanceIndicators.js';
 
 import {
   Course,
@@ -440,7 +441,9 @@ export function validateCourseOutcomes(
   cos: CourseOutcome[],
   courseType: CourseType,
   allowTps1 = false,
-  credits?: number | string
+  credits?: number | string,
+  department?: string,
+  programmeCode?: string
 ): ValidationRuleResult[] {
   const results: ValidationRuleResult[] = [];
 
@@ -585,8 +588,9 @@ export function validateCourseOutcomes(
       }
 
       // Check if any entered PI matches known master list and TPS
+      const deptPis = getDepartmentPerformanceIndicators(department, programmeCode, PERFORMANCE_INDICATORS);
       const matchedPis = piValues
-        .map(p => PERFORMANCE_INDICATORS.find(pi => pi.piNumber === p))
+        .map(p => deptPis.find(pi => pi.piNumber.toLowerCase() === p.toLowerCase()))
         .filter(Boolean);
       if (matchedPis.length > 0 && !matchedPis.some(p => p!.tpsLevel === co.tpsLevel)) {
         results.push({
@@ -1851,7 +1855,9 @@ export function validateCourse(
     course.courseOutcomes,
     course.courseType,
     allowTps1,
-    course.credits
+    course.credits,
+    course.department,
+    course.programmeCode
   ));
 
   // B6: Assessment Pattern
