@@ -4,7 +4,7 @@ export interface ProgrammeCode {
     department: string;
 }
 export declare const PROGRAMME_CODES: ProgrammeCode[];
-export declare const DEPARTMENT_OPTIONS: readonly ["Civil Engineering", "Chemistry", "Computer Science and Engineering", "Computer Science and Business Systems", "Computer Applications", "Data Science", "Artificial Intelligence and Machine Learning", "Electronics and Communication Engineering", "Electrical and Electronics Engineering", "English", "Fashion Technology", "Information Technology", "Mathematics", "Mechanical Engineering", "Mechatronics", "Physics", "First Year / Interdisciplinary"];
+export declare const DEPARTMENT_OPTIONS: readonly ["Civil Engineering", "Chemistry", "Computer Science and Engineering", "Computer Science and Business Systems", "Computer Applications", "Data Science", "Artificial Intelligence and Machine Learning", "Electronics and Communication Engineering", "Electronics Engineering (VLSI Design and Technology)", "Electrical and Electronics Engineering", "English", "Fashion Technology", "Information Technology", "Mathematics", "Mechanical Engineering", "Mechatronics", "Physics", "First Year / Interdisciplinary"];
 export type DepartmentName = typeof DEPARTMENT_OPTIONS[number];
 export declare const SALUTATION_OPTIONS: readonly ["Dr.", "Mr.", "Ms.", "Mrs.", "Er.", "Prof."];
 export type Salutation = typeof SALUTATION_OPTIONS[number];

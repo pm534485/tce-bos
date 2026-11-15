@@ -641,6 +641,104 @@ export const AMCS_PERFORMANCE_INDICATORS = [
     { piNumber: '11.3.1', descriptor: 'Source and comprehend technical literature and other credible sources of information', tpsLevel: 4 },
     { piNumber: '11.3.2', descriptor: 'Analyze sourced technical and popular information for feasibility, viability, sustainability, etc.', tpsLevel: 4 },
 ];
+// 8. Electronics Engineering (VLSI Design and Technology) - B.Tech VLSI (EL)
+export const VLSI_PERFORMANCE_INDICATORS = [
+    // PO 1
+    { piNumber: '1.1.1', descriptor: 'Apply calculus, linear algebra, probability and statistics to analyse semiconductor devices, VLSI circuits and electronic systems.', tpsLevel: 3 },
+    { piNumber: '1.1.2', descriptor: 'Apply differential equations, numerical techniques, transforms and optimization to model CMOS circuits, timing, power and signal integrity.', tpsLevel: 3 },
+    { piNumber: '1.2.1', descriptor: 'Apply principles of physics, chemistry, electromagnetism and semiconductor material science to explain electronic device operation, fabrication and packaging.', tpsLevel: 3 },
+    { piNumber: '1.3.1', descriptor: 'Apply circuit theory, network analysis, electronic devices, digital logic, computer architecture and programming to solve electronics engineering problems.', tpsLevel: 3 },
+    { piNumber: '1.4.1', descriptor: 'Apply semiconductor device physics, CMOS technology, digital CMOS VLSI, analog and mixed-signal design, and low-power VLSI principles to analyse and design integrated circuits.', tpsLevel: 3 },
+    { piNumber: '1.4.2', descriptor: 'Apply Verilog HDL, ASIC/FPGA design methodologies, design verification, design for testability and RISC-V/SoC architecture to develop and validate VLSI systems.', tpsLevel: 3 },
+    { piNumber: '1.5.1', descriptor: 'Apply Python, C, object-oriented programming, data structures, algorithms and numerical computing to analyse data and model electronic systems.', tpsLevel: 3 },
+    { piNumber: '1.5.2', descriptor: 'Apply HDL-based modelling, simulation and EDA/CAD tools to analyse circuit functionality, timing, power and physical-design constraints.', tpsLevel: 3 },
+    // PO 2
+    { piNumber: '2.1.1', descriptor: 'Formulate problems involving semiconductor devices, integrated circuits, design verification and embedded/SoC systems with clear objectives.', tpsLevel: 2 },
+    { piNumber: '2.1.2', descriptor: 'Identify design variables and constraints including functionality, area, power, delay, noise, reliability and test coverage.', tpsLevel: 2 },
+    { piNumber: '2.1.3', descriptor: 'Identify relevant mathematics, device physics, circuit theory, digital design and computing concepts.', tpsLevel: 2 },
+    { piNumber: '2.2.1', descriptor: 'Decompose complex VLSI problems into device, circuit, logic, architecture, verification and implementation subproblems.', tpsLevel: 4 },
+    { piNumber: '2.2.2', descriptor: 'Review technical literature, semiconductor process information, datasheets and design standards.', tpsLevel: 4 },
+    { piNumber: '2.2.3', descriptor: 'Evaluate existing circuit architectures, design methodologies, verification approaches and justified modelling assumptions.', tpsLevel: 4 },
+    { piNumber: '2.2.4', descriptor: 'Compare alternative designs against performance, power, area, cost, manufacturability and sustainability requirements.', tpsLevel: 4 },
+    { piNumber: '2.3.1', descriptor: 'Develop device, circuit, RTL or system-level models with appropriate abstraction and accuracy.', tpsLevel: 4 },
+    { piNumber: '2.3.2', descriptor: 'Identify physical and computational assumptions such as process corners, parasitics, clocking and operating conditions.', tpsLevel: 4 },
+    { piNumber: '2.4.1', descriptor: 'Apply mathematical and computational methods to analyse semiconductor and VLSI design models.', tpsLevel: 4 },
+    { piNumber: '2.4.2', descriptor: 'Validate results using simulation, functional verification, synthesis, timing analysis and laboratory testing.', tpsLevel: 4 },
+    { piNumber: '2.4.3', descriptor: 'Identify modelling, measurement and implementation errors and limitations.', tpsLevel: 4 },
+    { piNumber: '2.4.4', descriptor: 'Draw substantiated conclusions on functionality, timing, power, area, reliability and testability.', tpsLevel: 4 },
+    // PO 3
+    { piNumber: '3.1.1', descriptor: 'Recognize the importance of requirements analysis for IC and SoC design.', tpsLevel: 3 },
+    { piNumber: '3.1.2', descriptor: 'Elicit and document functional, interface, performance, power, area and test requirements.', tpsLevel: 3 },
+    { piNumber: '3.1.3', descriptor: 'Derive design requirements from current semiconductor and VLSI research and industry practice.', tpsLevel: 3 },
+    { piNumber: '3.1.4', descriptor: 'Identify applicable semiconductor, electronic design, safety and interface standards.', tpsLevel: 3 },
+    { piNumber: '3.1.5', descriptor: 'Incorporate safety, security, sustainability, environmental and societal constraints.', tpsLevel: 3 },
+    { piNumber: '3.1.6', descriptor: 'Prepare measurable design specifications and verification criteria for VLSI products.', tpsLevel: 3 },
+    { piNumber: '3.2.1', descriptor: 'Generate alternative RTL, circuit, architectural and implementation solutions.', tpsLevel: 4 },
+    { piNumber: '3.2.2', descriptor: 'Develop HDL models, circuit simulations, FPGA prototypes and subsystem demonstrators.', tpsLevel: 4 },
+    { piNumber: '3.2.3', descriptor: 'Establish evaluation criteria including PPA (power, performance and area), testability, reliability, cost and environmental impact.', tpsLevel: 4 },
+    { piNumber: '3.3.1', descriptor: 'Select design alternatives using systematic trade-off analysis of power, performance, area, test coverage and resource constraints.', tpsLevel: 5 },
+    { piNumber: '3.3.2', descriptor: 'Consult relevant experts and stakeholders to refine the selected IC/SoC design.', tpsLevel: 5 },
+    { piNumber: '3.4.1', descriptor: 'Refine specifications into detailed RTL, circuit, verification, synthesis and physical-design deliverables within constraints.', tpsLevel: 4 },
+    { piNumber: '3.4.2', descriptor: 'Use simulation, testbench results, FPGA validation and laboratory measurements to improve the design.', tpsLevel: 4 },
+    // PO 4
+    { piNumber: '4.1.1', descriptor: 'Define investigation objectives for semiconductor devices, digital/analog circuits and VLSI subsystems.', tpsLevel: 3 },
+    { piNumber: '4.1.2', descriptor: 'Select measurement, simulation, data-acquisition and calibration methods appropriate to the investigation.', tpsLevel: 3 },
+    { piNumber: '4.1.3', descriptor: 'Measure relevant electrical characteristics using laboratory instruments and software tools.', tpsLevel: 3 },
+    { piNumber: '4.1.4', descriptor: 'Relate observed characteristics to semiconductor physics, circuit models and design principles.', tpsLevel: 3 },
+    { piNumber: '4.2.1', descriptor: 'Design experiments specifying test circuits, stimuli, instrumentation, operating conditions and validation procedures.', tpsLevel: 5 },
+    { piNumber: '4.2.2', descriptor: 'Apply appropriate experimental design and statistical analysis to characterize process, voltage and temperature effects.', tpsLevel: 5 },
+    { piNumber: '4.3.1', descriptor: 'Collect simulation, verification, timing, power and measurement data using suitable tools.', tpsLevel: 4 },
+    { piNumber: '4.3.2', descriptor: 'Analyse trends, correlations, uncertainty and errors in VLSI experimental results.', tpsLevel: 4 },
+    { piNumber: '4.3.3', descriptor: 'Present device characteristics, waveforms, timing reports and performance metrics clearly.', tpsLevel: 4 },
+    { piNumber: '4.3.4', descriptor: 'Draw valid conclusions by comparing experimental results with design specifications and theoretical predictions.', tpsLevel: 4 },
+    // PO 5
+    { piNumber: '5.1.1', descriptor: 'Identify appropriate EDA/CAD, HDL simulation, logic synthesis, circuit simulation, FPGA, verification and test tools.', tpsLevel: 3 },
+    { piNumber: '5.1.2', descriptor: 'Develop or adapt testbenches, scripts, design automation flows and reusable hardware modules.', tpsLevel: 3 },
+    { piNumber: '5.2.1', descriptor: 'Select suitable tools for semiconductor modelling, RTL design, functional verification, physical design, signal integrity and test.', tpsLevel: 3 },
+    { piNumber: '5.2.2', descriptor: 'Demonstrate proficiency in Verilog-based modelling, ASIC/FPGA design, design verification and VLSI CAD workflows.', tpsLevel: 3 },
+    { piNumber: '5.3.1', descriptor: 'Evaluate tool limitations arising from device models, process assumptions, parasitics, timing constraints and simulation abstraction.', tpsLevel: 4 },
+    { piNumber: '5.3.2', descriptor: 'Corroborate EDA results through independent checks, FPGA prototyping, test data or physical measurements.', tpsLevel: 4 },
+    // PO 6
+    { piNumber: '6.1.1', descriptor: 'Identify and describe various engineering roles; particularly as pertains to protection of the public and public interest at the global, regional and local level', tpsLevel: 3 },
+    { piNumber: '6.2.1', descriptor: 'Interpret legislation, regulations, codes, and standards relevant to your discipline and explain its contribution to the protection of the public', tpsLevel: 3 },
+    { piNumber: '6.3.1', descriptor: 'Identify risks/impacts in the life-cycle of an engineering product or activity', tpsLevel: 4 },
+    { piNumber: '6.3.2', descriptor: 'Understand the relationship between the technical, socio-economic and environmental dimensions of sustainability', tpsLevel: 4 },
+    { piNumber: '6.4.1', descriptor: 'Describe management techniques for sustainable development', tpsLevel: 3 },
+    { piNumber: '6.4.2', descriptor: 'Apply principles of preventive engineering and sustainable development to an engineering activity or product relevant to the discipline', tpsLevel: 3 },
+    // PO 7
+    { piNumber: '7.1.1', descriptor: 'Identify situations of unethical professional conduct and propose ethical alternatives', tpsLevel: 3 },
+    { piNumber: '7.2.1', descriptor: 'Identify principles of professional ethics and relevant IEEE codes of ethics.', tpsLevel: 3 },
+    { piNumber: '7.2.2', descriptor: 'Examine and apply moral and ethical principles to engineering case studies.', tpsLevel: 3 },
+    // PO 8
+    { piNumber: '8.1.1', descriptor: 'Recognize a variety of working and learning preferences; appreciate the value of diversity on a team', tpsLevel: 3 },
+    { piNumber: '8.1.2', descriptor: 'Implement the norms of practice (e.g. rules, roles, charters, agendas, etc.) of effective team work, to accomplish a goal.', tpsLevel: 3 },
+    { piNumber: '8.2.1', descriptor: 'Demonstrate effective communication, problem-solving, conflict resolution and leadership skills', tpsLevel: 3 },
+    { piNumber: '8.2.2', descriptor: 'Treat other team members respectfully', tpsLevel: 3 },
+    { piNumber: '8.2.3', descriptor: 'Listen to other members', tpsLevel: 3 },
+    { piNumber: '8.2.4', descriptor: 'Maintain composure in difficult situations', tpsLevel: 3 },
+    { piNumber: '8.3.1', descriptor: 'Present results as a team, with smooth integration of contributions from all individual efforts', tpsLevel: 3 },
+    // PO 9
+    { piNumber: '9.1.1', descriptor: 'Read, understand and interpret technical and non-technical information', tpsLevel: 3 },
+    { piNumber: '9.1.2', descriptor: 'Produce clear, well-constructed, and well-supported written engineering documents', tpsLevel: 3 },
+    { piNumber: '9.1.3', descriptor: 'Create flow in a document or presentation - a logical progression of ideas so that the main point is clear', tpsLevel: 3 },
+    { piNumber: '9.2.1', descriptor: 'Listen to and comprehend information, instructions, and viewpoints of others', tpsLevel: 3 },
+    { piNumber: '9.2.2', descriptor: 'Deliver effective oral presentations to technical and non-technical audiences', tpsLevel: 3 },
+    { piNumber: '9.3.1', descriptor: 'Create engineering-standard figures, reports and drawings to complement writing and presentations', tpsLevel: 3 },
+    { piNumber: '9.3.2', descriptor: 'Use a variety of media effectively to convey a message in a document or a presentation', tpsLevel: 3 },
+    // PO 10
+    { piNumber: '10.1.1', descriptor: 'Describe various economic and financial costs/benefits of an engineering activity', tpsLevel: 4 },
+    { piNumber: '10.1.2', descriptor: 'Analyze different forms of financial statements to evaluate the financial status of an engineering project', tpsLevel: 4 },
+    { piNumber: '10.2.1', descriptor: 'Analyze and select the most appropriate proposal based on economic and financial considerations.', tpsLevel: 5 },
+    { piNumber: '10.3.1', descriptor: 'Identify the tasks required to complete an engineering activity, and the resources required to complete the tasks.', tpsLevel: 3 },
+    { piNumber: '10.3.2', descriptor: 'Use project management tools to schedule an engineering project, so it is completed on time and on budget.', tpsLevel: 3 },
+    // PO 11
+    { piNumber: '11.1.1', descriptor: 'Describe the rationale for the requirement for continuing professional development', tpsLevel: 3 },
+    { piNumber: '11.1.2', descriptor: 'Identify deficiencies or gaps in knowledge and demonstrate an ability to source information to close this gap', tpsLevel: 3 },
+    { piNumber: '11.2.1', descriptor: 'Identify historic points of technological advance in engineering that required practitioners to seek education in order to stay current', tpsLevel: 3 },
+    { piNumber: '11.2.2', descriptor: 'Recognize the need and be able to clearly explain why it is vitally important to keep current regarding new developments in your field', tpsLevel: 3 },
+    { piNumber: '11.3.1', descriptor: 'Source and comprehend technical literature and other credible sources of information', tpsLevel: 4 },
+    { piNumber: '11.3.2', descriptor: 'Analyze sourced technical and popular information for feasibility, viability, sustainability, etc.', tpsLevel: 4 },
+];
 /**
  * Helper to retrieve department-specific Performance Indicators.
  * If department/programme is provided and has custom indicators, returns those.
@@ -673,12 +771,18 @@ export function getDepartmentPerformanceIndicators(department, programmeCode, de
         (deptNorm.includes('electrical and electronics') && progNorm !== 'ER')) {
         return EEE_PERFORMANCE_INDICATORS;
     }
-    // 5. ECE (EC, PC; EL will be added later per user request)
+    // 5. Electronics Engineering (VLSI Design and Technology) - B.Tech VLSI (EL)
+    if (progNorm === 'EL' ||
+        deptNorm.includes('vlsi') ||
+        deptNorm.includes('electronics engineering')) {
+        return VLSI_PERFORMANCE_INDICATORS;
+    }
+    // 6. ECE (EC, PC)
     if (['EC', 'PC'].includes(progNorm) ||
-        (deptNorm.includes('electronics and communication') && progNorm !== 'EL')) {
+        (deptNorm.includes('electronics and communication') && progNorm !== 'EL' && !deptNorm.includes('vlsi'))) {
         return ECE_PERFORMANCE_INDICATORS;
     }
-    // 6. CSE branches (CSE, IT, CSBS, AI&ML)
+    // 7. CSE branches (CSE, IT, CSBS, AI&ML)
     if (deptNorm.includes('computer science') ||
         deptNorm.includes('information technology') ||
         deptNorm.includes('business systems') ||
@@ -687,7 +791,7 @@ export function getDepartmentPerformanceIndicators(department, programmeCode, de
         ['CS', 'PD', 'IT', 'CB', 'AM'].includes(progNorm)) {
         return CSE_BRANCHES_PERFORMANCE_INDICATORS;
     }
-    // 7. AMCS / Data Science (DS, Mathematics)
+    // 8. AMCS / Data Science (DS, Mathematics)
     if (deptNorm.includes('data science') ||
         deptNorm.includes('applied mathematics') ||
         deptNorm === 'mathematics' ||
