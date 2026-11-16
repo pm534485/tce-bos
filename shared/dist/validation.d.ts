@@ -1,4 +1,4 @@
-import { Course, CourseType, CourseOutcome, AssessmentMatrixCell, SyllabusModule, LearningResource, SdgActivity, LabExperiment, LabCoursePlanItem, CourseDesigner, LectureScheduleItem, ValidationRuleResult, CourseValidationReport } from './types.js';
+import { Course, CourseType, CourseOutcome, AssessmentMatrixCell, BajajAssessmentPattern, SyllabusModule, LearningResource, SdgActivity, LabExperiment, LabCoursePlanItem, CourseDesigner, LectureScheduleItem, ValidationRuleResult, CourseValidationReport } from './types.js';
 export declare function countWords(text: string): number;
 export declare function validateCourseName(name: string, courseType: CourseType): ValidationRuleResult[];
 export interface CourseCodeParts {
@@ -20,7 +20,7 @@ export declare function validateAssessmentPattern(courseType: CourseType, cos: C
     cat2: number;
     assignment2: number;
     terminal: number;
-}): ValidationRuleResult[];
+}, bajajPattern?: BajajAssessmentPattern): ValidationRuleResult[];
 export declare function validateSyllabusModules(modules: SyllabusModule[], cos: CourseOutcome[]): ValidationRuleResult[];
 export declare function validateExperimentsAndPlan(experiments: LabExperiment[], coursePlan: LabCoursePlanItem[], cos: CourseOutcome[]): ValidationRuleResult[];
 export interface CourseHoursCriteria {

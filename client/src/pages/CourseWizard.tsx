@@ -2047,12 +2047,42 @@ export const CourseWizard: React.FC = () => {
   const isStep2Complete = validCos.length >= minCosRequired;
 
   // Step 3 validation: Assessment Pattern
-  const isStep3Complete = Boolean(
-    course.courseType === 'PRACTICAL'
-      ? !validationReport.errors.some(e => e.field.startsWith('assessmentMatrix'))
-      : (course.assessmentMatrix || []).length > 0 &&
-        !validationReport.errors.some(e => e.field.startsWith('assessmentMatrix'))
-  );
+  let isStep3Complete = false;
+  if (course.courseType === 'BAJAJ') {
+    const pattern = course.bajajAssessmentPattern;
+    const theoryLevels = pattern?.theoryTpsLevels || [1, 2, 3];
+    const practicalLevels = pattern?.practicalTpsLevels || [1, 2, 3];
+    const terminalLevels = pattern?.terminalTpsLevels || [1, 2, 3];
+    const rows = pattern?.rows || [];
+
+    let sumTheory = 0;
+    let sumPractical = 0;
+    let sumTerminal = 0;
+
+    (course.courseOutcomes || []).forEach(co => {
+      const r = rows.find(x => x.coNo === co.coNo);
+      theoryLevels.forEach(lvl => {
+        sumTheory += Number((r?.theoryMarks as any)?.[lvl]) || 0;
+      });
+      practicalLevels.forEach(lvl => {
+        sumPractical += Number((r?.practicalMarks as any)?.[lvl]) || 0;
+      });
+      terminalLevels.forEach(lvl => {
+        sumTerminal += Number((r?.terminalMarks as any)?.[lvl]) || 0;
+      });
+    });
+
+    isStep3Complete = (rows.length > 0) &&
+      Math.abs(sumTheory - 100) < 0.01 &&
+      Math.abs(sumPractical - 100) < 0.01 &&
+      Math.abs(sumTerminal - 100) < 0.01 &&
+      !validationReport.errors.some(e => e.field.startsWith('bajajAssessmentPattern'));
+  } else if (course.courseType === 'PRACTICAL') {
+    isStep3Complete = !validationReport.errors.some(e => e.field.startsWith('assessmentMatrix'));
+  } else {
+    isStep3Complete = (course.assessmentMatrix || []).length > 0 &&
+      !validationReport.errors.some(e => e.field.startsWith('assessmentMatrix'));
+  }
 
   // Step 4 validation: Syllabus & Content (or Lab Experiments)
   const isStep4Complete = Boolean(
@@ -2060,9 +2090,14 @@ export const CourseWizard: React.FC = () => {
       ? (course.experiments || []).length > 0 &&
         (course.experiments || []).every(exp => (exp.name || '').trim().length > 0) &&
         !validationReport.errors.some(e => e.field.startsWith('experiments'))
-      : (course.modules || []).length > 0 &&
-        (course.modules || []).every(m => (m.mainTopic || '').trim().length > 0 && ((m.subtopics || []).length > 0 || (course.lectureScheduleItems || []).some(it => it.moduleNo.startsWith(`${m.moduleNo}.`)))) &&
-        !validationReport.errors.some(e => e.field.startsWith('modules') || e.field.startsWith('lectureScheduleItems'))
+      : course.courseType === 'BAJAJ'
+        ? ((course.modules || []).length > 0 || (course.experiments || []).length > 0) &&
+          ((course.modules || []).length === 0 || (course.modules || []).every(m => (m.mainTopic || '').trim().length > 0)) &&
+          ((course.experiments || []).length === 0 || (course.experiments || []).every(exp => (exp.name || '').trim().length > 0)) &&
+          !validationReport.errors.some(e => e.field.startsWith('modules') || e.field.startsWith('lectureScheduleItems') || e.field.startsWith('experiments'))
+        : (course.modules || []).length > 0 &&
+          (course.modules || []).every(m => (m.mainTopic || '').trim().length > 0 && ((m.subtopics || []).length > 0 || (course.lectureScheduleItems || []).some(it => it.moduleNo.startsWith(`${m.moduleNo}.`)))) &&
+          !validationReport.errors.some(e => e.field.startsWith('modules') || e.field.startsWith('lectureScheduleItems'))
   );
 
   // Step 5 validation: Learning Resources
@@ -2118,7 +2153,42 @@ export const CourseWizard: React.FC = () => {
         const req = numCr < 3 && numCr > 0 ? (numCr === 1 ? 3 : 4) : 6;
         return `Theory (${numCr || 3} credits) requires minimum ${req} Course Outcomes with statements to continue (currently ${validCount}/${req})`;
       }
-      case 'assessment': return 'Complete assessment marks distribution (each component must total 100%) to continue';
+      case 'assessment': {
+        if (course.courseType === 'BAJAJ') {
+          const pattern = course.bajajAssessmentPattern;
+          const theoryLevels = pattern?.theoryTpsLevels || [1, 2, 3];
+          const practicalLevels = pattern?.practicalTpsLevels || [1, 2, 3];
+          const terminalLevels = pattern?.terminalTpsLevels || [1, 2, 3];
+          const rows = pattern?.rows || [];
+
+          let sumTheory = 0;
+          let sumPractical = 0;
+          let sumTerminal = 0;
+
+          (course.courseOutcomes || []).forEach(co => {
+            const r = rows.find(x => x.coNo === co.coNo);
+            theoryLevels.forEach(lvl => {
+              sumTheory += Number((r?.theoryMarks as any)?.[lvl]) || 0;
+            });
+            practicalLevels.forEach(lvl => {
+              sumPractical += Number((r?.practicalMarks as any)?.[lvl]) || 0;
+            });
+            terminalLevels.forEach(lvl => {
+              sumTerminal += Number((r?.terminalMarks as any)?.[lvl]) || 0;
+            });
+          });
+
+          const parts: string[] = [];
+          if (Math.abs(sumTheory - 100) >= 0.01) parts.push(`Theory is ${sumTheory}%`);
+          if (Math.abs(sumPractical - 100) >= 0.01) parts.push(`Practical is ${sumPractical}%`);
+          if (Math.abs(sumTerminal - 100) >= 0.01) parts.push(`Terminal Practical is ${sumTerminal}%`);
+
+          if (parts.length > 0) {
+            return `Assessment components must each total 100% (${parts.join(', ')}) to continue`;
+          }
+        }
+        return 'Complete assessment marks distribution (each component must total 100%) to continue';
+      }
       case 'syllabus': {
         if (course.courseType === 'PRACTICAL') {
           const exps = course.experiments || [];

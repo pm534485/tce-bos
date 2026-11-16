@@ -19,6 +19,7 @@ import {
   CourseType,
   CourseOutcome,
   AssessmentMatrixCell,
+  BajajAssessmentPattern,
   SyllabusModule,
   LearningResource,
   SdgActivity,
@@ -849,11 +850,72 @@ export function validateAssessmentPattern(
   cos: CourseOutcome[],
   matrix: AssessmentMatrixCell[],
   tolerance = 3,
-  componentWeights = DEFAULT_CONFIG_SETTINGS.assessmentComponentWeights
+  componentWeights = DEFAULT_CONFIG_SETTINGS.assessmentComponentWeights,
+  bajajPattern?: BajajAssessmentPattern
 ): ValidationRuleResult[] {
   const results: ValidationRuleResult[] = [];
 
   if (courseType === 'BAJAJ') {
+    if (!bajajPattern || !bajajPattern.rows || bajajPattern.rows.length === 0) {
+      results.push({
+        id: 'B6_BAJAJ_EMPTY',
+        field: 'bajajAssessmentPattern',
+        severity: 'error',
+        message: 'Assessment pattern table is required.',
+        fixHint: 'Fill in assessment marks for CAT and Terminal Exam Practical.',
+      });
+      return results;
+    }
+
+    const theoryLevels = bajajPattern.theoryTpsLevels || [1, 2, 3];
+    const practicalLevels = bajajPattern.practicalTpsLevels || [1, 2, 3];
+    const terminalLevels = bajajPattern.terminalTpsLevels || [1, 2, 3];
+
+    let sumTheory = 0;
+    let sumPractical = 0;
+    let sumTerminal = 0;
+
+    (cos || []).forEach(co => {
+      const r = bajajPattern.rows.find(x => x.coNo === co.coNo);
+      theoryLevels.forEach(lvl => {
+        sumTheory += Number((r?.theoryMarks as any)?.[lvl]) || 0;
+      });
+      practicalLevels.forEach(lvl => {
+        sumPractical += Number((r?.practicalMarks as any)?.[lvl]) || 0;
+      });
+      terminalLevels.forEach(lvl => {
+        sumTerminal += Number((r?.terminalMarks as any)?.[lvl]) || 0;
+      });
+    });
+
+    if (Math.abs(sumTheory - 100) > 0.01) {
+      results.push({
+        id: 'B6_BAJAJ_THEORY_SUM',
+        field: 'bajajAssessmentPattern.theory',
+        severity: 'error',
+        message: `Assessment CAT Theory marks must total 100% (currently ${sumTheory}%).`,
+        fixHint: 'Adjust row values so that Theory column sum equals 100%.',
+      });
+    }
+    if (Math.abs(sumPractical - 100) > 0.01) {
+      results.push({
+        id: 'B6_BAJAJ_PRACTICAL_SUM',
+        field: 'bajajAssessmentPattern.practical',
+        severity: 'error',
+        message: `Assessment CAT Practical marks must total 100% (currently ${sumPractical}%).`,
+        fixHint: 'Adjust row values so that Practical column sum equals 100%.',
+      });
+    }
+    if (Math.abs(sumTerminal - 100) > 0.01) {
+      results.push({
+        id: 'B6_BAJAJ_TERMINAL_SUM',
+        field: 'bajajAssessmentPattern.terminal',
+        severity: 'error',
+        message: `Terminal Exam Practical marks must total 100% (currently ${sumTerminal}%).`,
+        fixHint: 'Adjust row values so that Terminal column sum equals 100%.',
+      });
+    }
+
     return results;
   }
 
@@ -1912,7 +1974,8 @@ export function validateCourse(
     course.courseOutcomes || [],
     course.assessmentMatrix || [],
     tolerance,
-    componentWeights
+    componentWeights,
+    course.bajajAssessmentPattern
   ));
 
   // B7: Syllabus Modules (Theory / TCP, and optional for Practical/Bajaj if modules provided)
