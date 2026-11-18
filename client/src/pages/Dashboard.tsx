@@ -391,6 +391,16 @@ export const Dashboard: React.FC = () => {
                 <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                   <span className="font-semibold text-slate-600">Semester {c.semester}</span>
                   <div className="flex items-center space-x-1">
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        navigate(`/courses/${c._id}`);
+                      }}
+                      title="Edit syllabus"
+                      className="p-1 text-slate-400 hover:text-sky-700 hover:bg-sky-50 rounded transition-colors"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
                     {(c.status === 'APPROVED' || c.status === 'FINALIZED') && (
                       <button
                         onClick={e => handleRevise(c._id!, e)}
