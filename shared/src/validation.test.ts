@@ -28,6 +28,11 @@ describe('B1: Course Name Validation', () => {
     expect(res.filter(r => r.severity === 'error')).toHaveLength(0);
   });
 
+  it('should accept course name containing comma like Probability, Statistics and Optimization', () => {
+    const res = validateCourseName('Probability, Statistics and Optimization', 'THEORY');
+    expect(res.filter(r => r.severity === 'error')).toHaveLength(0);
+  });
+
   it('should reject special characters like hyphens, ampersands, slashes', () => {
     const res = validateCourseName('Data Structures & Algorithms - Part 1', 'THEORY');
     const errors = res.filter(r => r.severity === 'error');

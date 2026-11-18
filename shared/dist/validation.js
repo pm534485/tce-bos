@@ -21,14 +21,14 @@ export function validateCourseName(name, courseType) {
         });
         return results;
     }
-    // Only letters, digits and spaces. No hyphens, slashes, ampersands, parentheses, colons, etc.
-    if (!/^[a-zA-Z0-9\s]+$/.test(trimmed)) {
+    // Only letters, digits, spaces, and commas. No hyphens, slashes, ampersands, parentheses, colons, etc.
+    if (!/^[a-zA-Z0-9\s,]+$/.test(trimmed)) {
         results.push({
             id: 'B1_SPECIAL_CHARS',
             field: 'courseName',
             severity: 'error',
-            message: 'Course name contains invalid characters. Only alphanumeric characters and spaces are allowed.',
-            fixHint: 'Remove any hyphens, slashes, ampersands (&), colons, parentheses, or punctuation symbols.',
+            message: 'Course name contains invalid characters. Only alphanumeric characters, spaces, and commas are allowed.',
+            fixHint: 'Remove any hyphens, slashes, ampersands (&), colons, parentheses, or unauthorized punctuation symbols.',
         });
     }
     // Max 60 characters incl. spaces
@@ -101,7 +101,7 @@ export function validateCourseName(name, courseType) {
         });
     }
     // Check for all-caps abbreviations (e.g., DSP, AI, ML, VLSI)
-    const words = trimmed.split(/\s+/);
+    const words = trimmed.split(/\s+/).map(w => w.replace(/[,;.:]+$/, ''));
     const acronyms = words.filter(w => w.length >= 2 && w === w.toUpperCase() && /^[A-Z]+$/.test(w));
     if (acronyms.length > 0) {
         results.push({
