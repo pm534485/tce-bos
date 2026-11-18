@@ -12,6 +12,12 @@ export declare function formatDesignerName(designer: {
     salutation?: string;
     name?: string;
 }): string;
+/**
+ * Standard compact designer department names to save horizontal space in syllabus documents.
+ * e.g. "Electronics and Communication Engineering" -> "Department of ECE"
+ */
+export declare function formatDesignerDepartment(dept?: string): string;
+export declare const DESIGNER_DEPARTMENT_OPTIONS: readonly ["Department of ECE", "Department of CSE", "Department of EEE", "Department of IT", "Department of Mech", "Department of Civil", "Department of AIML", "Department of CSBS", "Department of CA", "Department of Data Science", "Department of Mechatronics", "Department of FT", "Department of Mathematics", "Department of Physics", "Department of Chemistry", "Department of English"];
 export declare function getProgrammesForDepartment(dept?: string): ProgrammeCode[];
 export declare function getDepartmentForProgramme(code?: string): string;
 /**

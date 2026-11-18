@@ -19,7 +19,7 @@ import {
   suggestCoWeightages,
 } from './validation.js';
 import { Course, CourseOutcome, SyllabusModule, LearningResource, SdgActivity } from './types.js';
-import { getDisplayTeType, PERFORMANCE_INDICATORS, isPgProgramme, isPgCourse } from './constants.js';
+import { getDisplayTeType, PERFORMANCE_INDICATORS, isPgProgramme, isPgCourse, formatDesignerDepartment } from './constants.js';
 import { getDepartmentPerformanceIndicators } from './departmentPerformanceIndicators.js';
 
 describe('B1: Course Name Validation', () => {
@@ -876,6 +876,21 @@ describe('B13: 17-Point Theory Compliance Checklist Auto-Evaluation', () => {
       ];
       const res = validateCourseOutcomes(pgCosWithoutPi, 'THEORY', false, 3, 'Civil Engineering', 'PA');
       expect(res.some(e => e.id.includes('PI'))).toBe(false);
+    });
+
+    it('should format designer department to compact standard saving space', () => {
+      expect(formatDesignerDepartment('Electronics and Communication Engineering')).toBe('Department of ECE');
+      expect(formatDesignerDepartment('Department of Electronics and Communication Engineering')).toBe('Department of ECE');
+      expect(formatDesignerDepartment('ECE')).toBe('Department of ECE');
+      expect(formatDesignerDepartment('Computer Science and Engineering')).toBe('Department of CSE');
+      expect(formatDesignerDepartment('Electrical and Electronics Engineering')).toBe('Department of EEE');
+      expect(formatDesignerDepartment('Information Technology')).toBe('Department of IT');
+      expect(formatDesignerDepartment('Mechanical Engineering')).toBe('Department of Mech');
+      expect(formatDesignerDepartment('Civil Engineering')).toBe('Department of Civil');
+      expect(formatDesignerDepartment('Artificial Intelligence and Machine Learning')).toBe('Department of AIML');
+      expect(formatDesignerDepartment('Department of ECE')).toBe('Department of ECE');
+      expect(formatDesignerDepartment('')).toBe('');
+      expect(formatDesignerDepartment('Analog Devices')).toBe('Analog Devices');
     });
   });
 });

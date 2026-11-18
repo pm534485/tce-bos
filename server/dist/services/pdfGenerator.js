@@ -1,4 +1,4 @@
-import { getDisplayTeType, formatDesignerName, LAB_OBJECTIVES_LEGEND_TEXT, isPgCourse } from '@syllabusforge/shared';
+import { getDisplayTeType, formatDesignerName, formatDesignerDepartment, LAB_OBJECTIVES_LEGEND_TEXT, isPgCourse } from '@syllabusforge/shared';
 export function getDegreeProgramHeader(course) {
     let progCode = (course.programmeCode || '').toUpperCase();
     if (!progCode && course.courseCode && course.courseCode.length >= 4) {
@@ -469,7 +469,7 @@ export function buildCourseInnerHtml(course, options) {
     const designersHtml = designers.length > 0
         ? designers.map(d => {
             const fullName = formatDesignerName(d);
-            const parts = [fullName, d.designation, d.company, d.department].filter(Boolean).join(', ');
+            const parts = [fullName, d.designation, d.company, formatDesignerDepartment(d.department)].filter(Boolean).join(', ');
             return `${parts}${d.email ? (parts ? ', ' : '') + `<a href="mailto:${d.email}" style="color: #0000FF; text-decoration: underline;">${d.email}</a>` : ''}`;
         }).join('<br>')
         : 'Faculty Member, <a href="mailto:faculty@tce.edu" style="color: #0000FF; text-decoration: underline;">faculty@tce.edu</a>';

@@ -15,7 +15,7 @@ import {
   VerticalMergeType,
   UnderlineType,
 } from 'docx';
-import { Course, getDisplayTeType, formatDesignerName, LAB_OBJECTIVES_LEGEND_TEXT, isPgCourse } from '@syllabusforge/shared';
+import { Course, getDisplayTeType, formatDesignerName, formatDesignerDepartment, LAB_OBJECTIVES_LEGEND_TEXT, isPgCourse } from '@syllabusforge/shared';
 import { getDegreeProgramHeader } from './pdfGenerator.js';
 
 // Table cell borders helper: clean single solid borders
@@ -989,7 +989,7 @@ export function buildCourseDocxElements(
     const designers = course.designers || [];
     if (designers.length > 0) {
       designers.forEach(d => {
-        const parts = [formatDesignerName(d), d.designation, d.company, d.department].filter(Boolean).join(', ');
+        const parts = [formatDesignerName(d), d.designation, d.company, formatDesignerDepartment(d.department)].filter(Boolean).join(', ');
         const runs = [createText(`${parts}${d.email ? (parts ? ', ' : '') : ''}`)];
         if (d.email) {
           runs.push(new TextRun({
@@ -1410,7 +1410,7 @@ export function buildCourseDocxElements(
     const designers = course.designers || [];
     if (designers.length > 0) {
       designers.forEach(d => {
-        const parts = [formatDesignerName(d), d.designation, d.company, d.department].filter(Boolean).join(', ');
+        const parts = [formatDesignerName(d), d.designation, d.company, formatDesignerDepartment(d.department)].filter(Boolean).join(', ');
         const runs = [createText(`${parts}${d.email ? (parts ? ', ' : '') : ''}`)];
         if (d.email) {
           runs.push(new TextRun({

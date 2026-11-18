@@ -91,6 +91,198 @@ export function formatDesignerName(designer: { salutation?: string; name?: strin
   return `${salutation} ${rawName}`;
 }
 
+/**
+ * Standard compact designer department names to save horizontal space in syllabus documents.
+ * e.g. "Electronics and Communication Engineering" -> "Department of ECE"
+ */
+export function formatDesignerDepartment(dept?: string): string {
+  if (!dept) return '';
+  const raw = dept.trim();
+  if (!raw) return '';
+
+  // Clean common prefixes for matching
+  const cleaned = raw
+    .replace(/^(department\s+of|dept\.?\s+of)\s+/i, '')
+    .trim();
+
+  const lower = cleaned.toLowerCase();
+
+  // ECE
+  if (
+    lower === 'electronics and communication engineering' ||
+    lower === 'electronics and communication' ||
+    lower === 'ece' ||
+    lower === 'electronics engineering (vlsi design and technology)' ||
+    lower === 'communication systems'
+  ) {
+    return 'Department of ECE';
+  }
+
+  // CSE
+  if (
+    lower === 'computer science and engineering' ||
+    lower === 'computer science & engineering' ||
+    lower === 'cse' ||
+    lower === 'computer science and engineering (pg)'
+  ) {
+    return 'Department of CSE';
+  }
+
+  // EEE
+  if (
+    lower === 'electrical and electronics engineering' ||
+    lower === 'electrical & electronics engineering' ||
+    lower === 'eee' ||
+    lower === 'electrical and computer engineering'
+  ) {
+    return 'Department of EEE';
+  }
+
+  // IT
+  if (
+    lower === 'information technology' ||
+    lower === 'it'
+  ) {
+    return 'Department of IT';
+  }
+
+  // Mechanical
+  if (
+    lower === 'mechanical engineering' ||
+    lower === 'mech' ||
+    lower === 'me'
+  ) {
+    return 'Department of Mech';
+  }
+
+  // Civil
+  if (
+    lower === 'civil engineering' ||
+    lower === 'civil' ||
+    lower === 'ce' ||
+    lower === 'structural engineering' ||
+    lower === 'construction engineering and management'
+  ) {
+    return 'Department of Civil';
+  }
+
+  // AI & ML
+  if (
+    lower === 'artificial intelligence and machine learning' ||
+    lower === 'artificial intelligence & machine learning' ||
+    lower === 'aiml' ||
+    lower === 'ai and ml' ||
+    lower === 'ai & ml'
+  ) {
+    return 'Department of AIML';
+  }
+
+  // CSBS
+  if (
+    lower === 'computer science and business systems' ||
+    lower === 'computer science & business systems' ||
+    lower === 'csbs'
+  ) {
+    return 'Department of CSBS';
+  }
+
+  // Computer Applications / MCA
+  if (
+    lower === 'computer applications' ||
+    lower === 'computer applications (mca)' ||
+    lower === 'mca' ||
+    lower === 'ca'
+  ) {
+    return 'Department of CA';
+  }
+
+  // Data Science
+  if (
+    lower === 'data science' ||
+    lower === 'data science (five years)' ||
+    lower === 'ds'
+  ) {
+    return 'Department of Data Science';
+  }
+
+  // Mechatronics
+  if (
+    lower === 'mechatronics' ||
+    lower === 'mechatronics engineering' ||
+    lower === 'mt' ||
+    lower === 'mtr'
+  ) {
+    return 'Department of Mechatronics';
+  }
+
+  // Fashion Technology
+  if (
+    lower === 'fashion technology' ||
+    lower === 'ft'
+  ) {
+    return 'Department of FT';
+  }
+
+  // Mathematics
+  if (
+    lower === 'mathematics' ||
+    lower === 'maths' ||
+    lower === 'ma'
+  ) {
+    return 'Department of Mathematics';
+  }
+
+  // Physics
+  if (
+    lower === 'physics' ||
+    lower === 'ph'
+  ) {
+    return 'Department of Physics';
+  }
+
+  // Chemistry
+  if (
+    lower === 'chemistry' ||
+    lower === 'ch'
+  ) {
+    return 'Department of Chemistry';
+  }
+
+  // English
+  if (
+    lower === 'english' ||
+    lower === 'eg'
+  ) {
+    return 'Department of English';
+  }
+
+  // If already starts with "Department of" or "Dept. of", standardize to "Department of ..."
+  if (/^(department\s+of|dept\.?\s+of)\s+/i.test(raw)) {
+    return `Department of ${cleaned}`;
+  }
+
+  return raw;
+}
+
+export const DESIGNER_DEPARTMENT_OPTIONS = [
+  'Department of ECE',
+  'Department of CSE',
+  'Department of EEE',
+  'Department of IT',
+  'Department of Mech',
+  'Department of Civil',
+  'Department of AIML',
+  'Department of CSBS',
+  'Department of CA',
+  'Department of Data Science',
+  'Department of Mechatronics',
+  'Department of FT',
+  'Department of Mathematics',
+  'Department of Physics',
+  'Department of Chemistry',
+  'Department of English',
+] as const;
+
 export function getProgrammesForDepartment(dept?: string): ProgrammeCode[] {
   if (!dept) return PROGRAMME_CODES;
   const map: Record<string, string[]> = {

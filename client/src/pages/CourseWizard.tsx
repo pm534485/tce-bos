@@ -43,6 +43,8 @@ import {
   getExpectedHoursCriteria,
   SALUTATION_OPTIONS,
   formatDesignerName,
+  formatDesignerDepartment,
+  DESIGNER_DEPARTMENT_OPTIONS,
   isPgCourse,
 } from '@syllabusforge/shared';
 import { LiveCompliancePanel } from '../components/LiveCompliancePanel';
@@ -7623,15 +7625,31 @@ export const CourseWizard: React.FC = () => {
                             <div className="md:col-span-2">
                               <input
                                 type="text"
+                                list="designer-dept-options"
                                 value={des.department || ''}
                                 onChange={e => {
                                   const updated = [...(course.designers || [])];
                                   updated[idx] = { ...updated[idx], department: e.target.value };
                                   updateField('designers', updated);
                                 }}
-                                placeholder={isIndustryCourse ? "Division / Dept" : "Department"}
+                                onBlur={e => {
+                                  if (!isIndustryCourse) {
+                                    const compact = formatDesignerDepartment(e.target.value);
+                                    if (compact && compact !== e.target.value) {
+                                      const updated = [...(course.designers || [])];
+                                      updated[idx] = { ...updated[idx], department: compact };
+                                      updateField('designers', updated);
+                                    }
+                                  }
+                                }}
+                                placeholder={isIndustryCourse ? "Division / Dept" : "Department (e.g. Department of ECE)"}
                                 className="w-full p-2 border border-slate-300 rounded text-xs"
                               />
+                              <datalist id="designer-dept-options">
+                                {DESIGNER_DEPARTMENT_OPTIONS.map(opt => (
+                                  <option key={opt} value={opt} />
+                                ))}
+                              </datalist>
                             </div>
 
                             {/* Email */}
@@ -7660,7 +7678,7 @@ export const CourseWizard: React.FC = () => {
                               salutation: '',
                               name: '',
                               designation: '',
-                              department: isIndustryCourse ? '' : (course.department || ''),
+                              department: isIndustryCourse ? '' : (formatDesignerDepartment(course.department) || ''),
                               company: '',
                               email: '',
                             };
@@ -7687,7 +7705,7 @@ export const CourseWizard: React.FC = () => {
                               salutation: '',
                               name: '',
                               designation: '',
-                              department: isIndustryCourse ? '' : (course.department || ''),
+                              department: isIndustryCourse ? '' : (formatDesignerDepartment(course.department) || ''),
                               company: '',
                               email: '',
                             };
