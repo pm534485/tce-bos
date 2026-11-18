@@ -83,6 +83,7 @@ const CourseDesignerSchema = new Schema({
     name: { type: String, required: false },
     designation: { type: String, required: false },
     department: { type: String, required: false },
+    company: { type: String, required: false, default: '' },
     email: { type: String, required: false },
 }, { _id: false });
 const ReviewCommentSchema = new Schema({

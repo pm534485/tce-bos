@@ -148,6 +148,7 @@ export interface CourseDesigner {
     name: string;
     designation: string;
     department: string;
+    company?: string;
     email: string;
 }
 export interface ReviewComment {

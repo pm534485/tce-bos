@@ -1491,7 +1491,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
           <div className="text-xs text-black leading-relaxed space-y-1">
             {(course.designers && course.designers.length > 0) ? (
               course.designers.map((d, idx) => {
-                const textParts = [formatDesignerName(d), d.designation, d.department].filter(Boolean).join(', ');
+                const textParts = [formatDesignerName(d), d.designation, d.company, d.department].filter(Boolean).join(', ');
                 return (
                   <div key={idx}>
                     {textParts}

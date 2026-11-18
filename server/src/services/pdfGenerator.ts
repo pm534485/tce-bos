@@ -463,7 +463,7 @@ export function buildCourseInnerHtml(
   const designersHtml = designers.length > 0
     ? designers.map(d => {
         const fullName = formatDesignerName(d);
-        const parts = [fullName, d.designation, d.department].filter(Boolean).join(', ');
+        const parts = [fullName, d.designation, d.company, d.department].filter(Boolean).join(', ');
         return `${parts}${d.email ? (parts ? ', ' : '') + `<a href="mailto:${d.email}" style="color: #0000FF; text-decoration: underline;">${d.email}</a>` : ''}`;
       }).join('<br>')
     : 'Faculty Member, <a href="mailto:faculty@tce.edu" style="color: #0000FF; text-decoration: underline;">faculty@tce.edu</a>';

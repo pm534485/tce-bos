@@ -2049,6 +2049,13 @@ export const CourseWizard: React.FC = () => {
   const isOneCreditIndustry = course.courseType === 'THEORY' && 
     (Number(course.credits) === 1 || course.categoryLetter === '1' || activeTable3Category?.name === 'Industry-Supported Course');
 
+  const isIndustryCourse = Boolean(
+    course.categoryLetter === '1' ||
+    course.categoryLetter === '2' ||
+    activeTable3Category?.name === 'Industry-Supported Course' ||
+    (course.courseType === 'THEORY' && Number(course.credits) === 1)
+  );
+
   // Step 3 validation: Assessment Pattern
   let isStep3Complete = false;
   if (course.courseType === 'BAJAJ') {
@@ -7352,16 +7359,25 @@ export const CourseWizard: React.FC = () => {
                   <div className="space-y-6">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                       <div>
-                        <h2 className="text-xl font-bold text-slate-900">
-                          {isPracticalCourse ? '6. Course Designers' : '7. Course Designers'}
-                        </h2>
+                        <div className="flex items-center space-x-2">
+                          <h2 className="text-xl font-bold text-slate-900">
+                            {isPracticalCourse ? '6. Course Designers' : '7. Course Designers'}
+                          </h2>
+                          {isIndustryCourse && (
+                            <span className="text-xs bg-amber-100 text-amber-800 border border-amber-300 font-bold px-2.5 py-0.5 rounded-full">
+                              Industry-Supported Course
+                            </span>
+                          )}
+                        </div>
                         <p className="text-sm text-slate-500 mt-1">
-                          List course designers with institutional emails. Use <strong>Move Up</strong> / <strong>Move Down</strong> to adjust the sequence (e.g. to position a senior professor or co-designer first).
+                          {isIndustryCourse
+                            ? 'List the industry professionals / corporate experts designing this course, along with company name, designation, and contact details.'
+                            : 'List course designers with institutional emails. Use Move Up / Move Down to adjust the sequence (e.g. to position a senior professor or co-designer first).'}
                         </p>
                       </div>
                       {(course.designers || []).length > 1 && (
                         <span className="text-xs text-sky-800 bg-sky-50 px-2.5 py-1 rounded-lg border border-sky-200 font-medium self-start sm:self-auto flex items-center space-x-1">
-                          <span>💡 Faculty 1 is the Primary Designer in documents</span>
+                          <span>💡 {isIndustryCourse ? 'Expert 1 is the Lead Designer in documents' : 'Faculty 1 is the Primary Designer in documents'}</span>
                         </span>
                       )}
                     </div>
@@ -7375,14 +7391,16 @@ export const CourseWizard: React.FC = () => {
                               <span className="w-5 h-5 rounded-full bg-sky-600 text-white flex items-center justify-center text-[11px] font-bold shadow-2xs">
                                 {idx + 1}
                               </span>
-                              <span className="font-bold text-xs text-slate-800">Faculty {idx + 1}</span>
+                              <span className="font-bold text-xs text-slate-800">
+                                {isIndustryCourse ? `Industry Expert ${idx + 1}` : `Faculty ${idx + 1}`}
+                              </span>
                               {idx === 0 ? (
                                 <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold px-2 py-0.5 rounded-full">
-                                  Primary Designer
+                                  {isIndustryCourse ? 'Lead Expert' : 'Primary Designer'}
                                 </span>
                               ) : (
                                 <span className="text-[10px] bg-slate-100 text-slate-600 font-medium px-2 py-0.5 rounded-full">
-                                  Co-Designer
+                                  {isIndustryCourse ? 'Co-Expert' : 'Co-Designer'}
                                 </span>
                               )}
                             </div>
@@ -7393,7 +7411,7 @@ export const CourseWizard: React.FC = () => {
                                 type="button"
                                 disabled={idx === 0}
                                 onClick={() => moveDesigner(idx, idx - 1)}
-                                title={idx === 0 ? 'Already in the first position' : `Move up to Faculty ${idx}`}
+                                title={idx === 0 ? 'Already in the first position' : `Move up to ${isIndustryCourse ? 'Expert' : 'Faculty'} ${idx}`}
                                 className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-all ${
                                   idx === 0
                                     ? 'text-slate-300 border border-slate-100 bg-slate-50/40 cursor-not-allowed'
@@ -7412,7 +7430,7 @@ export const CourseWizard: React.FC = () => {
                                 title={
                                   idx === (course.designers || []).length - 1
                                     ? 'Already in the last position'
-                                    : `Move down to Faculty ${idx + 2}`
+                                    : `Move down to ${isIndustryCourse ? 'Expert' : 'Faculty'} ${idx + 2}`
                                 }
                                 className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-all ${
                                   idx === (course.designers || []).length - 1
@@ -7441,10 +7459,10 @@ export const CourseWizard: React.FC = () => {
                             </div>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
-                            {/* Salutation & Faculty Name */}
-                            <div className="flex space-x-1.5 md:col-span-4">
+                            {/* Salutation & Faculty/Expert Name */}
+                            <div className="flex space-x-1.5 md:col-span-3">
                               {customSalutationIndices[idx] || (des.salutation && !['Dr.', 'Mr.', 'Ms.', 'Mrs.', 'Er.', 'Prof.', ''].includes(des.salutation)) ? (
-                                <div className="flex items-center space-x-1 w-28 shrink-0">
+                                <div className="flex items-center space-x-1 w-24 shrink-0">
                                   <input
                                     type="text"
                                     value={des.salutation || ''}
@@ -7453,7 +7471,7 @@ export const CourseWizard: React.FC = () => {
                                       updated[idx] = { ...updated[idx], salutation: e.target.value };
                                       updateField('designers', updated);
                                     }}
-                                    placeholder="Title/Prefix"
+                                    placeholder="Title"
                                     className="p-2 border border-indigo-400 rounded text-xs bg-indigo-50/40 text-slate-900 font-semibold w-full focus:ring-1 focus:ring-indigo-500"
                                     title="Manual Salutation (e.g. Er., Dr., Shri, Prof., Capt.)"
                                     autoFocus
@@ -7498,17 +7516,17 @@ export const CourseWizard: React.FC = () => {
                                     };
                                     updateField('designers', updated);
                                   }}
-                                  className="p-2 border border-slate-300 rounded text-xs bg-white text-slate-800 font-semibold w-28 shrink-0 cursor-pointer"
+                                  className="p-2 border border-slate-300 rounded text-xs bg-white text-slate-800 font-semibold w-24 shrink-0 cursor-pointer"
                                   title="Select or enter manual salutation"
                                 >
-                                  <option value="">Salutation</option>
+                                  <option value="">Title</option>
                                   <option value="Dr.">Dr.</option>
                                   <option value="Mr.">Mr.</option>
                                   <option value="Ms.">Ms.</option>
                                   <option value="Mrs.">Mrs.</option>
                                   <option value="Er.">Er.</option>
                                   <option value="Prof.">Prof.</option>
-                                  <option value="__MANUAL__">✏️ Other (Manual)...</option>
+                                  <option value="__MANUAL__">✏️ Other...</option>
                                 </select>
                               )}
                               <input
@@ -7527,69 +7545,106 @@ export const CourseWizard: React.FC = () => {
                                   updated[idx] = { ...updated[idx], name: e.target.value };
                                   updateField('designers', updated);
                                 }}
-                                placeholder="Faculty Name"
+                                placeholder={isIndustryCourse ? "Expert Name" : "Faculty Name"}
                                 className="p-2 border border-slate-300 rounded text-xs font-semibold flex-1 min-w-0"
                               />
                             </div>
+
+                            {/* Designation */}
+                            <div className="md:col-span-2">
+                              {isIndustryCourse ? (
+                                <input
+                                  type="text"
+                                  value={des.designation || ''}
+                                  onChange={e => {
+                                    const updated = [...(course.designers || [])];
+                                    updated[idx] = { ...updated[idx], designation: e.target.value };
+                                    updateField('designers', updated);
+                                  }}
+                                  placeholder="Role / Designation"
+                                  className="w-full p-2 border border-slate-300 rounded text-xs text-slate-800 font-medium"
+                                />
+                              ) : (
+                                <select
+                                  value={
+                                    ['Assistant Professor', 'Associate Professor', 'Professor'].find(
+                                      opt => opt.toLowerCase() === (des.designation || '').trim().toLowerCase()
+                                    ) || des.designation || ''
+                                  }
+                                  onChange={e => {
+                                    const updated = [...(course.designers || [])];
+                                    updated[idx] = { ...updated[idx], designation: e.target.value };
+                                    updateField('designers', updated);
+                                  }}
+                                  className={`w-full p-2 border border-slate-300 rounded text-xs bg-white ${
+                                    !des.designation ? 'text-slate-400' : 'text-slate-800'
+                                  }`}
+                                >
+                                  <option value="" disabled>
+                                    Select Designation
+                                  </option>
+                                  {des.designation &&
+                                    !['Assistant Professor', 'Associate Professor', 'Professor'].some(
+                                      opt => opt.toLowerCase() === (des.designation || '').trim().toLowerCase()
+                                    ) && (
+                                      <option value={des.designation}>{des.designation}</option>
+                                    )}
+                                  <option value="Assistant Professor" className="text-slate-800">
+                                    Assistant Professor
+                                  </option>
+                                  <option value="Associate Professor" className="text-slate-800">
+                                    Associate Professor
+                                  </option>
+                                  <option value="Professor" className="text-slate-800">
+                                    Professor
+                                  </option>
+                                </select>
+                              )}
+                            </div>
+
+                            {/* Company / Organization */}
                             <div className="md:col-span-3">
-                              <select
-                                value={
-                                  ['Assistant Professor', 'Associate Professor', 'Professor'].find(
-                                    opt => opt.toLowerCase() === (des.designation || '').trim().toLowerCase()
-                                  ) || des.designation || ''
-                                }
+                              <input
+                                type="text"
+                                value={des.company || ''}
                                 onChange={e => {
                                   const updated = [...(course.designers || [])];
-                                  updated[idx] = { ...updated[idx], designation: e.target.value };
+                                  updated[idx] = { ...updated[idx], company: e.target.value };
                                   updateField('designers', updated);
                                 }}
-                                className={`w-full p-2 border border-slate-300 rounded text-xs bg-white ${
-                                  !des.designation ? 'text-slate-400' : 'text-slate-800'
+                                placeholder={isIndustryCourse ? "Company / Organization" : "Company (Optional)"}
+                                className={`w-full p-2 border rounded text-xs font-medium ${
+                                  isIndustryCourse && !des.company ? 'border-amber-400 bg-amber-50/30' : 'border-slate-300'
                                 }`}
-                              >
-                                <option value="" disabled>
-                                  Select Designation
-                                </option>
-                                {des.designation &&
-                                  !['Assistant Professor', 'Associate Professor', 'Professor'].some(
-                                    opt => opt.toLowerCase() === (des.designation || '').trim().toLowerCase()
-                                  ) && (
-                                    <option value={des.designation}>{des.designation}</option>
-                                  )}
-                                <option value="Assistant Professor" className="text-slate-800">
-                                  Assistant Professor
-                                </option>
-                                <option value="Associate Professor" className="text-slate-800">
-                                  Associate Professor
-                                </option>
-                                <option value="Professor" className="text-slate-800">
-                                  Professor
-                                </option>
-                              </select>
+                              />
                             </div>
+
+                            {/* Department / Division */}
                             <div className="md:col-span-2">
                               <input
                                 type="text"
-                                value={des.department}
+                                value={des.department || ''}
                                 onChange={e => {
                                   const updated = [...(course.designers || [])];
                                   updated[idx] = { ...updated[idx], department: e.target.value };
                                   updateField('designers', updated);
                                 }}
-                                placeholder="Department"
+                                placeholder={isIndustryCourse ? "Division / Dept" : "Department"}
                                 className="w-full p-2 border border-slate-300 rounded text-xs"
                               />
                             </div>
-                            <div className="md:col-span-3">
+
+                            {/* Email */}
+                            <div className="md:col-span-2">
                               <input
                                 type="email"
-                                value={des.email}
+                                value={des.email || ''}
                                 onChange={e => {
                                   const updated = [...(course.designers || [])];
                                   updated[idx] = { ...updated[idx], email: e.target.value };
                                   updateField('designers', updated);
                                 }}
-                                placeholder="Email ID"
+                                placeholder={isIndustryCourse ? "Corporate Email" : "Email ID"}
                                 className="w-full p-2 border border-slate-300 rounded text-xs font-mono text-[#0000FF] underline font-medium"
                               />
                             </div>
@@ -7605,7 +7660,8 @@ export const CourseWizard: React.FC = () => {
                               salutation: '',
                               name: '',
                               designation: '',
-                              department: course.department || '',
+                              department: isIndustryCourse ? '' : (course.department || ''),
+                              company: '',
                               email: '',
                             };
                             // Shift custom salutation map indices
@@ -7621,7 +7677,7 @@ export const CourseWizard: React.FC = () => {
                           className="w-full py-2.5 px-3 rounded-xl border border-dashed border-sky-300 bg-sky-50/50 hover:bg-sky-100 text-sky-800 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
                         >
                           <Plus className="w-3.5 h-3.5 text-sky-600" />
-                          <span>+ Add Designer as First (Primary)</span>
+                          <span>{isIndustryCourse ? '+ Add Expert as First (Lead)' : '+ Add Designer as First (Primary)'}</span>
                         </button>
 
                         <button
@@ -7631,7 +7687,8 @@ export const CourseWizard: React.FC = () => {
                               salutation: '',
                               name: '',
                               designation: '',
-                              department: course.department || '',
+                              department: isIndustryCourse ? '' : (course.department || ''),
+                              company: '',
                               email: '',
                             };
                             updateField('designers', [...(course.designers || []), newDes]);
@@ -7639,7 +7696,7 @@ export const CourseWizard: React.FC = () => {
                           className="w-full py-2.5 px-3 rounded-xl border border-dashed border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 text-slate-700 hover:text-sky-700 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
                         >
                           <Plus className="w-3.5 h-3.5 text-slate-500" />
-                          <span>+ Add Additional Designer (At End)</span>
+                          <span>{isIndustryCourse ? '+ Add Additional Industry Expert' : '+ Add Additional Designer (At End)'}</span>
                         </button>
                       </div>
                       <InlineFieldError field="designers" />

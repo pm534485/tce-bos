@@ -935,7 +935,7 @@ export function buildCourseDocxElements(course, options) {
         const designers = course.designers || [];
         if (designers.length > 0) {
             designers.forEach(d => {
-                const parts = [formatDesignerName(d), d.designation, d.department].filter(Boolean).join(', ');
+                const parts = [formatDesignerName(d), d.designation, d.company, d.department].filter(Boolean).join(', ');
                 const runs = [createText(`${parts}${d.email ? (parts ? ', ' : '') : ''}`)];
                 if (d.email) {
                     runs.push(new TextRun({
@@ -1325,7 +1325,7 @@ export function buildCourseDocxElements(course, options) {
         const designers = course.designers || [];
         if (designers.length > 0) {
             designers.forEach(d => {
-                const parts = [formatDesignerName(d), d.designation, d.department].filter(Boolean).join(', ');
+                const parts = [formatDesignerName(d), d.designation, d.company, d.department].filter(Boolean).join(', ');
                 const runs = [createText(`${parts}${d.email ? (parts ? ', ' : '') : ''}`)];
                 if (d.email) {
                     runs.push(new TextRun({
