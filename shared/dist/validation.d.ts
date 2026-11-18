@@ -20,7 +20,7 @@ export declare function validateAssessmentPattern(courseType: CourseType, cos: C
     cat2: number;
     assignment2: number;
     terminal: number;
-}, bajajPattern?: BajajAssessmentPattern): ValidationRuleResult[];
+}, bajajPattern?: BajajAssessmentPattern, credits?: number | string, categoryLetter?: string): ValidationRuleResult[];
 export declare function validateSyllabusModules(modules: SyllabusModule[], cos: CourseOutcome[]): ValidationRuleResult[];
 export declare function validateExperimentsAndPlan(experiments: LabExperiment[], coursePlan: LabCoursePlanItem[], cos: CourseOutcome[]): ValidationRuleResult[];
 export interface CourseHoursCriteria {

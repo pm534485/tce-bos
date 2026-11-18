@@ -111,6 +111,7 @@ export function buildCourseInnerHtml(
   const isTcp = course.courseType === 'TCP';
   const isPractical = course.courseType === 'PRACTICAL';
   const isBajaj = course.courseType === 'BAJAJ';
+  const isOneCreditTheory = !isTcp && !isPractical && !isBajaj && (Number(course.credits) === 1 || course.categoryLetter === '1');
   let totalCol1 = 0;
   let totalCol2 = 0;
   let totalCol3 = 0;
@@ -277,6 +278,23 @@ export function buildCourseInnerHtml(
         <td class="center">${v3}</td>
         <td class="center">${v4}</td>
         <td class="center">${v5}</td>
+      </tr>
+    `;
+  }).join('');
+
+  let totalOneCreditCat = 0;
+  let totalOneCreditTerm = 0;
+  const oneCreditAssessmentRowsHtml = coList.map((co) => {
+    const row = matrix.find(m => m.coNo === co.coNo);
+    const c1 = row?.cat1 && row.cat1 > 0 ? row.cat1 : '';
+    const c2 = row?.terminalExam && row.terminalExam > 0 ? row.terminalExam : '';
+    if (typeof c1 === 'number') totalOneCreditCat += c1;
+    if (typeof c2 === 'number') totalOneCreditTerm += c2;
+    return `
+      <tr>
+        <td class="center font-bold">${co.coNo}</td>
+        <td class="center">${c1}</td>
+        <td class="center">${c2}</td>
       </tr>
     `;
   }).join('');
@@ -709,6 +727,31 @@ export function buildCourseInnerHtml(
         <td class="center font-bold">${totalCol3 || 100}%</td>
         <td class="center font-bold">${totalCol4 || 100}%</td>
         <td class="center font-bold">${totalCol5 || 100}%</td>
+      </tr>
+    </tbody>
+  </table>
+  ` : isOneCreditTheory ? `
+  <div class="gray-banner">Assessment Pattern</div>
+  <div class="line-space-sm"></div>
+  <div class="plain-heading">Continuous Assessment – Theory</div>
+  <table>
+    <thead>
+      <tr>
+        <th rowspan="2" class="center" style="width: 20%;">CO</th>
+        <th class="center" style="width: 40%;">Continuous Assessment Test (CAT)</th>
+        <th class="center" style="width: 40%;">Terminal Examination</th>
+      </tr>
+      <tr>
+        <th class="center" style="font-weight: bold; font-size: 11pt;">% of Marks</th>
+        <th class="center" style="font-weight: bold; font-size: 11pt;">% of Marks</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${oneCreditAssessmentRowsHtml}
+      <tr>
+        <td class="center font-bold">Total</td>
+        <td class="center font-bold">${totalOneCreditCat || 100}%</td>
+        <td class="center font-bold">${totalOneCreditTerm || 100}%</td>
       </tr>
     </tbody>
   </table>

@@ -679,6 +679,61 @@ export function buildCourseDocxElements(
       width: { size: 100, type: WidthType.PERCENTAGE },
       rows: [assessHeader1, assessHeader2, assessHeader3, ...assessDataRows, assessTotalRow],
     }));
+  } else if (!isTcp && (Number(course.credits) === 1 || course.categoryLetter === '1')) {
+    // 1-Credit Industry Supported Course: 1 CAT and 1 Terminal Examination
+    const assessHeader1 = new TableRow({
+      children: [
+        createCell('CO', { bold: true, widthPercent: 20, align: AlignmentType.CENTER, verticalMerge: VerticalMergeType.RESTART }),
+        createCell('Continuous Assessment Test (CAT)', { bold: true, widthPercent: 40, align: AlignmentType.CENTER }),
+        createCell('Terminal Examination', { bold: true, widthPercent: 40, align: AlignmentType.CENTER }),
+      ],
+    });
+
+    const assessHeader2 = new TableRow({
+      children: [
+        createCell('', { widthPercent: 20, verticalMerge: VerticalMergeType.CONTINUE }),
+        createCell('% of Marks', { bold: true, widthPercent: 40, align: AlignmentType.CENTER, size: 22 }),
+        createCell('% of Marks', { bold: true, widthPercent: 40, align: AlignmentType.CENTER, size: 22 }),
+      ],
+    });
+
+    let totCat = 0;
+    let totTerm = 0;
+
+    const assessDataRows = coList.map((co) => {
+      const row = matrix.find(m => m.coNo === co.coNo);
+      let c1: number | string = '';
+      let c2: number | string = '';
+
+      if (row) {
+        c1 = row.cat1 && row.cat1 > 0 ? row.cat1 : '';
+        c2 = row.terminalExam && row.terminalExam > 0 ? row.terminalExam : '';
+      }
+
+      if (typeof c1 === 'number') totCat += c1;
+      if (typeof c2 === 'number') totTerm += c2;
+
+      return new TableRow({
+        children: [
+          createCell(co.coNo, { widthPercent: 20, align: AlignmentType.CENTER }),
+          createCell(String(c1 || ''), { widthPercent: 40, align: AlignmentType.CENTER }),
+          createCell(String(c2 || ''), { widthPercent: 40, align: AlignmentType.CENTER }),
+        ],
+      });
+    });
+
+    const assessTotalRow = new TableRow({
+      children: [
+        createCell('Total', { bold: true, widthPercent: 20, align: AlignmentType.CENTER }),
+        createCell(`${totCat || 100}%`, { bold: true, widthPercent: 40, align: AlignmentType.CENTER }),
+        createCell(`${totTerm || 100}%`, { bold: true, widthPercent: 40, align: AlignmentType.CENTER }),
+      ],
+    });
+
+    children.push(new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [assessHeader1, assessHeader2, ...assessDataRows, assessTotalRow],
+    }));
   } else {
     const assessHeader1 = new TableRow({
       children: [

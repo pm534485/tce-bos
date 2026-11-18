@@ -2046,6 +2046,9 @@ export const CourseWizard: React.FC = () => {
   const validCos = cosList.filter(co => Boolean((co.statement || '').trim()));
   const isStep2Complete = validCos.length >= minCosRequired;
 
+  const isOneCreditIndustry = course.courseType === 'THEORY' && 
+    (Number(course.credits) === 1 || course.categoryLetter === '1' || activeTable3Category?.name === 'Industry-Supported Course');
+
   // Step 3 validation: Assessment Pattern
   let isStep3Complete = false;
   if (course.courseType === 'BAJAJ') {
@@ -2079,6 +2082,21 @@ export const CourseWizard: React.FC = () => {
       !validationReport.errors.some(e => e.field.startsWith('bajajAssessmentPattern'));
   } else if (course.courseType === 'PRACTICAL') {
     isStep3Complete = !validationReport.errors.some(e => e.field.startsWith('assessmentMatrix'));
+  } else if (isOneCreditIndustry) {
+    const cos = course.courseOutcomes || [];
+    const sumCat1 = cos.reduce((acc, co) => {
+      const row = (course.assessmentMatrix || []).find(r => r.coNo === co.coNo);
+      return acc + (Number(row?.cat1) || 0);
+    }, 0);
+    const sumTerm = cos.reduce((acc, co) => {
+      const row = (course.assessmentMatrix || []).find(r => r.coNo === co.coNo);
+      return acc + (Number(row?.terminalExam) || 0);
+    }, 0);
+
+    isStep3Complete = (course.assessmentMatrix || []).length > 0 &&
+      Math.abs(sumCat1 - 100) < 0.01 &&
+      Math.abs(sumTerm - 100) < 0.01 &&
+      !validationReport.errors.some(e => e.field.startsWith('assessmentMatrix'));
   } else {
     isStep3Complete = (course.assessmentMatrix || []).length > 0 &&
       !validationReport.errors.some(e => e.field.startsWith('assessmentMatrix'));
@@ -2182,6 +2200,25 @@ export const CourseWizard: React.FC = () => {
           if (Math.abs(sumTheory - 100) >= 0.01) parts.push(`Theory is ${sumTheory}%`);
           if (Math.abs(sumPractical - 100) >= 0.01) parts.push(`Practical is ${sumPractical}%`);
           if (Math.abs(sumTerminal - 100) >= 0.01) parts.push(`Terminal Practical is ${sumTerminal}%`);
+
+          if (parts.length > 0) {
+            return `Assessment components must each total 100% (${parts.join(', ')}) to continue`;
+          }
+        }
+        if (isOneCreditIndustry) {
+          const cos = course.courseOutcomes || [];
+          const sumCat1 = cos.reduce((acc, co) => {
+            const row = (course.assessmentMatrix || []).find(r => r.coNo === co.coNo);
+            return acc + (Number(row?.cat1) || 0);
+          }, 0);
+          const sumTerm = cos.reduce((acc, co) => {
+            const row = (course.assessmentMatrix || []).find(r => r.coNo === co.coNo);
+            return acc + (Number(row?.terminalExam) || 0);
+          }, 0);
+
+          const parts: string[] = [];
+          if (Math.abs(sumCat1 - 100) >= 0.01) parts.push(`CAT is ${sumCat1}%`);
+          if (Math.abs(sumTerm - 100) >= 0.01) parts.push(`Terminal Exam is ${sumTerm}%`);
 
           if (parts.length > 0) {
             return `Assessment components must each total 100% (${parts.join(', ')}) to continue`;
@@ -2696,6 +2733,27 @@ export const CourseWizard: React.FC = () => {
         practicalCa: ca[i],
         practicalModel: model[i],
         tcpTerminal: term[i],
+      }));
+      updateField('assessmentMatrix', matrix);
+      return;
+    }
+
+    // 1-Credit Industry Supported Course: 1 CAT and 1 Terminal Examination
+    if (isOneCreditIndustry) {
+      const cat1Col = [...weights];
+      const terminalCol = [...weights];
+      const cDiff = 100 - cat1Col.reduce((a, b) => a + b, 0);
+      cat1Col[cat1Col.length - 1] += cDiff;
+      const tDiff = 100 - terminalCol.reduce((a, b) => a + b, 0);
+      terminalCol[terminalCol.length - 1] += tDiff;
+
+      const matrix = cos.map((c, i) => ({
+        coNo: c.coNo,
+        cat1: cat1Col[i],
+        assignment1: 0,
+        cat2: 0,
+        assignment2: 0,
+        terminalExam: terminalCol[i],
       }));
       updateField('assessmentMatrix', matrix);
       return;
@@ -4575,7 +4633,9 @@ export const CourseWizard: React.FC = () => {
                                 Assessment Pattern (Course Outcomes Mark Distribution)
                               </h3>
                               <p className="text-xs text-slate-500">
-                                Mark percentage distribution across Continuous Assessment Tests (CAT 1, CAT 2), Assignments (1, 2), and Terminal Examination for each Course Outcome. Each column must sum to exactly 100%.
+                                {isOneCreditIndustry
+                                  ? 'Mark percentage distribution across Continuous Assessment Test (CAT) and Terminal Examination for each Course Outcome. Each column must sum to exactly 100%.'
+                                  : 'Mark percentage distribution across Continuous Assessment Tests (CAT 1, CAT 2), Assignments (1, 2), and Terminal Examination for each Course Outcome. Each column must sum to exactly 100%.'}
                               </p>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
@@ -4608,6 +4668,113 @@ export const CourseWizard: React.FC = () => {
                               <p className="text-xs text-amber-800 font-semibold">
                                 No Course Outcomes defined yet. Please return to Step 3 (Course Outcomes) to add COs first.
                               </p>
+                            </div>
+                          ) : isOneCreditIndustry ? (
+                            <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-xs">
+                              <div className="bg-sky-50/70 border-b border-sky-100 px-3 py-2 text-xs font-semibold text-sky-900 flex items-center justify-between">
+                                <span className="flex items-center gap-1.5">
+                                  <span className="px-2 py-0.5 bg-sky-600 text-white rounded text-[10px] font-bold">1-Credit Industry Supported</span>
+                                  <span>Configured for 1 Continuous Assessment Test (CAT) and 1 Terminal Examination.</span>
+                                </span>
+                              </div>
+                              <table className="w-full text-xs text-left border-collapse">
+                                <thead className="bg-slate-100 text-slate-700 font-bold">
+                                  <tr>
+                                    <th className="p-2.5 border-b w-28 bg-slate-200 text-slate-800 text-center">CO</th>
+                                    <th className="p-2.5 border-b text-center">Continuous Assessment Test (CAT) (%)</th>
+                                    <th className="p-2.5 border-b text-center bg-sky-50 text-sky-900">Terminal Exam (%)</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {(course.courseOutcomes || []).map(co => {
+                                    const rowData = (course.assessmentMatrix || []).find(r => r.coNo === co.coNo) || {
+                                      coNo: co.coNo,
+                                      cat1: 0,
+                                      assignment1: 0,
+                                      cat2: 0,
+                                      assignment2: 0,
+                                      terminalExam: 0,
+                                    };
+
+                                    const updateCell = (col: 'cat1' | 'terminalExam', val: number) => {
+                                      const matrix = [...(course.assessmentMatrix || [])];
+                                      const idx = matrix.findIndex(r => r.coNo === co.coNo);
+                                      if (idx >= 0) {
+                                        matrix[idx] = { ...matrix[idx], [col]: val, assignment1: 0, cat2: 0, assignment2: 0 };
+                                      } else {
+                                        matrix.push({ ...rowData, [col]: val, assignment1: 0, cat2: 0, assignment2: 0 });
+                                      }
+                                      updateField('assessmentMatrix', matrix);
+                                    };
+
+                                    return (
+                                      <tr key={co.coNo} className="border-b border-slate-100 hover:bg-slate-50/50">
+                                        <td className="p-2.5 font-bold text-slate-800 bg-slate-50/60 text-center">
+                                          <div>
+                                            <span className="font-extrabold text-sky-900">{co.coNo}</span>
+                                            <span className="block text-[10px] text-slate-500 font-medium">
+                                              TPS {co.tpsLevel}
+                                            </span>
+                                          </div>
+                                        </td>
+                                        <td className="p-2 text-center">
+                                          <input
+                                            type="number"
+                                            min={0}
+                                            max={100}
+                                            value={rowData.cat1 === 0 ? '' : rowData.cat1}
+                                            placeholder="0"
+                                            onChange={e => updateCell('cat1', parseInt(e.target.value) || 0)}
+                                            className="w-24 p-1.5 border border-slate-300 rounded text-center text-xs font-semibold placeholder:text-slate-300 placeholder:font-normal"
+                                          />
+                                        </td>
+                                        <td className="p-2 text-center bg-sky-50/30">
+                                          <input
+                                            type="number"
+                                            min={0}
+                                            max={100}
+                                            value={rowData.terminalExam === 0 ? '' : rowData.terminalExam}
+                                            placeholder="0"
+                                            onChange={e => updateCell('terminalExam', parseInt(e.target.value) || 0)}
+                                            className="w-24 p-1.5 border border-sky-300 bg-white rounded text-center text-xs font-bold text-sky-900 placeholder:text-sky-200 placeholder:font-normal"
+                                          />
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                                <tfoot className="bg-slate-100 font-bold border-t-2 border-slate-300">
+                                  <tr>
+                                    <td className="p-2.5 font-extrabold text-slate-900 text-center">Total (%):</td>
+                                    {(['cat1', 'terminalExam'] as const).map(col => {
+                                      const cos = course.courseOutcomes || [];
+                                      const sum = cos.reduce((acc, co) => {
+                                        const row = (course.assessmentMatrix || []).find(r => r.coNo === co.coNo);
+                                        return acc + (Number((row as any)?.[col]) || 0);
+                                      }, 0);
+                                      const isOk = sum === 100;
+                                      const label = col === 'cat1' ? 'CAT' : 'Terminal Exam';
+                                      return (
+                                        <td
+                                          key={col}
+                                          className={`p-2.5 text-center text-xs font-extrabold ${
+                                            isOk ? 'text-emerald-700 bg-emerald-50' : 'text-rose-600 bg-red-50'
+                                          }`}
+                                        >
+                                          <div className="flex items-center justify-center space-x-1">
+                                            <span>{label}: {sum}%</span>
+                                            {isOk ? (
+                                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                            ) : (
+                                              <span className="text-[10px] text-rose-500 font-normal">(!=100)</span>
+                                            )}
+                                          </div>
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                </tfoot>
+                              </table>
                             </div>
                           ) : (
                             <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-xs">

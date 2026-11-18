@@ -391,6 +391,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
   const isTcp = course.courseType === 'TCP';
   const isPractical = course.courseType === 'PRACTICAL';
   const isBajaj = course.courseType === 'BAJAJ';
+  const isOneCreditTheory = !isTcp && !isPractical && !isBajaj && (Number(course.credits) === 1 || course.categoryLetter === '1');
   let totalCol1 = 0;
   let totalCol2 = 0;
   let totalCol3 = 0;
@@ -1053,6 +1054,54 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ course, footer
                   <td className="border border-black p-1.5 text-center font-bold">{totalLabCa || 100}%</td>
                   <td className="border border-black p-1.5 text-center font-bold">{totalLabModel || 100}%</td>
                   <td className="border border-black p-1.5 text-center font-bold">{totalLabTerm || 100}%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        ) : isOneCreditTheory ? (
+          <div className="section-block">
+            <div className="document-banner bg-[#D9D9D9] font-bold px-2 py-1 text-black text-xs sm:text-sm w-full mb-1.5 print:bg-[#D9D9D9]">
+              Assessment Pattern
+            </div>
+            <table className="w-full border-collapse border border-black mb-0 text-xs">
+              <thead>
+                <tr>
+                  <th rowSpan={2} className="border border-black p-1.5 text-center align-middle w-[20%]">CO</th>
+                  <th className="border border-black p-1.5 text-center w-[40%]">Continuous Assessment Test (CAT)</th>
+                  <th className="border border-black p-1.5 text-center w-[40%]">Terminal Examination</th>
+                </tr>
+                <tr>
+                  <th className="border border-black p-1 text-center font-bold text-[10px]">% of Marks</th>
+                  <th className="border border-black p-1 text-center font-bold text-[10px]">% of Marks</th>
+                </tr>
+              </thead>
+              <tbody>
+                {coList.map(co => {
+                  const row = matrix.find(m => m.coNo === co.coNo);
+                  const c1 = row?.cat1 && row.cat1 > 0 ? row.cat1 : '';
+                  const c2 = row?.terminalExam && row.terminalExam > 0 ? row.terminalExam : '';
+                  return (
+                    <tr key={co.coNo} className="border-b border-black">
+                      <td className="border border-black p-1.5 text-center font-bold">{co.coNo}</td>
+                      <td className="border border-black p-1.5 text-center">{c1}</td>
+                      <td className="border border-black p-1.5 text-center">{c2}</td>
+                    </tr>
+                  );
+                })}
+                <tr>
+                  <td className="border border-black p-1.5 text-center font-bold">Total</td>
+                  <td className="border border-black p-1.5 text-center font-bold">
+                    {coList.reduce((acc, co) => {
+                      const row = matrix.find(m => m.coNo === co.coNo);
+                      return acc + (Number(row?.cat1) || 0);
+                    }, 0) || 100}%
+                  </td>
+                  <td className="border border-black p-1.5 text-center font-bold">
+                    {coList.reduce((acc, co) => {
+                      const row = matrix.find(m => m.coNo === co.coNo);
+                      return acc + (Number(row?.terminalExam) || 0);
+                    }, 0) || 100}%
+                  </td>
                 </tr>
               </tbody>
             </table>

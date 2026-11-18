@@ -851,7 +851,9 @@ export function validateAssessmentPattern(
   matrix: AssessmentMatrixCell[],
   tolerance = 3,
   componentWeights = DEFAULT_CONFIG_SETTINGS.assessmentComponentWeights,
-  bajajPattern?: BajajAssessmentPattern
+  bajajPattern?: BajajAssessmentPattern,
+  credits?: number | string,
+  categoryLetter?: string
 ): ValidationRuleResult[] {
   const results: ValidationRuleResult[] = [];
 
@@ -931,7 +933,60 @@ export function validateAssessmentPattern(
   }
 
   if (courseType === 'THEORY') {
-    // Columns: CAT1, Assignment 1, CAT2, Assignment 2, Terminal Exam
+    const isOneCredit = Number(credits) === 1 || categoryLetter === '1';
+
+    // 1-Credit Industry Supported Course: Exactly 1 CAT and 1 Terminal Examination
+    if (isOneCredit) {
+      const colTotals = {
+        cat1: 0,
+        terminalExam: 0,
+      };
+
+      const coAppearance: Record<string, number> = {};
+
+      matrix.forEach(row => {
+        colTotals.cat1 += Number(row.cat1) || 0;
+        colTotals.terminalExam += Number(row.terminalExam) || 0;
+
+        const totalMarksForCo = (row.cat1 || 0) + (row.terminalExam || 0);
+        coAppearance[row.coNo] = totalMarksForCo;
+      });
+
+      const columns: Array<{ name: keyof typeof colTotals; label: string }> = [
+        { name: 'cat1', label: 'Continuous Assessment Test (CAT)' },
+        { name: 'terminalExam', label: 'Terminal Examination' },
+      ];
+
+      columns.forEach(col => {
+        const total = colTotals[col.name];
+        if (Math.abs(total - 100) > 0.01) {
+          results.push({
+            id: `B6_COL_SUM_${col.name}`,
+            field: `assessmentMatrix.${col.name}`,
+            severity: 'error',
+            message: `Assessment column "${col.label}" must total 100% (currently ${total}%).`,
+            fixHint: `Adjust row values so that ${col.label} column sum equals exactly 100%.`,
+          });
+        }
+      });
+
+      // Every CO must appear in at least one component
+      cos.forEach(co => {
+        if (!coAppearance[co.coNo] || coAppearance[co.coNo] <= 0) {
+          results.push({
+            id: `B6_CO_MISSING_${co.coNo}`,
+            field: 'assessmentMatrix',
+            severity: 'error',
+            message: `${co.coNo} does not appear in any assessment component.`,
+            fixHint: `Allocate marks for ${co.coNo} in CAT or Terminal Exam.`,
+          });
+        }
+      });
+
+      return results;
+    }
+
+    // Standard Columns: CAT1, Assignment 1, CAT2, Assignment 2, Terminal Exam
     const colTotals = {
       cat1: 0,
       assignment1: 0,
@@ -1975,7 +2030,9 @@ export function validateCourse(
     course.assessmentMatrix || [],
     tolerance,
     componentWeights,
-    course.bajajAssessmentPattern
+    course.bajajAssessmentPattern,
+    course.credits,
+    course.categoryLetter
   ));
 
   // B7: Syllabus Modules (Theory / TCP, and optional for Practical/Bajaj if modules provided)

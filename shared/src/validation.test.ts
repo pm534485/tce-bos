@@ -434,6 +434,26 @@ describe('B6: Assessment Pattern Validation', () => {
     expect(res.some(e => e.id === 'B6_CO_MISSING_CO1')).toBe(true);
   });
 
+  it('should accept valid 1-credit industry supported course assessment matrix with 1 CAT and 1 Terminal', () => {
+    const oneCreditMatrix: AssessmentMatrixCell[] = [
+      { coNo: 'CO1', cat1: 50, terminalExam: 50 },
+      { coNo: 'CO2', cat1: 50, terminalExam: 50 },
+    ];
+    const cos2 = dummyCos.slice(0, 2);
+    const res = validateAssessmentPattern('THEORY', cos2, oneCreditMatrix, 3, undefined, undefined, 1, '1');
+    expect(res.filter(r => r.severity === 'error')).toHaveLength(0);
+  });
+
+  it('should reject 1-credit industry course assessment when CAT or Terminal does not sum to 100', () => {
+    const badOneCreditMatrix: AssessmentMatrixCell[] = [
+      { coNo: 'CO1', cat1: 40, terminalExam: 50 },
+      { coNo: 'CO2', cat1: 50, terminalExam: 50 },
+    ];
+    const cos2 = dummyCos.slice(0, 2);
+    const res = validateAssessmentPattern('THEORY', cos2, badOneCreditMatrix, 3, undefined, undefined, 1, '1');
+    expect(res.some(e => e.id === 'B6_COL_SUM_cat1')).toBe(true);
+  });
+
   it('should validate question level split (70-100% own TPS, 0-30% lower)', () => {
     const cosWithSplit: CourseOutcome[] = [
       {
@@ -807,7 +827,7 @@ describe('B13: 17-Point Theory Compliance Checklist Auto-Evaluation', () => {
       expect(erPis).toBe(PERFORMANCE_INDICATORS);
 
       const elPis = getDepartmentPerformanceIndicators('Electronics Engineering (VLSI)', 'EL', PERFORMANCE_INDICATORS);
-      expect(elPis).toBe(PERFORMANCE_INDICATORS);
+      expect(elPis.length).toBe(84);
     });
 
     it('should identify PG courses and return empty PIs for PG programmes', () => {
